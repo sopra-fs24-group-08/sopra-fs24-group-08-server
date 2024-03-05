@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 public class UserRepositoryIntegrationTest {
@@ -26,7 +27,10 @@ public class UserRepositoryIntegrationTest {
     user.setName("Firstname Lastname");
     user.setUsername("firstname@lastname");
     user.setStatus(UserStatus.OFFLINE);
+    user.setPassword("TestPassword");
     user.setToken("1");
+    LocalDate date = LocalDate.now();
+    user.setCreation_date(date);
 
     entityManager.persist(user);
     entityManager.flush();
@@ -40,5 +44,10 @@ public class UserRepositoryIntegrationTest {
     assertEquals(found.getUsername(), user.getUsername());
     assertEquals(found.getToken(), user.getToken());
     assertEquals(found.getStatus(), user.getStatus());
+    assertNotNull(found.getCreation_date());
   }
+
+
 }
+
+

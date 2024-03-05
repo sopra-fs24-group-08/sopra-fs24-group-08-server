@@ -29,6 +29,8 @@ public class DTOMapperTest {
     assertEquals(userPostDTO.getUsername(), user.getUsername());
   }
 
+
+
   @Test
   public void testGetUser_fromUser_toUserGetDTO_success() {
     // create User
@@ -47,4 +49,5 @@ public class DTOMapperTest {
     assertEquals(user.getUsername(), userGetDTO.getUsername());
     assertEquals(user.getStatus(), userGetDTO.getStatus());
   }
+
 }

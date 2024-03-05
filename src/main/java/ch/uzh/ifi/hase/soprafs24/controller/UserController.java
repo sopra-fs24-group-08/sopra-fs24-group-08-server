@@ -1,6 +1,8 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.EditUserPutDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.LoginUserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
@@ -27,6 +29,9 @@ public class UserController {
     this.userService = userService;
   }
 
+  /*
+  get all users
+   */
   @GetMapping("/users")
   @ResponseStatus(HttpStatus.OK)
   @ResponseBody
@@ -42,6 +47,9 @@ public class UserController {
     return userGetDTOs;
   }
 
+  /*
+  Register
+   */
   @PostMapping("/users")
   @ResponseStatus(HttpStatus.CREATED)
   @ResponseBody
@@ -54,4 +62,34 @@ public class UserController {
     // convert internal representation of user back to API
     return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);
   }
+  /*
+    Login: Post API to login user
+   */
+  @PostMapping("/login")
+  @ResponseStatus(HttpStatus.OK)
+  @ResponseBody
+  public UserGetDTO loginUser(@RequestBody LoginUserPostDTO loginUserPostDTO) {
+      User userCredentials = DTOMapper.INSTANCE.convertLoginUserPostDTOtoEntity(loginUserPostDTO);
+      User userData = userService.loginCredentials(userCredentials);
+      return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
+  }
+  /*
+    Get by id
+   */
+  @GetMapping(value = "/users/{id}")
+  @ResponseBody
+  public UserGetDTO getUserbyID(@PathVariable("id") Long id) {
+      User userData = userService.getUserbyUserID(id);
+      return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
+  }
+
+  @PutMapping(value = "/users/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @ResponseBody
+  public void editUser(@RequestBody EditUserPutDTO editUserPutDTO, @PathVariable("id") Long id) {
+      User editUser = DTOMapper.INSTANCE.convertEditUserPutDTOtoEntity(editUserPutDTO);
+      editUser.setId(id);
+      User edited_user = userService.editUserbyUserID(editUser);
+  }
+
 }
