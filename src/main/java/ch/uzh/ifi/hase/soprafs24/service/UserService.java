@@ -153,6 +153,14 @@ public class UserService {
       }
       return userbyID;
     }
+    public User logoutUserbyUserID(Long userid) {
+        // Input: user id
+        // Function: Change online status to offline
+        // Return: Edited user information
+        User userbyID = userRepository.findByid(userid);
+        userbyID.setStatus(UserStatus.OFFLINE);
+        return userbyID;
+    }
 
 
 }

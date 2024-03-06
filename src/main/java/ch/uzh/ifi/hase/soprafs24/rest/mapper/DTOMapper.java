@@ -1,10 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.rest.mapper;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.EditUserPutDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.LoginUserPostDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
@@ -70,4 +67,7 @@ public interface DTOMapper {
 
 
   User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
+
+  @Mapping(source = "status", target = "status")
+  LogoutUserGetDTO convertEntityToFullUserGetDTO(User user);
 }

@@ -1,10 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.EditUserPutDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.LoginUserPostDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -90,6 +87,16 @@ public class UserController {
       User editUser = DTOMapper.INSTANCE.convertEditUserPutDTOtoEntity(editUserPutDTO);
       editUser.setId(id);
       User edited_user = userService.editUserbyUserID(editUser);
+  }
+
+    /*
+    Logout: Change status of profile
+     */
+  @PutMapping(value = "/logout/{id}")
+  @ResponseBody
+  public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id) {
+      User loggedUser = userService.logoutUserbyUserID(id);
+      return DTOMapper.INSTANCE.convertEntityToFullUserGetDTO(loggedUser);
   }
 
 }
