@@ -69,5 +69,5 @@ public interface DTOMapper {
   User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
 
   @Mapping(source = "status", target = "status")
-  LogoutUserGetDTO convertEntityToFullUserGetDTO(User user);
+  LogoutUserGetDTO convertEntityToLogoutUserGetDTO(User user);
 }

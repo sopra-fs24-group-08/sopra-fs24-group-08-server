@@ -80,8 +80,11 @@ public class UserController {
       return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
   }
 
+    /*
+      Edit: put
+       */
   @PutMapping(value = "/users/{id}")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @ResponseStatus(HttpStatus.NO_CONTENT) //请求成功后不返回信息 只有204代码
   @ResponseBody
   public void editUser(@RequestBody EditUserPutDTO editUserPutDTO, @PathVariable("id") Long id) {
       User editUser = DTOMapper.INSTANCE.convertEditUserPutDTOtoEntity(editUserPutDTO);
@@ -96,7 +99,7 @@ public class UserController {
   @ResponseBody
   public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id) {
       User loggedUser = userService.logoutUserbyUserID(id);
-      return DTOMapper.INSTANCE.convertEntityToFullUserGetDTO(loggedUser);
+      return DTOMapper.INSTANCE.convertEntityToLogoutUserGetDTO(loggedUser);
   }
 
 }

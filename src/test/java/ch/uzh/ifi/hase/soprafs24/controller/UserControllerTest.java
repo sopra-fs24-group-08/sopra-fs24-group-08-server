@@ -118,7 +118,7 @@ public class UserControllerTest {
 
       // then
       mockMvc.perform(postRequest)
-              .andExpect(status().isConflict());
+              .andExpect(status().isConflict()); //409
   }
 
   //GET: success
@@ -135,6 +135,7 @@ public class UserControllerTest {
       user.setPassword("Dennis");
       user.setCreation_date(date);
       user.setStatus(UserStatus.ONLINE);
+      user.setBirthday(date);
 
       given(userService.getUserbyUserID(Mockito.any())).willReturn(user);
 
@@ -146,9 +147,10 @@ public class UserControllerTest {
       mockMvc.perform(getRequest)
               .andExpect(jsonPath("$.id", is(user.getId().intValue())))
               .andExpect(jsonPath("$.username", is(user.getUsername())))
-              .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
-      //.andExpect(jsonPath("$.creation_date", is(user.getCreation_date())));
-      //.andExpect(jsonPath("$.birthday", is(user.getBirthday().toString())));
+              .andExpect(jsonPath("$.status", is(user.getStatus().toString())))
+              .andExpect(jsonPath("$.creation_date", is(user.getCreation_date().toString())))
+              .andExpect(jsonPath("$.birthday", is(user.getBirthday().toString())))
+              .andExpect(jsonPath("$.name", is(user.getName())));
   }
   //GET:fail
   @Test
@@ -157,7 +159,7 @@ public class UserControllerTest {
       given(userService.getUserbyUserID(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
       // when
-      MockHttpServletRequestBuilder getRequest = get("/users/1")
+      MockHttpServletRequestBuilder getRequest = get("/users/10086")
               .contentType(MediaType.APPLICATION_JSON);
 
       // then
@@ -181,10 +183,7 @@ public class UserControllerTest {
         user.setCreation_date(date);
         user.setStatus(UserStatus.ONLINE);
 
-
         EditUserPutDTO editUserPutDTO = new EditUserPutDTO();
-
-
 
         given(userService.editUserbyUserID(Mockito.any())).willReturn(user);
 
@@ -195,13 +194,12 @@ public class UserControllerTest {
 
         // then
         mockMvc.perform(putRequest)
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());//204
     }
     // PUT: fail
     @Test
     public void givenId_attemptedit_IdNotFound() throws Exception {
         // given$
-        LocalDate date = LocalDate.now();
         EditUserPutDTO editUserPutDTO = new EditUserPutDTO();
 
         given(userService.editUserbyUserID(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -214,7 +212,7 @@ public class UserControllerTest {
 
         // then
         mockMvc.perform(putRequest)
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());//404
     }
 
 

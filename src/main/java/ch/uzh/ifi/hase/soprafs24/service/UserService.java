@@ -140,9 +140,7 @@ public class UserService {
       if (existingUser != null && !existingUser.getId().equals(userid)) {
           throw new ResponseStatusException(HttpStatus.CONFLICT, uniqueErrorMessage);
       }
-
-
-      if (username != null) {
+      if (username != null) {                 //如果没有被输入，那么返回的就是null，这里就不会进行编辑
             userbyID.setUsername(username);
       }
       if (birthday != null) {
