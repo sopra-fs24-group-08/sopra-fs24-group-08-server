@@ -1,8 +1,12 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
+import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserEditDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * User Service
@@ -31,11 +33,18 @@ public class UserService {
   private final Logger log = LoggerFactory.getLogger(UserService.class);
 
   private final UserRepository userRepository;
+  private final AchievementRepository achievementRepository;
+  private final FriendRequestRepository friendRequestRepository;
 
-  @Autowired
-  public UserService(@Qualifier("userRepository") UserRepository userRepository) {
-    this.userRepository = userRepository;
-  }
+
+    @Autowired
+    public UserService(@Qualifier("userRepository") UserRepository userRepository,
+                       AchievementRepository achievementRepository, FriendRequestRepository friendRequestRepository) { // Modify constructor to inject AchievementRepository
+        this.userRepository = userRepository;
+        this.achievementRepository = achievementRepository;
+        this.friendRequestRepository = friendRequestRepository;
+
+    }
 
   public List<User> getUsers() {
     return this.userRepository.findAll();
@@ -60,9 +69,22 @@ public class UserService {
     checkIfUserExists(newUser);
     newUser.setCreation_date(LocalDate.now());
     newUser.setBirthday(null);
-    // saves the given entity but data is only persisted in the database once
-    // flush() is called
-    newUser = userRepository.save(newUser);
+    //No clue about Optional.ofNullable, IDE recommend and it works
+    Optional<Achievement> achievementOptional = Optional.ofNullable(achievementRepository.findById(1L));
+
+      if (achievementOptional.isPresent()) {
+          // If the achievement is found, add it to the new user
+          Achievement predefinedAchievement = achievementOptional.get();
+          newUser.addAchievement(predefinedAchievement);
+      } else {
+          // Handle the case where the achievement is not found
+          // This could be logging an error, throwing a custom exception, or any other error handling mechanism
+          log.error("Predefined achievement with ID 1 not found. User created without this achievement.");
+          // Optionally, throw an exception or take other actions as needed
+          // throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achievement not found");
+      }
+
+      newUser = userRepository.save(newUser);
     userRepository.flush();
 
     log.debug("Created Information for User: {}", newUser);
@@ -74,9 +96,6 @@ public class UserService {
     User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
     User userByPassword = userRepository.findByPassword(userToBeCreated.getPassword());
     String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
-    //Changed after M1 interview, since they specifically asked for this method, makes sense why they were interested in it,
-      //Had logical error in it because I never bothered with adapting the template stuff again after first week
-      //if (userByUsername != null && userByPassword != null) {
       if ((userByPassword != null) && (userByPassword == userByUsername)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT,
           String.format(baseErrorMessage, "username and the password", "are"));
@@ -92,10 +111,8 @@ public class UserService {
                   String.format(baseErrorMessage,userId));
       }
   }
-  //Doing extra work, does it even matter security wise if I do private/public? If combine some of the methods later.
   private void checkUserCredentials(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
-        //User userByPassword = userRepository.findByPassword(userToBeCreated.getPassword());
         String baseErrorMessage = "Something went wrong, %s";
         if (userByUsername == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -116,10 +133,8 @@ public class UserService {
     }
 
     public String checkIfValid(User userCredentials){
-        //Authenticate first and if its fine give back token
         checkUserCredentials(userCredentials);
         User userByUsername = userRepository.findByUsername(userCredentials.getUsername());
-        // neeeed for token userByUsername.getToken()
         if (userByUsername.getPassword().equals(userCredentials.getPassword())){
             userByUsername.setStatus(UserStatus.ONLINE);
         }
@@ -179,7 +194,87 @@ public class UserService {
 
         userRepository.save(user);
         userRepository.flush();
+    }
+
+    public void addFriend(Long userId, String friendUsername) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User friend = userRepository.findByUsername(friendUsername);
+        if (friend == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend not found");
         }
+        user.addFriend(friend);
+        userRepository.save(user);
+    }
+
+    public Set<User> getFriends(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return user.getFriends();
+    }
+
+    public void sendFriendRequest(Long senderId, Long recipientId) {
+        Optional<User> senderOpt = userRepository.findById(senderId);
+        Optional<User> recipientOpt = userRepository.findById(recipientId);
+
+        if (!senderOpt.isPresent() || !recipientOpt.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender or recipient not found");
+        }
+
+        User sender = senderOpt.get();
+        User recipient = recipientOpt.get();
+
+        FriendRequest friendRequest = new FriendRequest();
+        friendRequest.setSender(sender);
+        friendRequest.setRecipient(recipient);
+        friendRequestRepository.save(friendRequest);
+    }
+
+    public void acceptFriendRequest(Long requestId) {
+        Optional<FriendRequest> friendRequestOpt = friendRequestRepository.findById(requestId);
+
+        if (!friendRequestOpt.isPresent()) {
+            // Handle "not found" scenario
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend request not found");
+        }
+
+        FriendRequest friendRequest = friendRequestOpt.get();
+        friendRequest.setAccepted(true);
+
+        User sender = friendRequest.getSender();
+        User recipient = friendRequest.getRecipient();
+        sender.addFriend(recipient); // Assuming addFriend() method is defined in User
+        userRepository.save(sender);
+    }
+
+    public void declineFriendRequest(Long requestId) {
+        Optional<FriendRequest> friendRequestOpt = friendRequestRepository.findById(requestId);
+
+        if (!friendRequestOpt.isPresent()) {
+            // Handle "not found" scenario
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend request not found");
+        }
+
+        FriendRequest friendRequest = friendRequestOpt.get();
+        friendRequest.setAccepted(false);
+        friendRequestRepository.save(friendRequest);
+    }
+    public List<FriendRequest> getPendingFriendRequestsForUser(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            log.error("User not found.");
+            // Handle this error appropriately
+            return new ArrayList<>();
+        }
+        return friendRequestRepository.findByRecipientAndAcceptedIsNull(user);
+    }
+    // Might come in handy, for when a user sends frequest and immediately refreshes friendlist.
+    public List<FriendRequest> getResolvedFriendRequestsForUser(Long userId, Boolean accepted) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            log.error("User not found.");
+            return new ArrayList<>();
+        }
+        return friendRequestRepository.findByRecipientAndAccepted(user, accepted);
+    }
 
 }
 

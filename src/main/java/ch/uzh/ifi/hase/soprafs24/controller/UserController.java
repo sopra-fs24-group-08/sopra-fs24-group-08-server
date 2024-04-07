@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
+import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserEditDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User Controller
@@ -90,4 +93,27 @@ public class UserController {
       userService.logout(userId);
     }
 
+
+    @GetMapping("/users/{userId}/achievements")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Set<Achievement> getUserAchievements(@PathVariable Long userId) {
+        // Fetch the user by ID
+        User user = userService.getUserById(userId);
+        return user.getAchievements();
+  }
+    @PostMapping("/users/{userId}/friends/{friendUsername}")
+    @ResponseStatus(HttpStatus.OK)
+    public void addFriend(@PathVariable Long userId, @PathVariable String friendUsername) {
+        userService.addFriend(userId, friendUsername);
+    }
+
+
+    @GetMapping("/users/friends/{userId}")
+    public List<UserGetDTO> getFriendList(@PathVariable Long userId) {
+        Set<User> friends = userService.getFriends(userId);
+        return friends.stream()
+                .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
+                .collect(Collectors.toList());
+    }
 }

@@ -71,14 +71,7 @@ public class AuthenticationController {
         User authUser = userService.loginAuth(userInput);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(authUser);
     }
-    //Changing User status inside DB => Should be PUT
-    @PutMapping("/user/{userId}/logout")
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public void logout(@RequestHeader("Authorization") String token,@PathVariable Long userId){
-        userService.authToken(token);
-        userService.logout(userId);
-    }
+
 
 }
 
