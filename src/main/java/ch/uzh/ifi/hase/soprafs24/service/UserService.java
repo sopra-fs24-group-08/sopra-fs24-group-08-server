@@ -159,6 +159,21 @@ public class UserService {
         userbyID.setStatus(UserStatus.OFFLINE);
         return userbyID;
     }
+    
+    // For Authentication
+    public void authenticateUser(String token, Long userid){
+        User userById = userRepository.findByid(userid);
+        if (userById.getToken() != token){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
+        }
+    }
 
+    // For Authorization
+    public void authorizeUser(String token, Long userid){
+        User userByToken = userRepository.findByToken(token);
+        if (userByToken == null){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");
+        }
+    }
 
 }

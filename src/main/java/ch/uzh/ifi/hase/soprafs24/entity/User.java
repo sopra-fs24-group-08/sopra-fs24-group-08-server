@@ -5,6 +5,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 
 /**
@@ -35,6 +36,7 @@ public class User implements Serializable {
 
     @Column(nullable = false)
     private String password;
+    
     @Column(nullable = false, unique = true)
     private String token;
 
@@ -46,6 +48,13 @@ public class User implements Serializable {
 
     @Column
     private LocalDate birthday;
+
+    @Column
+    private List<Long> friends;
+
+    @Column
+    private boolean inGame;
+
     public Long getId() {
         return id;
     }
@@ -103,6 +112,25 @@ public class User implements Serializable {
     public void setBirthday(LocalDate birthday) {
         this.birthday = birthday;
     }
+
+    public List<Long> getFriends(){
+        return friends;
+    }
+
+    public void addFriend(Long friendId){
+        this.friends.add(friendId);
+    }
+
+    public void deleteFriend(Long friendId){
+        this.friends.remove(friendId);
+    }
+
+    public Boolean getInGame() {
+        return inGame;
+    }
+    public void setInGame(Boolean inGame) {
+        this.inGame = inGame;
+    }    
 
 }
 
