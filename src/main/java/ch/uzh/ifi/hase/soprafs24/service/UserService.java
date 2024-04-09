@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -158,6 +159,46 @@ public class UserService {
         User userbyID = userRepository.findByid(userid);
         userbyID.setStatus(UserStatus.OFFLINE);
         return userbyID;
+    }
+
+    //above are all saved from M1
+    public void addFriend(Long userId, Long friendId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        Optional<User> friendOptional = userRepository.findById(friendId);
+
+        if (userOptional.isPresent() && friendOptional.isPresent()) {
+            User user = userOptional.get();
+            User friend = friendOptional.get();
+
+            if (!user.getFriendList().contains(friend)) {
+                user.getFriendList().add(friend);
+                userRepository.save(user);
+            }
+            // add the reverse relationship
+            if (!friend.getFriendList().contains(user)) {
+                friend.getFriendList().add(user);
+                userRepository.save(friend);
+            }
+        }
+    }
+    public void deleteFriend(Long userId, Long friendId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        Optional<User> friendOptional = userRepository.findById(friendId);
+
+        if (userOptional.isPresent() && friendOptional.isPresent()) {
+            User user = userOptional.get();
+            User friend = friendOptional.get();
+
+            if (user.getFriendList().contains(friend)) {
+                user.getFriendList().remove(friend);
+                userRepository.save(user);
+            }
+            // reverse deletion (or not)
+            if (friend.getFriendList().contains(user)) {
+                friend.getFriendList().remove(user);
+                userRepository.save(friend);
+            }
+        }
     }
 
 
