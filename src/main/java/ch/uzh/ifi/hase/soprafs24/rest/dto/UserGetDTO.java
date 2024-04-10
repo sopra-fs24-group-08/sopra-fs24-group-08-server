@@ -4,6 +4,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class UserGetDTO {
 
@@ -13,7 +14,7 @@ public class UserGetDTO {
   private UserStatus status;
   private LocalDate birthday;
   private String token;
-
+  private List<IconGetDTO> icons;
 
 
   public LocalDate getCreation_date() {
@@ -59,4 +60,12 @@ public class UserGetDTO {
   private String getToken(){
       return token;
   }
+
+  public List<IconGetDTO> getIcons() {
+      return icons;}
+
+    public void setIcons(List<IconGetDTO> icons) {this.icons = icons;
+    }
+
+
 }

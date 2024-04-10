@@ -1,9 +1,15 @@
 package ch.uzh.ifi.hase.soprafs24.rest.mapper;
+import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.IconGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DTOMapper
@@ -31,10 +37,19 @@ public interface DTOMapper {
             @Mapping(source = "username", target = "username")})
   User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
 
-  @Mapping(source = "id", target = "id")
-  @Mapping(source = "username", target = "username")
-  @Mapping(source = "status", target = "status")
-  @Mapping(source = "birthday", target = "birthday")
-  @Mapping(source = "creation_date" ,target = "creation_date")
-  UserGetDTO convertEntityToUserGetDTO(User user);
+
+
+  IconGetDTO convertEntityToIconGetDTO(Icon icon);
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "username", target = "username")
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "birthday", target = "birthday")
+    @Mapping(source = "creation_date", target = "creation_date")
+    @Mapping(source = "icons", target = "icons") // Ensure this mapping is correct
+    UserGetDTO convertEntityToUserGetDTO(User user);
+    default List<IconGetDTO> mapIcons(Set<Icon> icons) {
+        return icons.stream().map(this::convertEntityToIconGetDTO).collect(Collectors.toList());
+    }
+
+
 }

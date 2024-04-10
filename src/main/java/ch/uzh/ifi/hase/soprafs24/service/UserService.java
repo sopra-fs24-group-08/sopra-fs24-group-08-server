@@ -3,8 +3,10 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
+import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserEditDTO;
@@ -35,15 +37,21 @@ public class UserService {
   private final UserRepository userRepository;
   private final AchievementRepository achievementRepository;
   private final FriendRequestRepository friendRequestRepository;
+  private final IconRepository iconRepository;
 
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository,
-                       AchievementRepository achievementRepository, FriendRequestRepository friendRequestRepository) { // Modify constructor to inject AchievementRepository
+                       AchievementRepository achievementRepository, FriendRequestRepository friendRequestRepository, IconRepository iconRepository) {
         this.userRepository = userRepository;
         this.achievementRepository = achievementRepository;
         this.friendRequestRepository = friendRequestRepository;
+        this.iconRepository = iconRepository;
 
+    }
+
+    public Icon getDefaultIcon(String defaultIconName) {
+        return iconRepository.findByName(defaultIconName);
     }
 
   public List<User> getUsers() {
@@ -64,11 +72,17 @@ public class UserService {
   public User createUser(User newUser) {
     String Token = UUID.randomUUID().toString();
     newUser.setToken(Token);
-    //Should the user also be logged in if I simply create the profile over postman e.g?
     newUser.setStatus(UserStatus.ONLINE);
     checkIfUserExists(newUser);
     newUser.setCreation_date(LocalDate.now());
     newUser.setBirthday(null);
+    Icon defaultIcon = getDefaultIcon("Default Icon");
+    if (defaultIcon != null) {
+        newUser.setCurrIcon(defaultIcon); // Set the current icon to the default
+        newUser.addIcon(defaultIcon); // Add the default icon to the user's collection
+    } else {
+        log.warn("Default icon not found.");
+    }
     //No clue about Optional.ofNullable, IDE recommend and it works
     Optional<Achievement> achievementOptional = Optional.ofNullable(achievementRepository.findById(1L));
 
@@ -77,6 +91,7 @@ public class UserService {
           Achievement predefinedAchievement = achievementOptional.get();
           newUser.addAchievement(predefinedAchievement);
       } else {
+          System.out.println("Achievement not foundo");
           // Handle the case where the achievement is not found
           // This could be logging an error, throwing a custom exception, or any other error handling mechanism
           log.error("Predefined achievement with ID 1 not found. User created without this achievement.");
@@ -194,6 +209,33 @@ public class UserService {
 
         userRepository.save(user);
         userRepository.flush();
+    }
+
+    public void unlockIconUser(Long userId, Long iconId) {
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Icon icon = iconRepository.findById(iconId).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Icon not found"));
+
+        user.addIcon(icon);
+        userRepository.save(user);
+    }
+
+    public Icon chooseIconUser(Long userId, Long iconId) {
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        Icon iconToSelect = iconRepository.findById(iconId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Icon not found"));
+
+        if (!user.getIcons().contains(iconToSelect)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This icon is not available for the user.");
+        }
+
+        user.setCurrIcon(iconToSelect);
+        userRepository.save(user);
+
+        return iconToSelect;
     }
 
     public void addFriend(Long userId, String friendUsername) {

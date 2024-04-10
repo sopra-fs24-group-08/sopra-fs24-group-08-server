@@ -42,7 +42,6 @@ public class FriendRequest {
         this.accepted = null; // null indicates pending, true indicates accepted, false indicates declined
     }
 
-    // Getters and setters
     public Long getId() {
         return id;
     }

@@ -16,6 +16,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -66,81 +67,117 @@ public class User implements Serializable {
   )
   private Set<Achievement> achievements = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "user_friends",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "friend_id")
+  @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  @JoinTable(
+          name = "user_friends",
+          joinColumns = @JoinColumn(name = "user_id"),
+          inverseJoinColumns = @JoinColumn(name = "friend_id")
     )
-    private Set<User> friends = new HashSet<>();
+  private Set<User> friends = new HashSet<>();
 
-    public Set<User> getFriends() {
-        return this.friends;
+  @ElementCollection(fetch = FetchType.LAZY)
+  @CollectionTable(name = "user_banners", joinColumns = @JoinColumn(name = "user_id"))
+  @Column(name = "banner")
+  private List<Boolean> banners;
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+            name = "user_icons",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "icon_id")
+    )
+  private Set<Icon> icons = new HashSet<>();
+
+  @ManyToOne
+  @JoinColumn(name = "curr_icon_id")
+  private Icon currIcon;
+
+
+  public Set<Icon> getIcons() {
+        return icons;
+  }
+
+  public void setIcons(Set<Icon> icons) {
+        this.icons = icons;
+  }
+
+  public void addIcon(Icon icon) {
+        this.icons.add(icon);
     }
 
+public List<Boolean> getBanners() {
+    return banners;
+}
 
-    public void addFriend(User friend) {
-        this.friends.add(friend);
-        friend.getFriends().add(this);
-    }
+public void setBanners(List<Boolean> banners) {
+    this.banners = banners;
+}
 
+public Set<User> getFriends() {
+    return this.friends;
+}
 
-    public void removeFriend(User friend) {
-        this.friends.remove(friend);
-        friend.getFriends().remove(this);
-    }
+public void addFriend(User friend) {
+    this.friends.add(friend);
+    friend.getFriends().add(this);
+}
 
-  public Set<Achievement> getAchievements() {
-      return achievements;
-  }
+public void removeFriend(User friend) {
+    this.friends.remove(friend);
+    friend.getFriends().remove(this);
+}
 
-  public void setAchievements(Set<Achievement> achievements) {
-      this.achievements = achievements;
-  }
+public Set<Achievement> getAchievements() {
+  return achievements;
+}
 
-  public void addAchievement(Achievement achievement) {
-        this.achievements.add(achievement);
-  }
+public void setAchievements(Set<Achievement> achievements) {
+  this.achievements = achievements;
+}
 
-
-  public Long getId() {
-      return id;
-  }
-
-  public void setId(Long id) {
-      this.id = id;
-  }
-  public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-        this.password = password;
-    }
+public void addAchievement(Achievement achievement) {
+    this.achievements.add(achievement);
+}
 
 
-  public String getToken() {
-    return token;
-  }
+public Long getId() {
+  return id;
+}
 
-  public void setToken(String token) {
-    this.token = token;
-  }
+public void setId(Long id) {
+  this.id = id;
+}
+public String getUsername() {
+    return username;
+}
 
-    public LocalDate getCreation_date(){
-        return creation_date;
-    }
+public void setUsername(String username) {
+    this.username = username;
+}
 
-    public void setCreation_date(LocalDate creation_date){
-        this.creation_date = creation_date;}
+public String getPassword() {
+return password;
+}
+
+public void setPassword(String password) {
+    this.password = password;
+}
+
+
+public String getToken() {
+return token;
+}
+
+public void setToken(String token) {
+this.token = token;
+}
+
+public LocalDate getCreation_date(){
+    return creation_date;
+}
+
+public void setCreation_date(LocalDate creation_date){
+    this.creation_date = creation_date;}
 
   public UserStatus getStatus() {
     return status;
@@ -157,4 +194,12 @@ public class User implements Serializable {
   public void setBirthday(LocalDate birthday) {
       this.birthday = birthday;
   }
+
+  public Icon getCurrIcon() {
+        return currIcon;
+    }
+
+    public void setCurrIcon(Icon currIcon) {
+        this.currIcon = currIcon;
+    }
 }
