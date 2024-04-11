@@ -116,4 +116,5 @@ public class UserController {
                 .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
                 .collect(Collectors.toList());
     }
+
 }

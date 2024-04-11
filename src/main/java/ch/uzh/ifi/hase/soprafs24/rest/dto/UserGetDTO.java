@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,7 +15,39 @@ public class UserGetDTO {
   private UserStatus status;
   private LocalDate birthday;
   private String token;
+
+    public Icon getCurrIcon() {
+        return currIcon;
+    }
+
+    public void setCurrIcon(Icon currIcon) {
+        this.currIcon = currIcon;
+    }
+
+    private Icon currIcon;
   private List<IconGetDTO> icons;
+  private List<BannerGetDTO> banners;
+  private List<AchievementGetDTO> achievements;
+
+    public List<BannerGetDTO> getBanners() {
+        return banners;
+    }
+
+    public void setBanners(List<BannerGetDTO> banners) {
+        this.banners = banners;
+    }
+
+
+
+    public List<AchievementGetDTO> getAchievements() {
+        return achievements;
+    }
+
+    public void setAchievements(List<AchievementGetDTO> achievements) {
+        this.achievements = achievements;
+    }
+
+
 
 
   public LocalDate getCreation_date() {

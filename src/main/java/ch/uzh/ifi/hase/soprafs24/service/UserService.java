@@ -49,7 +49,6 @@ public class UserService {
         this.iconRepository = iconRepository;
 
     }
-
     public Icon getDefaultIcon(String defaultIconName) {
         return iconRepository.findByName(defaultIconName);
     }
@@ -85,11 +84,18 @@ public class UserService {
     }
     //No clue about Optional.ofNullable, IDE recommend and it works
     Optional<Achievement> achievementOptional = Optional.ofNullable(achievementRepository.findById(1L));
+    Optional<Achievement> achievementOptional2 = Optional.ofNullable(achievementRepository.findById(7L));
 
-      if (achievementOptional.isPresent()) {
+
+
+      if (achievementOptional.isPresent() && achievementOptional2.isPresent()) {
           // If the achievement is found, add it to the new user
           Achievement predefinedAchievement = achievementOptional.get();
+
           newUser.addAchievement(predefinedAchievement);
+          Achievement predefinedAchievementTest = achievementOptional2.get();
+          newUser.addAchievement(predefinedAchievementTest);
+
       } else {
           System.out.println("Achievement not foundo");
           // Handle the case where the achievement is not found

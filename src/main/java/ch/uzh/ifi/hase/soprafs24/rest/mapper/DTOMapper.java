@@ -1,9 +1,9 @@
 package ch.uzh.ifi.hase.soprafs24.rest.mapper;
+import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
+import ch.uzh.ifi.hase.soprafs24.entity.Banner;
 import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.IconGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
@@ -39,16 +39,24 @@ public interface DTOMapper {
 
 
 
-  IconGetDTO convertEntityToIconGetDTO(Icon icon);
+  IconGetDTO iconToIconGetDTO(Icon icon);
+  BannerGetDTO bannerToBannerDTO(Banner banner);
+  AchievementGetDTO achievementToAchievementDTO(Achievement achievement);
     @Mapping(source = "id", target = "id")
     @Mapping(source = "username", target = "username")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "birthday", target = "birthday")
     @Mapping(source = "creation_date", target = "creation_date")
-    @Mapping(source = "icons", target = "icons") // Ensure this mapping is correct
+    @Mapping(source = "currIcon", target = "currIcon" )
+    @Mapping(target = "icons", expression = "java(mapIcons(user.getIcons()))")
+    @Mapping(source = "banners", target = "banners")
+    @Mapping(source = "achievements", target = "achievements")
     UserGetDTO convertEntityToUserGetDTO(User user);
     default List<IconGetDTO> mapIcons(Set<Icon> icons) {
-        return icons.stream().map(this::convertEntityToIconGetDTO).collect(Collectors.toList());
+
+        return icons.stream()
+                .map(this::iconToIconGetDTO)
+                .collect(Collectors.toList());
     }
 
 

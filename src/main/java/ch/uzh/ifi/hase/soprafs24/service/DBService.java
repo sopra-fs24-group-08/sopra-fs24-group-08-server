@@ -43,7 +43,8 @@ public class DBService implements CommandLineRunner {
                 new Achievement("First Win", "Win your first game."),
                 new Achievement("Intermediate", "Play 5 games."),
                 new Achievement("Popular Player", "Have more than 5 friends."),
-                new Achievement("Best Player in town", "Have the most wins.")
+                new Achievement("Best Player in town", "Have the most wins."),
+                new Achievement("Test","Added for Testing")
 
         );
 
@@ -57,7 +58,7 @@ public class DBService implements CommandLineRunner {
     public void initializeIcons() {
         log.info("Initializing icons...");
         List<Icon> predefinedIcons = List.of(
-                new Icon("Default Icon","http://localhost:8080/images/default_icon.jpg"),
+                new Icon("Default Icon","http://localhost:8080/images/OGIcon.jpg"),
                 new Icon("Icon 2", "https://cdn2.thecatapi.com/images/77h.jpg"),
                 new Icon("Icon 3", "https://cdn2.thecatapi.com/images/a3m.jpg"),
                 new Icon("Icon 4", "https://cdn2.thecatapi.com/images/lJHXU7DlQ.jpg")

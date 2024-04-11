@@ -75,10 +75,21 @@ public class User implements Serializable {
     )
   private Set<User> friends = new HashSet<>();
 
-  @ElementCollection(fetch = FetchType.LAZY)
-  @CollectionTable(name = "user_banners", joinColumns = @JoinColumn(name = "user_id"))
-  @Column(name = "banner")
-  private List<Boolean> banners;
+    public Set<Banner> getBanners() {
+        return banners;
+    }
+
+    public void setBanners(Set<Banner> banners) {
+        this.banners = banners;
+    }
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_banners",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "banner_id")
+    )
+    private Set<Banner> banners = new HashSet<>();
 
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
@@ -105,13 +116,7 @@ public class User implements Serializable {
         this.icons.add(icon);
     }
 
-public List<Boolean> getBanners() {
-    return banners;
-}
 
-public void setBanners(List<Boolean> banners) {
-    this.banners = banners;
-}
 
 public Set<User> getFriends() {
     return this.friends;
