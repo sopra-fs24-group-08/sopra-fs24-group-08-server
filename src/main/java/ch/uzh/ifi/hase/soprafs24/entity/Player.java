@@ -4,14 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Player {
+    private User user;
     private int score = 0;
     private List<Card> handCards;
     private Boolean isHinted;
     private Boolean isOnTurn;
     private Boolean isQuited;
     private ChatBox chatBox;
-    public Player(CardPile cardPile) {
+    public Player(CardPile cardPile, User user) {
         // Initialize
+        this.user = user;
         score = 0;
         handCards = new ArrayList<>();
         isHinted = false;

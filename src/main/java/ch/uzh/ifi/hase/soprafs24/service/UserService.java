@@ -162,42 +162,26 @@ public class UserService {
     }
 
     //above are all saved from M1
-    public void addFriend(Long userId, Long friendId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        Optional<User> friendOptional = userRepository.findById(friendId);
 
-        if (userOptional.isPresent() && friendOptional.isPresent()) {
-            User user = userOptional.get();
-            User friend = friendOptional.get();
-
-            if (!user.getFriendList().contains(friend)) {
-                user.getFriendList().add(friend);
-                userRepository.save(user);
-            }
-            // add the reverse relationship
-            if (!friend.getFriendList().contains(user)) {
-                friend.getFriendList().add(user);
-                userRepository.save(friend);
-            }
+    public void authenticateUser(String token, Long userid){
+        User userById = userRepository.findByid(userid);
+        // handle token
+        if (token != null && token.startsWith("Bearer ")){
+            token = token.substring(7);
+        }
+        if (!userById.getToken().equals(token)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
         }
     }
-    public void deleteFriend(Long userId, Long friendId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        Optional<User> friendOptional = userRepository.findById(friendId);
 
-        if (userOptional.isPresent() && friendOptional.isPresent()) {
-            User user = userOptional.get();
-            User friend = friendOptional.get();
-
-            if (user.getFriendList().contains(friend)) {
-                user.getFriendList().remove(friend);
-                userRepository.save(user);
-            }
-            // reverse deletion (or not)
-            if (friend.getFriendList().contains(user)) {
-                friend.getFriendList().remove(user);
-                userRepository.save(friend);
-            }
+    // For Authorization
+    public void authorizeUser(String token){
+        if (token != null && token.startsWith("Bearer ")){
+            token = token.substring(7);
+        }
+        User userByToken = userRepository.findByToken(token);
+        if (userByToken == null){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");
         }
     }
 

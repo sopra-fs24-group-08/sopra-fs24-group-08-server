@@ -9,7 +9,8 @@ public class CardPile {
     private final List<Card> cards;
     public CardPile() {
         this.cards = new ArrayList<>();
-
+        initializeCardPile();
+        shuffle();
     }
     public Card setRandom(){
         List<String> colors = List.of("red", "green", "blue", "white");
