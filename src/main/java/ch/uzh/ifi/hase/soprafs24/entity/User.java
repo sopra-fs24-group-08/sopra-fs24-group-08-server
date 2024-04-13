@@ -10,7 +10,6 @@ import org.hibernate.annotations.LazyCollectionOption;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
@@ -67,6 +66,7 @@ public class User implements Serializable {
   )
   private Set<Achievement> achievements = new HashSet<>();
 
+  //Adjust friends depending on how others have implemented it
   @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @JoinTable(
           name = "user_friends",
