@@ -97,12 +97,9 @@ public class UserService {
           newUser.addAchievement(predefinedAchievementTest);
 
       } else {
-          System.out.println("Achievement not foundo");
           // Handle the case where the achievement is not found
-          // This could be logging an error, throwing a custom exception, or any other error handling mechanism
-          log.error("Predefined achievement with ID 1 not found. User created without this achievement.");
+          log.error("Predefined achievement not found. User created without this achievement.");
           // Optionally, throw an exception or take other actions as needed
-          // throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achievement not found");
       }
 
       newUser = userRepository.save(newUser);
