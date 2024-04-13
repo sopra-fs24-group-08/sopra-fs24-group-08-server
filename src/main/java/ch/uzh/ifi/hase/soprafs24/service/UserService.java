@@ -163,13 +163,20 @@ public class UserService {
     // For Authentication
     public void authenticateUser(String token, Long userid){
         User userById = userRepository.findByid(userid);
-        if (userById.getToken() != token){
+        // handle token
+        if (token != null && token.startsWith("Bearer ")){
+            token = token.substring(7);
+        }
+        if (!userById.getToken().equals(token)){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
         }
     }
 
     // For Authorization
-    public void authorizeUser(String token, Long userid){
+    public void authorizeUser(String token){
+        if (token != null && token.startsWith("Bearer ")){
+            token = token.substring(7);
+        }
         User userByToken = userRepository.findByToken(token);
         if (userByToken == null){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");

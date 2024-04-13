@@ -11,7 +11,6 @@ import java.util.List;
 public interface GameInvitationRepository extends JpaRepository<GameInvitation, Long> {
     GameInvitation findBySenderIdAndReceiverId(Long senderId, Long receiverId);
     List <GameInvitation> findByReceiverIdAndStatus(Long receiverId, RequestStatus status);
-    @Query("SELECT fr FROM FriendRequest fr WHERE fr.senderId = :senderId AND (fr.status = RequestStatus.ACCEPTED OR fr.status = RequestStatus.DECLINED)")
-    List<GameInvitation> findBySenderIdAndAcceptedOrDeclinedStatuses(Long senderId);
+    List<GameInvitation> findBySenderIdAndStatus(Long senderId, RequestStatus status);
     void deleteBySenderIdAndStatus(Long userId, RequestStatus status);
 }

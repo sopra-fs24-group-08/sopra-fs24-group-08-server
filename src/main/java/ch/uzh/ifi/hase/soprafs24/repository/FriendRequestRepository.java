@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs24.repository;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
 import java.util.List;
@@ -14,7 +15,6 @@ import java.util.List;
 public interface FriendRequestRepository extends JpaRepository<FriendRequest, Long> {
     FriendRequest findBySenderIdAndReceiverId(Long senderId, Long receiverId);
     List <FriendRequest> findByReceiverIdAndStatus(Long receiverId, RequestStatus status);
-    @Query("SELECT fr FROM FriendRequest fr WHERE fr.senderId = :senderId AND (fr.status = RequestStatus.ACCEPTED OR fr.status = RequestStatus.DECLINED)")
-    List<FriendRequest> findBySenderIdAndAcceptedOrDeclinedStatuses(Long senderId);
+    List<FriendRequest> findBySenderIdAndStatus(@Param("senderId") Long senderId, RequestStatus status);
     void deleteBySenderIdAndStatus(Long userId, RequestStatus status);
 }

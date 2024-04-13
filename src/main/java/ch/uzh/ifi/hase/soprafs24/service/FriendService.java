@@ -20,6 +20,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.GameInvitationDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.CombinedUpdateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import javassist.tools.framedump;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
+@Service
+@Transactional
 public class FriendService {
 
     private final UserRepository userRepository;
@@ -37,7 +40,7 @@ public class FriendService {
     private GameService gameService = new GameService();
 
     public FriendService(@Qualifier("userRepository") UserRepository userRepository, 
-                        @Qualifier("requestRepository") FriendRequestRepository friendRequestRepository,
+                        @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
                         @Qualifier("invitationRepository") GameInvitationRepository gameInvitationRepository) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
@@ -50,12 +53,12 @@ public class FriendService {
         if (currentUser == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the current user.");
         }
-        return this.userRepository.findAllById(currentUser.getFriends());
+        return currentUser.getFriends();
     }
 
     //Add friend request
     @Transactional
-    public void addFriendRequest(Long userId, FriendRequest friendRequest){
+    public User addFriendRequest(Long userId, FriendRequest friendRequest){
         // query if there exists such a user
         Long receiverId = friendRequest.getReceiverId();
         User receiver = userRepository.findByid(receiverId);
@@ -64,7 +67,7 @@ public class FriendService {
         }
         // query if the friend is already in user's friendlist
         User user = userRepository.findByid(userId);
-        if (user.getFriends().contains(receiverId)){
+        if (user.getFriends().contains(receiver)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The user is already in your friend list.");
         }
         // query if exists the request from the same sender to the same receiver
@@ -84,11 +87,12 @@ public class FriendService {
         friendRequest.setStatus(RequestStatus.PENDING);
         friendRequestRepository.save(friendRequest);
         friendRequestRepository.flush();
+        return receiver;
     }
 
     //Invitation to game request
     @Transactional
-    public void inviteFriendToGame(Long userId, GameInvitation gameInvitation){
+    public GameInvitation inviteFriendToGame(Long userId, GameInvitation gameInvitation){
         // query if there exists such a user
         Long receiverId = gameInvitation.getReceiverId();
         User receiver = userRepository.findByid(receiverId);
@@ -97,7 +101,7 @@ public class FriendService {
         }
         // query if the invitation is sent to the friend
         User user = userRepository.findByid(userId);
-        if (!user.getFriends().contains(receiverId)){
+        if (!user.getFriends().contains(receiver)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not your friend.");
         }
         // query if exists the request from the same sender to the same receiver
@@ -117,6 +121,7 @@ public class FriendService {
         gameInvitation.setStatus(RequestStatus.PENDING);
         gameInvitationRepository.save(gameInvitation);
         gameInvitationRepository.flush();
+        return gameInvitation;
     }
 
     //handle friend request
@@ -136,8 +141,8 @@ public class FriendService {
             // add friend into both user's friend list
             User user = userRepository.findByid(userId);
             User friend = userRepository.findByid(friendId);
-            user.addFriend(friendId);
-            friend.addFriend(userId);
+            user.addFriend(friend);
+            friend.addFriend(user);
         } else if (receivedFriendRequest.getStatus() == RequestStatus.DECLINED){
             friendRequest.setStatus(RequestStatus.DECLINED);
         }
@@ -172,13 +177,15 @@ public class FriendService {
     public void pollUpdates(DeferredResult<CombinedUpdateDTO> deferredResult, Long userId) {
         // Friend request: including userId as senderId and as receiverId
         List<FriendRequest> pendingRequests = friendRequestRepository.findByReceiverIdAndStatus(userId, RequestStatus.PENDING);
-        List <FriendRequest> acceptedOrDeclinedRequests = friendRequestRepository.findBySenderIdAndAcceptedOrDeclinedStatuses(userId);
+        List <FriendRequest> acceptedOrDeclinedRequests = friendRequestRepository.findBySenderIdAndStatus(userId, RequestStatus.ACCEPTED);
+        acceptedOrDeclinedRequests.addAll(friendRequestRepository.findBySenderIdAndStatus(userId, RequestStatus.DECLINED));
         List<FriendRequest> friendRequests = new ArrayList<>(pendingRequests);
         friendRequests.addAll(acceptedOrDeclinedRequests);
 
         // Game Invitation: including userId as senderId and as receiverId
         List<GameInvitation> pendingInvitations = gameInvitationRepository.findByReceiverIdAndStatus(userId, RequestStatus.PENDING); 
-        List<GameInvitation> acceptedOrDeclinedInvitations = gameInvitationRepository.findBySenderIdAndAcceptedOrDeclinedStatuses(userId);
+        List<GameInvitation> acceptedOrDeclinedInvitations = gameInvitationRepository.findBySenderIdAndStatus(userId, RequestStatus.ACCEPTED);
+        acceptedOrDeclinedInvitations.addAll(gameInvitationRepository.findBySenderIdAndStatus(userId, RequestStatus.DECLINED));
         List<GameInvitation> gameInvitations = new ArrayList<>(pendingInvitations);
         gameInvitations.addAll(acceptedOrDeclinedInvitations);
 
@@ -207,10 +214,10 @@ public class FriendService {
         User oldFriend = userRepository.findByid(friendId);
         if (oldFriend == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend Username doesn't exist.");
-        }else if (!currentUser.getFriends().contains(oldFriend.getId())){
+        }else if (!currentUser.getFriends().contains(oldFriend)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not in your friend list.");
         }
-        currentUser.deleteFriend(friendId);
-        oldFriend.deleteFriend(userId);
+        currentUser.deleteFriend(oldFriend);
+        oldFriend.deleteFriend(currentUser);
     }   
 }

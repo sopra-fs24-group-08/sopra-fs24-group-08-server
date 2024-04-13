@@ -49,8 +49,13 @@ public class User implements Serializable {
     @Column
     private LocalDate birthday;
 
-    @Column
-    private List<Long> friends;
+    @ManyToMany
+    @JoinTable(
+        name = "user_friends",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "friend_id")
+    )
+    private List<User> friends;
 
     @Column
     private boolean inGame;
@@ -113,16 +118,16 @@ public class User implements Serializable {
         this.birthday = birthday;
     }
 
-    public List<Long> getFriends(){
+    public List<User> getFriends(){
         return friends;
     }
 
-    public void addFriend(Long friendId){
-        this.friends.add(friendId);
+    public void addFriend(User friend){
+        this.friends.add(friend);
     }
 
-    public void deleteFriend(Long friendId){
-        this.friends.remove(friendId);
+    public void deleteFriend(User friend){
+        this.friends.remove(friend);
     }
 
     public Boolean getInGame() {

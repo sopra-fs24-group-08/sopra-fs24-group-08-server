@@ -31,18 +31,18 @@ public class FriendRequestController {
     // add friend request
     @PostMapping("/users/{userId}/friends/add")
     @ResponseStatus(HttpStatus.CREATED)
-    public String addFriendRequest(@RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader String token, @PathVariable Long userId) {
-        userService.authenticateUser(token, userId);
+    public FriendGetDTO addFriendRequest(@RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+        userService.authenticateUser(authorization, userId);
         FriendRequest friendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-        friendService.addFriendRequest(userId, friendRequest);
-        return "Request sent";
+        User friend = friendService.addFriendRequest(userId, friendRequest);
+        return DTOMapper.INSTANCE.convertEntityToFriendGetDTO(friend);
     }
 
     // Long-polling to check for adding friend requests/response and game invitation request/response
     @GetMapping("/users/{userId}/polling")
     @ResponseStatus(HttpStatus.OK)
-    public DeferredResult<CombinedUpdateDTO> pollFriendRequest(@PathVariable Long userId, @RequestHeader String token) {
-        userService.authenticateUser(token, userId);
+    public DeferredResult<CombinedUpdateDTO> pollFriendRequest(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
+        userService.authenticateUser(authorization, userId);
         DeferredResult<CombinedUpdateDTO> deferredResult = new DeferredResult<>(GlobalConstants.POLL_TIMEOUT); // 5 seconds timeout
         friendService.pollUpdates(deferredResult, userId);
         return deferredResult;
@@ -51,8 +51,8 @@ public class FriendRequestController {
     // Handle friend request
     @PutMapping("/users/{userId}/friendresponse")
     @ResponseStatus(HttpStatus.OK)
-    public FriendRequestDTO handleFriendRequest(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader String token){
-        userService.authenticateUser(token, userId);
+    public FriendRequestDTO handleFriendRequest(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
+        userService.authenticateUser(authorization, userId);
         // turn DTO to entity
         FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
         //
@@ -63,11 +63,11 @@ public class FriendRequestController {
     //Invite friend into game
     @PostMapping("/game/invite/{userId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public String gameInvitation(@RequestBody GameInvitationDTO gameInvitationDTO, @RequestHeader String token, @PathVariable Long userId) {
-        userService.authenticateUser(token, userId);
+    public GameInvitationDTO gameInvitation(@RequestBody GameInvitationDTO gameInvitationDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+        userService.authenticateUser(authorization, userId);
         GameInvitation gameInvitation = DTOMapper.INSTANCE.convertGameInvitationDTOtoEntity(gameInvitationDTO);
-        friendService.inviteFriendToGame(userId, gameInvitation);
-        return "Request sent";
+        GameInvitation updateGameInvitation = friendService.inviteFriendToGame(userId, gameInvitation);
+        return DTOMapper.INSTANCE.convertEntityToGameInvitationDTO(updateGameInvitation);
     }
 
     // Handle game invitation
@@ -75,15 +75,17 @@ public class FriendRequestController {
     // Delete friend
     @PutMapping("/users/{userId}/friends/delete")
     @ResponseStatus(HttpStatus.OK)
-    public String deleteFriends(@PathVariable Long userId, @RequestParam(name = "friendId") Long friendId, @RequestHeader String token) {
+    public List<FriendGetDTO> deleteFriends(@PathVariable Long userId, @RequestParam(name = "friendId") Long friendId, @RequestHeader("Authorization") String authorization) {
 
         // authenticate user
-        userService.authenticateUser(token, userId);
+        userService.authenticateUser(authorization, userId);
 
         // add friend by userId
         friendService.deleteFriend(userId, friendId);
 
-        return "You removed a friend successfully.";
+        // get friendlist
+
+        return getAllUsers(userId, authorization);
     }    
 
     /*
@@ -92,9 +94,10 @@ public class FriendRequestController {
     @GetMapping("/users/{userId}/friends")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public List<FriendGetDTO> getAllUsers(@PathVariable Long userId, @RequestHeader String token) {
+    public List<FriendGetDTO> getAllUsers(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
         // authorization
-        userService.authorizeUser(token, userId);
+        System.out.println(authorization);
+        userService.authorizeUser(authorization);
 
         // fetch all users in the internal representation
         List<User> friends = friendService.getFriends(userId);
