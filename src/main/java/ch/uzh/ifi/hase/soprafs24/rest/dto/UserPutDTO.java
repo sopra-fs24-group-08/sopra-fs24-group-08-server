@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
-import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import java.time.LocalDate;
 
 public class UserPutDTO {
