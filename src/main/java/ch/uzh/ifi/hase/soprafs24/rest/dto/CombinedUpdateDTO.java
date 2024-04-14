@@ -19,7 +19,6 @@ public class CombinedUpdateDTO {
     public void addFriendRequestDTOs(List<FriendRequestDTO> friendRequestDTOs){
         this.friendRequestDTOs.addAll(friendRequestDTOs);
     }
-
     public void setFriendRequestDTOs(List<FriendRequestDTO> friendRequestDTOs){
         this.friendRequestDTOs = friendRequestDTOs;
     }

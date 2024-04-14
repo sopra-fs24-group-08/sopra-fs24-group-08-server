@@ -66,4 +66,8 @@ public class FriendRequest implements Serializable {
     public LocalDateTime getCreationTime(){
         return creationTime;
     }
+
+    public void setCreationTime(LocalDateTime creationTime){
+        this.creationTime = creationTime;
+    }
 }

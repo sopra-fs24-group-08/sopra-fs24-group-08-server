@@ -77,7 +77,8 @@ public class UserController {
      */
     @GetMapping(value = "/users/{id}")
     @ResponseBody
-    public UserGetDTO getUserbyID(@PathVariable("id") Long id) {
+    public UserGetDTO getUserbyID(@PathVariable("id") Long id, @RequestHeader("Authorization") String authorization) {
+        userService.authorizeUser(authorization);
         User userData = userService.getUserbyUserID(id);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
     }
