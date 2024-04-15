@@ -8,12 +8,11 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.server.ResponseStatusException;
 
 import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.entity.GameInvitation;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.GameInvitationRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendRequestDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameInvitationDTO;
@@ -36,15 +35,12 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
-    private final GameInvitationRepository gameInvitationRepository;
     private GameService gameService = new GameService();
 
     public FriendService(@Qualifier("userRepository") UserRepository userRepository, 
-                        @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
-                        @Qualifier("invitationRepository") GameInvitationRepository gameInvitationRepository) {
+                        @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
-        this.gameInvitationRepository = gameInvitationRepository;
     }
 
     //get Friend list
@@ -58,9 +54,13 @@ public class FriendService {
 
     //Add friend request
     @Transactional
-    public User addFriendRequest(Long userId, FriendRequest friendRequest){
+    public User addFriendRequest(Long userId, FriendRequest friendAdding){
+        // make sure the type of request is friendadding
+        if (friendAdding.getRequestType() != RequestType.FRIENDADDING){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request type is not FRIENDADDING!");
+        }
         // query if there exists such a user
-        Long receiverId = friendRequest.getReceiverId();
+        Long receiverId = friendAdding.getReceiverId();
         if (receiverId == userId){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't add yourself as a friend!");
         }
@@ -74,7 +74,7 @@ public class FriendService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The user is already in your friend list.");
         }
         // query if exists the request from the same sender to the same receiver
-        FriendRequest oldRequest = friendRequestRepository.findBySenderIdAndReceiverId(userId, receiverId);
+        FriendRequest oldRequest = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.FRIENDADDING, userId, receiverId);
         if (oldRequest != null && (oldRequest.getStatus() == RequestStatus.SENT || oldRequest.getStatus() == RequestStatus.PENDING)){
             // query the creation_time
             LocalDateTime previousTime = oldRequest.getCreationTime();
@@ -88,17 +88,21 @@ public class FriendService {
             }
         }
         // create new request and preserve into repository
-        friendRequest.setSenderId(userId);
-        friendRequest.setStatus(RequestStatus.PENDING);
-        friendRequest.setCreationTime(LocalDateTime.now());
-        friendRequestRepository.save(friendRequest);
+        friendAdding.setSenderId(userId);
+        friendAdding.setStatus(RequestStatus.PENDING);
+        friendAdding.setCreationTime(LocalDateTime.now());
+        friendRequestRepository.save(friendAdding);
         friendRequestRepository.flush();
         return receiver;
     }
 
     //Invitation to game request
     @Transactional
-    public GameInvitation inviteFriendToGame(Long userId, GameInvitation gameInvitation){
+    public FriendRequest inviteFriendToGame(Long userId, FriendRequest gameInvitation){
+        // make sure the type of request is friendadding
+        if (gameInvitation.getRequestType() != RequestType.GAMEINVITATION){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request type is not GAMEINVITATION!");
+        }
         // query if there exists such a user
         Long receiverId = gameInvitation.getReceiverId();
         if (receiverId == userId){
@@ -114,7 +118,7 @@ public class FriendService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not your friend.");
         }
         // query if exists the request from the same sender to the same receiver
-        GameInvitation oldGameInvitation = gameInvitationRepository.findBySenderIdAndReceiverId(userId, receiverId);
+        FriendRequest oldGameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, userId, receiverId);
         if (oldGameInvitation != null){
             // query the creation_time
             LocalDateTime previousTime = oldGameInvitation.getCreationTime();
@@ -122,48 +126,48 @@ public class FriendService {
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "U are sending too many invitation requests!");
             }else{
                 // delete the old request if it's beyond 60 sec
-                gameInvitationRepository.delete(oldGameInvitation);
+                friendRequestRepository.delete(oldGameInvitation);
             }
         }
         // create new request and preserve into repository
         gameInvitation.setSenderId(userId);
         gameInvitation.setStatus(RequestStatus.PENDING);
-        gameInvitationRepository.save(gameInvitation);
-        gameInvitationRepository.flush();
+        friendRequestRepository.save(gameInvitation);
+        friendRequestRepository.flush();
         return gameInvitation;
     }
 
     //handle friend request
     @Transactional
-    public FriendRequest handleFriendRequest(Long userId, FriendRequest receivedFriendRequest){
+    public FriendRequest handleFriendRequest(Long userId, FriendRequest receivedFriendAdding){
         // check if there does exist such a request
-        Long friendId = receivedFriendRequest.getSenderId();
-        FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(friendId, userId);
-        if (friendRequest == null){
+        Long friendId = receivedFriendAdding.getSenderId();
+        FriendRequest friendAdding = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.FRIENDADDING,friendId, userId);
+        if (friendAdding == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never sent you a friend request.");
-        }else if (friendRequest.getStatus() != RequestStatus.SENT){
+        }else if (friendAdding.getStatus() != RequestStatus.SENT){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This friend request has already been processed.");
         }
         // change request status
-        if (receivedFriendRequest.getStatus() == RequestStatus.ACCEPTED){
-            friendRequest.setStatus(RequestStatus.ACCEPTED);
+        if (receivedFriendAdding.getStatus() == RequestStatus.ACCEPTED){
+            friendAdding.setStatus(RequestStatus.ACCEPTED);
             // add friend into both user's friend list
             User user = userRepository.findByid(userId);
             User friend = userRepository.findByid(friendId);
             user.addFriend(friend);
             friend.addFriend(user);
-        } else if (receivedFriendRequest.getStatus() == RequestStatus.DECLINED){
-            friendRequest.setStatus(RequestStatus.DECLINED);
+        } else if (receivedFriendAdding.getStatus() == RequestStatus.DECLINED){
+            friendAdding.setStatus(RequestStatus.DECLINED);
         }
-        return friendRequest;
+        return friendAdding;
     }
 
     //handle game invitation
     @Transactional
-    public GameInvitation handleGameInvitation(Long userId, GameInvitation receivedGameInvitation){
+    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation){
         // check if there does exist such a request
         Long friendId = receivedGameInvitation.getSenderId();
-        GameInvitation gameInvitation = gameInvitationRepository.findBySenderIdAndReceiverId(friendId, userId);
+        FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, friendId, userId);
         if (gameInvitation == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never invited you.");
         }else if (gameInvitation.getStatus() != RequestStatus.SENT){
@@ -183,7 +187,7 @@ public class FriendService {
 
     // check for polling updates
     @Transactional
-    public void pollUpdates(DeferredResult<CombinedUpdateDTO> deferredResult, Long userId) {
+    public void pollUpdates(DeferredResult<List<FriendRequestDTO>> deferredResult, Long userId) {
         // Friend request: including userId as senderId and as receiverId
         List<FriendRequest> pendingRequests = friendRequestRepository.findByReceiverIdAndStatus(userId, RequestStatus.PENDING);
         List <FriendRequest> acceptedOrDeclinedRequests = friendRequestRepository.findBySenderIdAndStatus(userId, RequestStatus.ACCEPTED);
@@ -191,32 +195,18 @@ public class FriendService {
         List<FriendRequest> friendRequests = new ArrayList<>(pendingRequests);
         friendRequests.addAll(acceptedOrDeclinedRequests);
 
-        // Game Invitation: including userId as senderId and as receiverId
-        List<GameInvitation> pendingInvitations = gameInvitationRepository.findByReceiverIdAndStatus(userId, RequestStatus.PENDING); 
-        List<GameInvitation> acceptedOrDeclinedInvitations = gameInvitationRepository.findBySenderIdAndStatus(userId, RequestStatus.ACCEPTED);
-        acceptedOrDeclinedInvitations.addAll(gameInvitationRepository.findBySenderIdAndStatus(userId, RequestStatus.DECLINED));
-        List<GameInvitation> gameInvitations = new ArrayList<>(pendingInvitations);
-        gameInvitations.addAll(acceptedOrDeclinedInvitations);
-
         List<FriendRequestDTO> friendRequestDTOs = friendRequests.stream()
                 .map(this::convertEntityToFriendRequestDTO)
                 .collect(Collectors.toList());
-        List<GameInvitationDTO> gameInviteDTOs = gameInvitations.stream()
-                .map(this::convertEntityToGameInvitationDTO)
-                .collect(Collectors.toList());
 
-        if (!friendRequestDTOs.isEmpty() || !gameInvitations.isEmpty()){
-            deferredResult.setResult(new CombinedUpdateDTO(friendRequestDTOs, gameInviteDTOs));
+        if (!friendRequestDTOs.isEmpty()){
+            deferredResult.setResult(friendRequestDTOs);
             // Delete finished friend reqeust and game invitations. Do we need to presetve them?
             friendRequestRepository.deleteInBatch(acceptedOrDeclinedRequests);
-            gameInvitationRepository.deleteInBatch(acceptedOrDeclinedInvitations);
             // set request status as sent to avoid repeat send
             for (FriendRequest friendRequest: pendingRequests){
                 friendRequest.setStatus(RequestStatus.SENT);
-            }
-            for (GameInvitation gameInvitation: gameInvitations){
-                gameInvitation.setStatus(RequestStatus.SENT);
-            }            
+            }          
         }else {
             deferredResult.onTimeout(() -> deferredResult.setErrorResult(
                 ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
@@ -245,21 +235,7 @@ public class FriendService {
         String senderName = userRepository.findByid(senderId).getUsername();
         String receiverName = userRepository.findByid(receiverId).getUsername();
         dto.setStatus(friendRequest.getStatus());
-        dto.setSenderId(senderId);
-        dto.setReceiverId(receiverId);
-        dto.setSenderName(senderName);
-        dto.setReceiverName(receiverName);
-        return dto;
-    }
-
-    //convert request to GameInvitationDTO
-    public GameInvitationDTO convertEntityToGameInvitationDTO(GameInvitation gameInvitation) {
-        GameInvitationDTO dto = new GameInvitationDTO();
-        Long senderId = gameInvitation.getSenderId();
-        Long receiverId = gameInvitation.getReceiverId();
-        String senderName = userRepository.findByid(senderId).getUsername();
-        String receiverName = userRepository.findByid(receiverId).getUsername();
-        dto.setStatus(gameInvitation.getStatus());
+        dto.setRequestType(friendRequest.getRequestType());
         dto.setSenderId(senderId);
         dto.setReceiverId(receiverId);
         dto.setSenderName(senderName);

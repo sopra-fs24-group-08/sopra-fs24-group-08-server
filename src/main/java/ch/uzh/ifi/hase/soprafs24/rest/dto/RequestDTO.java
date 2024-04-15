@@ -3,7 +3,7 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 
-public class FriendRequestDTO {
+public class RequestDTO {
 
     private Long senderId;
     private String senderName;
@@ -27,14 +27,6 @@ public class FriendRequestDTO {
     public void setReceiverId(Long receiverId){
         this.receiverId = receiverId;
     }
-    
-    public RequestType getRequestType(){
-        return requestType;
-    }
-
-    public void setRequestType(RequestType requestType){
-        this.requestType = requestType;
-    }
 
     public RequestStatus getStatus(){
         return status;
@@ -42,6 +34,14 @@ public class FriendRequestDTO {
 
     public void setStatus(RequestStatus status){
         this.status = status;
+    }
+
+    public RequestType getRequestType(){
+        return requestType;
+    }
+
+    public void setRequestType(RequestType requestType){
+        this.requestType = requestType;
     }
 
     public String getSenderName(){
@@ -61,3 +61,4 @@ public class FriendRequestDTO {
     }
 
 }
+

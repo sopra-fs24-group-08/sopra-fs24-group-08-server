@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs24.entity;
 import javax.persistence.*;
 
 import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -18,6 +19,9 @@ public class FriendRequest implements Serializable {
     @Id
     @GeneratedValue
     private Long id;
+
+    @Column
+    private RequestType requestType;
 
     @Column
     private LocalDateTime creationTime;
@@ -37,6 +41,14 @@ public class FriendRequest implements Serializable {
 
     public void setId(Long id){
         this.id = id;
+    }
+
+    public RequestType getRequestType(){
+        return requestType;
+    }
+
+    public void setRequestType(RequestType requestType){
+        this.requestType = requestType;
     }
 
     public Long getSenderId(){
