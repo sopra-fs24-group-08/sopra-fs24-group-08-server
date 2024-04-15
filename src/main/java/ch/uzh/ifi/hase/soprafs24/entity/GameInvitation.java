@@ -23,6 +23,12 @@ public class GameInvitation implements Serializable{
     private Long receiverId;
 
     @Column
+    private String senderName;
+
+    @Column
+    private String receiverName;
+    
+    @Column
     private RequestStatus status;
 
     public Long getId(){

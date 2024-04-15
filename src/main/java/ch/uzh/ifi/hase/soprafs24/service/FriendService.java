@@ -199,10 +199,10 @@ public class FriendService {
         gameInvitations.addAll(acceptedOrDeclinedInvitations);
 
         List<FriendRequestDTO> friendRequestDTOs = friendRequests.stream()
-                .map(DTOMapper.INSTANCE::convertEntityToFriendRequestDTO)
+                .map(this::convertEntityToFriendRequestDTO)
                 .collect(Collectors.toList());
         List<GameInvitationDTO> gameInviteDTOs = gameInvitations.stream()
-                .map(DTOMapper.INSTANCE::convertEntityToGameInvitationDTO)
+                .map(this::convertEntityToGameInvitationDTO)
                 .collect(Collectors.toList());
 
         if (!friendRequestDTOs.isEmpty() || !gameInvitations.isEmpty()){
@@ -236,4 +236,34 @@ public class FriendService {
         currentUser.deleteFriend(oldFriend);
         oldFriend.deleteFriend(currentUser);
     }   
+
+    //convert request to FriendRequestDTO
+    public FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest) {
+        FriendRequestDTO dto = new FriendRequestDTO();
+        Long senderId = friendRequest.getSenderId();
+        Long receiverId = friendRequest.getReceiverId();
+        String senderName = userRepository.findByid(senderId).getUsername();
+        String receiverName = userRepository.findByid(receiverId).getUsername();
+        dto.setStatus(friendRequest.getStatus());
+        dto.setSenderId(senderId);
+        dto.setReceiverId(receiverId);
+        dto.setSenderName(senderName);
+        dto.setReceiverName(receiverName);
+        return dto;
+    }
+
+    //convert request to GameInvitationDTO
+    public GameInvitationDTO convertEntityToGameInvitationDTO(GameInvitation gameInvitation) {
+        GameInvitationDTO dto = new GameInvitationDTO();
+        Long senderId = gameInvitation.getSenderId();
+        Long receiverId = gameInvitation.getReceiverId();
+        String senderName = userRepository.findByid(senderId).getUsername();
+        String receiverName = userRepository.findByid(receiverId).getUsername();
+        dto.setStatus(gameInvitation.getStatus());
+        dto.setSenderId(senderId);
+        dto.setReceiverId(receiverId);
+        dto.setSenderName(senderName);
+        dto.setReceiverName(receiverName);
+        return dto;
+    }
 }

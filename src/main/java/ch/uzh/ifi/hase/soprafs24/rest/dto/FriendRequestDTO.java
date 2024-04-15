@@ -34,4 +34,20 @@ public class FriendRequestDTO {
         this.status = status;
     }
 
+    public String getSenderName(){
+        return senderName;
+    }
+
+    public void setSenderName(String senderName){
+        this.senderName = senderName;
+    }
+
+    public String getReceiverName(){
+        return receiverName;
+    }
+
+    public void setReceiverName(String receiverName){
+        this.receiverName = receiverName;
+    }
+
 }
