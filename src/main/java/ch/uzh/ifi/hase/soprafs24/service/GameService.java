@@ -1,85 +1,161 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
+import ch.uzh.ifi.hase.soprafs24.entity.*;
+import ch.uzh.ifi.hase.soprafs24.repository.BoardRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.ScoreRepository;
+import org.apache.catalina.Store;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ch.uzh.ifi.hase.soprafs24.entity.GridRow;
-import java.util.List;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class GameService {
 
-    private static final int BLOCKED = 0;
-    private static final int EMPTY = -1;
+    private final BoardRepository boardRepository;
+    private final ScoreRepository scoreRepository;
+    private final Map<Long, Player> players;
+
+    // 返回给定ID的Player对象
+    public Player getPlayerById(Long playerId) {
+        return players.get(playerId);
+    }
+
+    // 包级别方法，只在同一个包内可见
+    void addPlayer(Long playerId, Player player) {
+        this.players.put(playerId, player);
+    }
 
     @Autowired
-    private GameRepository gameRepository;
-
-    public Game createNewGame() {
-        Game game = new Game(); // New game with default grid
-        return gameRepository.save(game);
+    public GameService(BoardRepository boardRepository, ScoreRepository scoreRepository) {
+        this.boardRepository = boardRepository;
+        this.scoreRepository = scoreRepository;
+        this.players = new HashMap<>();
+        // 初始化玩家
+        this.players.put(1L, new Player(new CardPile(), new User()));
+        this.players.put(2L, new Player(new CardPile(), new User()));
     }
 
-    public Game tossCoin(Long gameId) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new RuntimeException("Game not found"));
-
-        game.setCoinTossResult(Math.random() < 0.5); // Randomly determining the heads and tails of coins
-        game.setAwaitingPlayerChoice(true); // Setting the game to wait for player selection
-        return gameRepository.save(game);
+    public void saveScore(Long playerId, Long gameId, Integer scoreValue) {
+        Score score = new Score();
+        score.setPlayerId(playerId);
+        score.setGameId(gameId);
+        score.setScore(scoreValue);
+        score.setTimestamp(LocalDateTime.now());
+        scoreRepository.save(score);
     }
 
-    public Game chooseStartingPlayer(Long gameId, boolean player1Starts) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new RuntimeException("Game not found"));
+    private int calculateScore(Card card, GridSquare square) {
+        int baseScore = card.getPoints();
+        String squareColor = square.getColor();
+        String cardColor = card.getColor();
 
-        if (!game.getAwaitingPlayerChoice()) {
+        if (squareColor == null || cardColor == null) {
+            return 0;  // 如果颜色信息不完整，则返回0分
+        }
+
+        if ("white".equals(squareColor)) {
+            return baseScore;  // 白色格子特殊规则
+        } else if (squareColor.equals(cardColor)) {
+            return baseScore * 2;  // 颜色匹配
+        } else {
+            return 0;  // 不匹配
+        }
+    }
+
+    public Board createNewGame() {
+        Board board = new Board();  // 初始化棋盘，包括玩家分配和棋格设置
+        board.setPlayer1Id(1L); //
+        board.setPlayer2Id(2L);
+        return boardRepository.save(board);
+    }
+
+    public Board tossCoin(Long boardId) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("Board not found"));
+        board.setCoinTossResult(Math.random() < 0.5); // 随机硬币决定谁先行
+        board.setAwaitingPlayerChoice(true);
+        return boardRepository.save(board);
+    }
+
+    public Board chooseStartingPlayer(Long boardId, boolean player1Starts) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("Board not found"));
+        if (!board.getAwaitingPlayerChoice()) {
             throw new IllegalStateException("Not awaiting player choice");
         }
 
-        game.setPlayer1sTurn(player1Starts);
-        game.setAwaitingPlayerChoice(false); // Players have made their choice and are no longer waiting
-        return gameRepository.save(game);
+        board.setPlayer1sTurn(player1Starts);
+        board.setAwaitingPlayerChoice(false);
+        return boardRepository.save(board);
     }
 
-    public Game placeCard(Long gameId, Long playerId, int cardId, int row, int col) {
-        // 获取游戏实例
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+
+    // 检查游戏是否结束
+    public boolean isGameOver(Board board) {
+        // 棋盘满时游戏结束
+        return board.isFull();
+    }
+
+    // 游戏结束后的行为 待实现
+    private void handleGameOver(Board board) {
+        // ......
+    }
+
+    public boolean isPlayerTurn(Long playerId, Board board) {
+        return (board.getPlayer1sTurn() && board.getPlayer1Id().equals(playerId)) ||
+                (!board.getPlayer1sTurn() && board.getPlayer2Id().equals(playerId));
+    }
+
+
+    public Board placeCard(Long boardId, Long playerId, Card card, int position) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("Board not found"));
+
+        Player player = players.get(playerId);
+        if (player == null) {
+            throw new IllegalStateException("Player not found");
+        }
 
         // 检查是否轮到当前玩家
-        boolean isPlayer1 = game.getPlayer1Id() != null && game.getPlayer1Id().equals(playerId);
-        boolean isPlayer2 = game.getPlayer2Id() != null && game.getPlayer2Id().equals(playerId);
-        if (!((game.getPlayer1sTurn() != null && game.getPlayer1sTurn() && isPlayer1) ||
-                (game.getPlayer1sTurn() != null && !game.getPlayer1sTurn() && isPlayer2))) {
+        boolean isPlayerTurn = (board.getPlayer1sTurn() && board.getPlayer1Id().equals(playerId)) ||
+                (!board.getPlayer1sTurn() && board.getPlayer2Id().equals(playerId));
+        if (!isPlayerTurn) {
             throw new IllegalStateException("It's not your turn");
         }
 
-        // Get the current grid
-        List<GridRow> currentGrid = game.getGrid();
-
-        // Validate the selected cell
-        GridRow gridRow = currentGrid.get(row);
-        if (col == 1 && gridRow.getCell2() == BLOCKED) {
-            throw new IllegalArgumentException("Cannot place a card in a blocked slot");
+        // 尝试放置卡牌并计算分数
+        if (!player.playCard(board, card, position)) {
+            throw new IllegalStateException("Invalid move");
         }
 
-        Integer cellValue = col == 0 ? gridRow.getCell1() : (col == 1 ? gridRow.getCell2() : gridRow.getCell3());
-        if (cellValue != null && cellValue != EMPTY) {
-            throw new IllegalArgumentException("Slot is already occupied");
+        GridSquare square = board.getGrid(position);
+        int score = calculateScore(card, square);
+        saveScore(playerId, boardId, score);
+
+        // 保存棋盘状态
+        boardRepository.save(board);
+
+        // 检查游戏是否结束
+        if (isGameOver(board)) {
+            handleGameOver(board);
+        } else {
+            // 如果游戏未结束，轮换到下一个玩家
+            switchPlayerTurn(board);
+            // 保存更新后的棋盘状态
+            boardRepository.save(board);
         }
 
-        // Place the card
-        if (col == 0) {
-            gridRow.setCell1(cardId);
-        } else if (col == 1) {
-            gridRow.setCell2(cardId);
-        } else if (col == 2) {
-            gridRow.setCell3(cardId);
-        }
-
-        // Save the updated game
-        return gameRepository.save(game);
+        return board;
     }
+
+
+    // 轮换玩家
+    private void switchPlayerTurn(Board board) {
+        board.setPlayer1sTurn(!board.getPlayer1sTurn());
+    }
+
 }

@@ -5,9 +5,15 @@ import java.util.List;
 public class GameGetDTO {
 
     private Long id;
-    private List<GridRowDTO> grid; // 保留这个属性用于映射
+    private List<GridSquareDTO> grid; // Grid representation with DTO
+    private Long player1Id;
+    private Long player2Id;
+    private Boolean coinTossResult;
+    private Boolean player1sTurn;
+    private Boolean awaitingPlayerChoice;
 
-    // 构造函数、getter 和 setter
+    // Constructors, getters, and setters
+
     public GameGetDTO() {
     }
 
@@ -19,12 +25,50 @@ public class GameGetDTO {
         this.id = id;
     }
 
-    // 修正为正确的 GridRowDTO 类型
-    public List<GridRowDTO> getGrid() {
+    public List<GridSquareDTO> getGrid() {
         return grid;
     }
 
-    public void setGrid(List<GridRowDTO> grid) {
+    public void setGrid(List<GridSquareDTO> grid) {
         this.grid = grid;
+    }
+    public Long getPlayer1Id() {
+        return player1Id;
+    }
+
+    public void setPlayer1Id(Long player1Id) {
+        this.player1Id = player1Id;
+    }
+
+    public Long getPlayer2Id() {
+        return player2Id;
+    }
+
+    public void setPlayer2Id(Long player2Id) {
+        this.player2Id = player2Id;
+    }
+
+    public Boolean getCoinTossResult() {
+        return coinTossResult;
+    }
+
+    public void setCoinTossResult(Boolean coinTossResult) {
+        this.coinTossResult = coinTossResult;
+    }
+
+    public Boolean getPlayer1sTurn() {
+        return player1sTurn;
+    }
+
+    public void setPlayer1sTurn(Boolean player1sTurn) {
+        this.player1sTurn = player1sTurn;
+    }
+
+    public Boolean getAwaitingPlayerChoice() {
+        return awaitingPlayerChoice;
+    }
+
+    public void setAwaitingPlayerChoice(Boolean awaitingPlayerChoice) {
+        this.awaitingPlayerChoice = awaitingPlayerChoice;
     }
 }

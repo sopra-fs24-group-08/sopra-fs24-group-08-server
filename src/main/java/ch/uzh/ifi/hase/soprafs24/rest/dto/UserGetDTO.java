@@ -7,13 +7,14 @@ import java.time.LocalDate;
 public class UserGetDTO {
 
     private Long id;
+    private String token;
+    private UserStatus status;
+    private LocalDate creationDate;
+    private LocalDate birthday;
     private String name;
     private String username;
-    private UserStatus status;
 
     private LocalDate creation_date;
-
-    private LocalDate birthday;
 
     public Long getId() {
         return id;

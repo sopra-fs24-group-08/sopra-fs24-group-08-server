@@ -1,14 +1,16 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
+
+import ch.uzh.ifi.hase.soprafs24.entity.Board;
+import ch.uzh.ifi.hase.soprafs24.entity.Card;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.ChooseStartDTO;
-import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameGetDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.PlaceCardDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.PlaceCardDTO;
 
 @RestController
 @RequestMapping("/games") // Base path for game-related actions
@@ -20,33 +22,30 @@ public class GameController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public GameGetDTO createGame() {
-        Game game = gameService.createNewGame();
-        return DTOMapper.INSTANCE.convertGameToGameGetDTO(game);
+        Board board = gameService.createNewGame();
+        return DTOMapper.INSTANCE.convertBoardToGameGetDTO(board);
     }
 
     @PostMapping("/{gameId}/placeCard")
     public ResponseEntity<?> placeCard(@PathVariable Long gameId, @RequestBody PlaceCardDTO placeCardDTO) {
         try {
-            Game updatedGame = gameService.placeCard(gameId, placeCardDTO.getPlayerId(), placeCardDTO.getCardId(), placeCardDTO.getRow(), placeCardDTO.getColumn());
-            return ResponseEntity.ok(DTOMapper.INSTANCE.convertGameToGameGetDTO(updatedGame));
+            Card card = new Card(placeCardDTO.getColor(), placeCardDTO.getPoints());
+            Board updatedBoard = gameService.placeCard(gameId, placeCardDTO.getPlayerId(), card, placeCardDTO.getPosition());
+            return ResponseEntity.ok(DTOMapper.INSTANCE.convertBoardToGameGetDTO(updatedBoard));
         } catch (NotYourTurnException e) {
-            // If it's not the player's turn, catch the exception and return to the 403 forbidden state
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 
     @PostMapping("/{gameId}/tossCoin")
     public GameGetDTO tossCoin(@PathVariable Long gameId) {
-        Game game = gameService.tossCoin(gameId);
-        return DTOMapper.INSTANCE.convertGameToGameGetDTO(game);
+        Board board = gameService.tossCoin(gameId);
+        return DTOMapper.INSTANCE.convertBoardToGameGetDTO(board);
     }
 
     @PostMapping("/{gameId}/chooseStartingPlayer")
     public GameGetDTO chooseStartingPlayer(@PathVariable Long gameId, @RequestBody ChooseStartDTO chooseStartDTO) {
-        Game game = gameService.chooseStartingPlayer(gameId, chooseStartDTO.isPlayer1Starts());
-        return DTOMapper.INSTANCE.convertGameToGameGetDTO(game);
+        Board board = gameService.chooseStartingPlayer(gameId, chooseStartDTO.isPlayer1Starts());
+        return DTOMapper.INSTANCE.convertBoardToGameGetDTO(board);
     }
-
-
 }
-

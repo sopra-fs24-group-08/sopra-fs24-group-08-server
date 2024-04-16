@@ -3,15 +3,13 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 public class PlaceCardDTO {
 
     private Long playerId;
-    private int cardId;
-    private int row;
-    private int column;
+    private String color;
+    private int points;
+    private int position;
 
-    // 默认构造函数用于JSON反序列化
     public PlaceCardDTO() {
     }
 
-    // getter和setter方法
     public Long getPlayerId() {
         return playerId;
     }
@@ -20,27 +18,27 @@ public class PlaceCardDTO {
         this.playerId = playerId;
     }
 
-    public int getCardId() {
-        return cardId;
+    public String getColor() {
+        return color;
     }
 
-    public void setCardId(int cardId) {
-        this.cardId = cardId;
+    public void setColor(String color) {
+        this.color = color;
     }
 
-    public int getRow() {
-        return row;
+    public int getPoints() {
+        return points;
     }
 
-    public void setRow(int row) {
-        this.row = row;
+    public void setPoints(int points) {
+        this.points = points;
     }
 
-    public int getColumn() {
-        return column;
+    public int getPosition() {
+        return position;
     }
 
-    public void setColumn(int column) {
-        this.column = column;
+    public void setPosition(int position) {
+        this.position = position;
     }
 }
