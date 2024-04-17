@@ -20,7 +20,7 @@ public class Player {
         isOnTurn = false;
         isQuited = false;
         chatBox = new ChatBox();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             Card card = cardPile.drawCard();
             handCards.add(card);
         }

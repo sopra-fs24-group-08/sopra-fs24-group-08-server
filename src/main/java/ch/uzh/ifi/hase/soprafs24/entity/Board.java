@@ -17,9 +17,10 @@ public class Board {
     private Boolean coinTossResult;
     private Boolean player1sTurn = false;
     private Boolean awaitingPlayerChoice = false;
-
+    private CardPile cardPile;  // 新增：棋盘现包含一个牌堆
     public Board() {
         initializeBoard();
+        this.cardPile = new CardPile(); // 初始化牌堆
     }
     private void initializeBoard() {
         this.grid = new ArrayList<>();

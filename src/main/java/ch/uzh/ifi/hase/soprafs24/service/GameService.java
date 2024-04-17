@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class GameService {
@@ -17,6 +20,7 @@ public class GameService {
     private final BoardRepository boardRepository;
     private final ScoreRepository scoreRepository;
     private final Map<Long, Player> players;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 返回给定ID的Player对象
     public Player getPlayerById(Long playerId) {
@@ -80,16 +84,59 @@ public class GameService {
         return boardRepository.save(board);
     }
 
+    public Board tossCoinAndDecideAutomatically(Long boardId) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("Board not found"));
+        board.setCoinTossResult(Math.random() < 0.5);
+        board.setAwaitingPlayerChoice(true);
+        boardRepository.save(board);
+
+        // Schedule a task to automatically choose the starting player if no choice is made within 15 seconds
+        scheduler.schedule(() -> {
+            if (board.getAwaitingPlayerChoice()) {  // Check if still awaiting player's decision
+                boolean autoDecision = Math.random() < 0.5;  // Random decision
+                chooseStartingPlayer(boardId, autoDecision);
+            }
+        }, 15, TimeUnit.SECONDS);
+
+        return board;
+    }
+
+
     public Board chooseStartingPlayer(Long boardId, boolean player1Starts) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new RuntimeException("Board not found"));
         if (!board.getAwaitingPlayerChoice()) {
-            throw new IllegalStateException("Not awaiting player choice");
-        }
 
+            return board;  // Return if the choice has already been made
+
+        }
         board.setPlayer1sTurn(player1Starts);
         board.setAwaitingPlayerChoice(false);
         return boardRepository.save(board);
+    }
+
+    private void dealInitialCards(boolean player1Starts, Board board) {
+        Player player1 = players.get(board.getPlayer1Id());
+        Player player2 = players.get(board.getPlayer2Id());
+
+        CardPile sharedPile = new CardPile(); // 每个玩家共享一个牌堆，或者各自有自己的牌堆
+
+        if (player1Starts) {
+            for (int i = 0; i < 2; i++) {
+                player1.drawCard(sharedPile); // 先手玩家抽2张牌
+            }
+            for (int i = 0; i < 3; i++) {
+                player2.drawCard(sharedPile); // 后手玩家抽3张牌
+            }
+        } else {
+            for (int i = 0; i < 2; i++) {
+                player2.drawCard(sharedPile); // 先手玩家抽2张牌
+            }
+            for (int i = 0; i < 3; i++) {
+                player1.drawCard(sharedPile); // 后手玩家抽3张牌
+            }
+        }
     }
 
 

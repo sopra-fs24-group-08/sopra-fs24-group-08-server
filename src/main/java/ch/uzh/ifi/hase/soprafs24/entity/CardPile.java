@@ -13,7 +13,7 @@ public class CardPile {
         shuffle();
     }
     public Card setRandom(){
-        List<String> colors = List.of("red", "green", "blue", "white");
+        List<String> colors = List.of("orange", "green", "purple", "brown");
         List<Integer> points = List.of(1, 2, 3, 4);
         String color = colors.get(new Random().nextInt(colors.size()));
         int point = points.get(new Random().nextInt(points.size()));
