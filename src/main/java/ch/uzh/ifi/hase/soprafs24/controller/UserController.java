@@ -32,16 +32,16 @@ public class UserController {
     @GetMapping("/users")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public List<UserGetDTO> getAllUsers(@RequestHeader("Authorization") String authorization) {
+    public List<OtherUserGetDTO> getAllUsers(@RequestHeader("Authorization") String authorization) {
         //authorization
         userService.authorizeUser(authorization);
         // fetch all users in the internal representation
         List<User> users = userService.getUsers();
-        List<UserGetDTO> userGetDTOs = new ArrayList<>();
+        List<OtherUserGetDTO> userGetDTOs = new ArrayList<>();
 
         // convert each user to the API representation
         for (User user : users) {
-            userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
+            userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(user));
         }
         return userGetDTOs;
     }
@@ -75,12 +75,20 @@ public class UserController {
     /*
       Get by id
      */
-    @GetMapping(value = "/users/{id}")
+    @GetMapping(value = "/users/self/{userId}")
     @ResponseBody
-    public UserGetDTO getUserbyID(@PathVariable("id") Long id, @RequestHeader("Authorization") String authorization) {
-        userService.authorizeUser(authorization);
-        User userData = userService.getUserbyUserID(id);
+    public UserGetDTO getUserSelfbyID(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+        userService.authenticateUser(authorization, userId);
+        User userData = userService.getUserbyUserID(userId);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
+    }
+
+    @GetMapping(value = "/users/other/{userId}")
+    @ResponseBody
+    public OtherUserGetDTO getOtherUserbyID(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+        userService.authorizeUser(authorization);
+        User userData = userService.getUserbyUserID(userId);
+        return DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(userData);
     }
 
     /*
@@ -103,6 +111,14 @@ public class UserController {
     public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id) {
         User loggedUser = userService.logoutUserbyUserID(id);
         return DTOMapper.INSTANCE.convertEntityToLogoutUserGetDTO(loggedUser);
+    }
+
+    // authenticate user
+    @GetMapping(value = "/users/authenticate/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public boolean authenticateUser(@RequestHeader("Authorization") String authorization, @PathVariable Long userId){
+        userService.authenticateUser(authorization, userId);
+        return true;
     }
 
 }

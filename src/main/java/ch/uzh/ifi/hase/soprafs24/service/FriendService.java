@@ -15,8 +15,6 @@ import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendRequestDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameInvitationDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.CombinedUpdateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import javassist.tools.framedump;
 import org.springframework.stereotype.Service;

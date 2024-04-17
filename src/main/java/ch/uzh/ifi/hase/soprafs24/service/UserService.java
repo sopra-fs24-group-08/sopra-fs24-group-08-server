@@ -167,7 +167,7 @@ public class UserService {
         if (token != null && token.startsWith("Bearer ")){
             token = token.substring(7);
         }
-        if (!userById.getToken().equals(token)){
+        if (userById == null || !userById.getToken().equals(token)){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
         }
     }

@@ -82,4 +82,7 @@ public interface DTOMapper {
     // friendRequestDTO convert to friendRequest entity and converse
     FriendRequest convertFriendRequestDTOtoEntity(FriendRequestDTO friendRequestDTO);
     FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest);
+
+    // convert to other user
+    OtherUserGetDTO convertEntityToOtherUserGetDTO(User user);
 }
