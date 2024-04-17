@@ -1,4 +1,4 @@
-package ch.uzh.ifi.hase.soprafs24.entity;
+package ch.uzh.ifi.hase.soprafs24.entity.GameElements;
 import java.util.Random;
 
 public class GridSquare {
@@ -6,7 +6,7 @@ public class GridSquare {
     private Boolean occupied;
 
     private static final String[] COLORS = {"red", "green", "blue","white"};
-    public void Initialize() {
+    public GridSquare() {
         Random rand = new Random();
         this.color = COLORS[rand.nextInt(COLORS.length)];
         this.occupied = false;

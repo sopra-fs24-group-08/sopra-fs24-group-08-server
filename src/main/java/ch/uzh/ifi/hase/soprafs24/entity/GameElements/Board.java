@@ -1,17 +1,13 @@
-package ch.uzh.ifi.hase.soprafs24.entity;
-import ch.uzh.ifi.hase.soprafs24.entity.Card;
+package ch.uzh.ifi.hase.soprafs24.entity.GameElements;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
-    private List<GridSquare> grid;
-    private int occupiedGridSquare;
+    public final List<GridSquare> grid;
+    public int occupiedGridSquare;
 
     public Board() {
-        initializeBoard();
-    }
-    private void initializeBoard() {
         this.grid = new ArrayList<>();
         this.occupiedGridSquare = 0;
         for (int i = 0; i < 9; i++) {
@@ -22,7 +18,7 @@ public class Board {
             }
         }
     }
-    public String checkGridColor(Integer position) {
+    public String getGridColor(Integer position) {
         GridSquare square = grid.get(position);
         if (square == null) {
             return null;

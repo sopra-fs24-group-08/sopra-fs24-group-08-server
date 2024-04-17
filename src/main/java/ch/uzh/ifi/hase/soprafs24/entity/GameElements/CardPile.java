@@ -1,5 +1,4 @@
-package ch.uzh.ifi.hase.soprafs24.entity;
-
+package ch.uzh.ifi.hase.soprafs24.entity.GameElements;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,7 @@ public class CardPile {
         shuffle();
     }
     public Card setRandom(){
-        List<String> colors = List.of("red", "green", "blue", "white");
+        List<String> colors = List.of("red", "green", "blue");
         List<Integer> points = List.of(1, 2, 3, 4);
         String color = colors.get(new Random().nextInt(colors.size()));
         int point = points.get(new Random().nextInt(points.size()));
@@ -21,7 +20,7 @@ public class CardPile {
     }
 
     void initializeCardPile() {
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 50; i++) {
             Card card = setRandom();
             cards.add(card);
         }
@@ -36,4 +35,4 @@ public class CardPile {
             return null;
         }
     }
-    }
+}

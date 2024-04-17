@@ -5,7 +5,9 @@ import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
 public class FriendRequestDTO {
 
     private Long senderId;
+    private String senderName;
     private Long receiverId;
+    private String receiverName;
     private RequestStatus status;
 
     public Long getSenderId(){
@@ -31,4 +33,5 @@ public class FriendRequestDTO {
     public void setStatus(RequestStatus status){
         this.status = status;
     }
+
 }

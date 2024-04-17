@@ -49,15 +49,7 @@ public class User implements Serializable {
     @Column
     private boolean inGame;
 
-    private boolean icon1Available;
-    private boolean icon2Available;
-    private boolean icon3Available;
 
-    private boolean banner1Available;
-    private boolean banner2Available;
-    private boolean banner3Available;
-
-    private List<Integer> achievements;
 
     // Getters and Setters
     public Long getId() {
@@ -143,51 +135,19 @@ public class User implements Serializable {
         this.inGame = inGame;
     }
 
-    public List<Boolean> getIcons() {
-        return Arrays.asList(icon1Available, icon2Available, icon3Available);
-    }
+
 
     public void setIcons(boolean iconAvailable){
         iconAvailable = true;
     }
 
-    public List<Boolean> getBanners() {
-        return Arrays.asList(banner1Available, banner2Available, banner3Available);
-    }
 
-    public void setBanners(boolean bannerAvailable){
-        bannerAvailable = true;
-    }
-
-    // Assuming we are just adding the entire list of achievements
-    public void setAchievements(List<Integer> achievements) {
-        this.achievements = achievements;
-    }
-
-    public List<Integer> getAchievements() {
-        return achievements;
-    }
 
     public void setCreation_date(LocalDate creation_date) {this.creation_date = creation_date;}
 
     public LocalDate getCreation_date() {return creation_date;}
 
-    // Enums
-    public enum Icon {
-        ICON1,
-        ICON2,
-        ICON3
-    }
 
-    public enum Banner {
-        BANNER1,
-        BANNER2,
-        BANNER3
-    }
 
-    public enum Achievement {
-        ACHIEVEMENT_1,
-        ACHIEVEMENT_2,
-        ACHIEVEMENT_3
-    }
+
 }

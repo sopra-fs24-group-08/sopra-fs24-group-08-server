@@ -49,7 +49,7 @@ public class FriendRequestController {
     }
 
     // Handle friend request
-    @PutMapping("/users/{userId}/friendresponse")
+    @PostMapping("/users/{userId}/friendresponse")
     @ResponseStatus(HttpStatus.OK)
     public FriendRequestDTO handleFriendRequest(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
         userService.authenticateUser(authorization, userId);
@@ -82,6 +82,8 @@ public class FriendRequestController {
 
         // add friend by userId
         friendService.deleteFriend(userId, friendId);
+
+        // get friendlist
 
         return getAllUsers(userId, authorization);
     }

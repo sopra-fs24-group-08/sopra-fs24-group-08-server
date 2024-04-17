@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -61,6 +62,9 @@ public class FriendService {
     public User addFriendRequest(Long userId, FriendRequest friendRequest){
         // query if there exists such a user
         Long receiverId = friendRequest.getReceiverId();
+        if (Objects.equals(receiverId, userId)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't add yourself as a friend!");
+        }
         User receiver = userRepository.findByid(receiverId);
         if (receiver == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the user you want to as as friend.");
@@ -72,10 +76,12 @@ public class FriendService {
         }
         // query if exists the request from the same sender to the same receiver
         FriendRequest oldRequest = friendRequestRepository.findBySenderIdAndReceiverId(userId, receiverId);
-        if (oldRequest != null){
+        if (oldRequest != null && (oldRequest.getStatus() == RequestStatus.SENT || oldRequest.getStatus() == RequestStatus.PENDING)){
             // query the creation_time
             LocalDateTime previousTime = oldRequest.getCreationTime();
-            if (Duration.between(LocalDateTime.now(), previousTime).getSeconds() < GlobalConstants.MAX_REQUEST_DURATION){
+            LocalDateTime nowTime = LocalDateTime.now();
+            Long duration = Duration.between(nowTime, previousTime).getSeconds();
+            if (duration < GlobalConstants.MAX_REQUEST_DURATION){
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "You've already sent a friend request to this user recently.");
             }else{
                 // delete the old request if it's beyond 60 sec
@@ -85,6 +91,7 @@ public class FriendService {
         // create new request and preserve into repository
         friendRequest.setSenderId(userId);
         friendRequest.setStatus(RequestStatus.PENDING);
+        friendRequest.setCreationTime(LocalDateTime.now());
         friendRequestRepository.save(friendRequest);
         friendRequestRepository.flush();
         return receiver;
@@ -95,6 +102,9 @@ public class FriendService {
     public GameInvitation inviteFriendToGame(Long userId, GameInvitation gameInvitation){
         // query if there exists such a user
         Long receiverId = gameInvitation.getReceiverId();
+        if (receiverId == userId){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't invite yourself into a game!");
+        }
         User receiver = userRepository.findByid(receiverId);
         if (receiver == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user doesn't exist.");
@@ -132,7 +142,7 @@ public class FriendService {
         FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(friendId, userId);
         if (friendRequest == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never sent you a friend request.");
-        }else if (friendRequest.getStatus() != RequestStatus.PENDING){
+        }else if (friendRequest.getStatus() != RequestStatus.SENT){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This friend request has already been processed.");
         }
         // change request status
@@ -157,7 +167,7 @@ public class FriendService {
         GameInvitation gameInvitation = gameInvitationRepository.findBySenderIdAndReceiverId(friendId, userId);
         if (gameInvitation == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never invited you.");
-        }else if (gameInvitation.getStatus() != RequestStatus.PENDING){
+        }else if (gameInvitation.getStatus() != RequestStatus.SENT){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This game invitation has already been processed.");
         }
         // change request status
@@ -201,6 +211,13 @@ public class FriendService {
             // Delete finished friend reqeust and game invitations. Do we need to presetve them?
             friendRequestRepository.deleteInBatch(acceptedOrDeclinedRequests);
             gameInvitationRepository.deleteInBatch(acceptedOrDeclinedInvitations);
+            // set request status as sent to avoid repeat send
+            for (FriendRequest friendRequest: pendingRequests){
+                friendRequest.setStatus(RequestStatus.SENT);
+            }
+            for (GameInvitation gameInvitation: gameInvitations){
+                gameInvitation.setStatus(RequestStatus.SENT);
+            }
         }else {
             deferredResult.onTimeout(() -> deferredResult.setErrorResult(
                     ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)

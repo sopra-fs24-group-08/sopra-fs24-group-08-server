@@ -1,4 +1,6 @@
-package ch.uzh.ifi.hase.soprafs24.entity;
+package ch.uzh.ifi.hase.soprafs24.entity.GameElements;
+
+import ch.uzh.ifi.hase.soprafs24.entity.User;
 
 import javax.persistence.*;
 import java.io.Serializable;

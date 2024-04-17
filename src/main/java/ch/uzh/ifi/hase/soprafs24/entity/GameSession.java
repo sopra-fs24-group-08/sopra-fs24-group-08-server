@@ -11,10 +11,8 @@ public class GameSession implements Serializable{
     @Id
     @GeneratedValue
     private Long id;
-
     @Column
     private LocalDateTime creationTime;
-
     @Column
     private List<Player> players;
 
