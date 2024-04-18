@@ -4,36 +4,48 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-//
+import javax.persistence.*;
+
+
+@Entity
 public class CardPile {
-    private final List<Card> cards;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "cardPile")
+    private List<Card> cards = new ArrayList<>();
+
     public CardPile() {
-        this.cards = new ArrayList<>();
-        initializeCardPile();
-        shuffle();
-    }
-    public Card setRandom(){
-        List<String> colors = List.of("red", "green", "blue", "white");
-        List<Integer> points = List.of(1, 2, 3, 4);
-        String color = colors.get(new Random().nextInt(colors.size()));
-        int point = points.get(new Random().nextInt(points.size()));
-        return new Card(color, point);
+        initializeCards();
     }
 
-    void initializeCardPile() {
+    //perhaps add ColorConstant?
+    private void initializeCards() {
+        String[] colors = {"red", "green", "blue", "yellow", "black", "white"};
+        Random random = new Random();
         for (int i = 0; i < 30; i++) {
-            Card card = setRandom();
+            int points = 1 + random.nextInt(5);
+            String color = colors[random.nextInt(colors.length)];
+            Card card = new Card(color, points);
+            card.setCardPile(this);
             cards.add(card);
         }
     }
-    public void shuffle() {
-        Collections.shuffle(cards);
+
+    public Long getId() {
+        return id;
     }
-    public Card drawCard() {
-        if (!cards.isEmpty()) {
-            return cards.remove(cards.size() - 1);
-        } else {
-            return null;
-        }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public List<Card> getCards() {
+        return cards;
+    }
+
+    public void setCards(List<Card> cards) {
+        this.cards = cards;
     }
 }

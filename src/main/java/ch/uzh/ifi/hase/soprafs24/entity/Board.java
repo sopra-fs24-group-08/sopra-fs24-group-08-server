@@ -1,52 +1,44 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 import ch.uzh.ifi.hase.soprafs24.entity.Card;
 
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
 public class Board {
-    private List<GridSquare> grid;
-    private int occupiedGridSquare;
 
-    public Board() {
-        initializeBoard();
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<GridSquare> squares;
+    public Long getId() {
+        return id;
     }
-    private void initializeBoard() {
-        this.grid = new ArrayList<>();
-        this.occupiedGridSquare = 0;
-        for (int i = 0; i < 9; i++) {
-            if (i==4){
-                this.grid.add(null);
-            }else {
-                this.grid.add(new GridSquare());
-            }
-        }
+
+    public void setId(Long id) {
+        this.id = id;
     }
-    public String checkGridColor(Integer position) {
-        GridSquare square = grid.get(position);
-        if (square == null) {
-            return null;
-        }
-        return square.getColor();
+
+
+
+    public List<GridSquare> getSquares() {
+        return squares;
     }
-    public boolean placeCard(Card card, Integer position) {
-        if (position < 0 || position >= grid.size() || grid.get(position) == null) {
-            return false;
-        }
-        GridSquare square = grid.get(position);
-        if (square.getOccupied()) {
-            return false;
+
+    public void setSquares(List<GridSquare> squares) {
+        this.squares = squares;
+    }
+
+    public GridSquare getSquareAt(int index) {
+        if (index >= 0 && index < 9) {
+            return squares.get(index);
         } else {
-            square.setOccupied();
-            occupiedGridSquare +=1;
-            return true;
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + squares.size());
         }
     }
-    public Boolean isFull(){
-        return occupiedGridSquare == (grid.size() - 1);
-    }
 
-    public GridSquare getGrid(Integer position) {
-        return grid.get(position);
-    }
+
 }

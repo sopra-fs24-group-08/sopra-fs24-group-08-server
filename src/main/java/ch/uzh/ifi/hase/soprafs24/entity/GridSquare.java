@@ -1,26 +1,52 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
+import javax.persistence.*;
 import java.util.Random;
 
+@Entity
 public class GridSquare {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String color;
-    private Boolean occupied;
 
-    private static final String[] COLORS = {"red", "green", "blue","white"};
-    public void Initialize() {
-        Random rand = new Random();
-        this.color = COLORS[rand.nextInt(COLORS.length)];
-        this.occupied = false;
-    }
+    @ManyToOne
+    private Board board;
 
-    // Getters and setters
+    @OneToOne(optional = true)
+    private Card card;
+
     public String getColor() {
         return color;
     }
 
-    public Boolean getOccupied() {
-        return occupied;
+    public void setColor(String color) {
+        this.color = color;
     }
-    public void setOccupied() {
-        this.occupied = true;
+
+    public Long getId() {
+        return id;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Card getCard() {
+        return card;
+    }
+
+    public void setCard(Card card) {
+        this.card = card;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+
 }

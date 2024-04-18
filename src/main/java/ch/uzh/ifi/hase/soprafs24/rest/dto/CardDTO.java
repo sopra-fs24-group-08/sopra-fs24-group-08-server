@@ -1,22 +1,13 @@
-package ch.uzh.ifi.hase.soprafs24.entity;
+package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
-import javax.persistence.*;
-
-@Entity
-public class Card {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CardDTO {
     private Long id;
     private String color;
     private int points;
 
-    @ManyToOne
-    @JoinColumn(name = "card_pile_id", nullable = false)
-    private CardPile cardPile;
 
-    public Card() {}
-
-    public Card(String color, int points) {
+    public CardDTO(Long id, String color, int points) {
+        this.id = id;
         this.color = color;
         this.points = points;
     }
@@ -44,13 +35,5 @@ public class Card {
 
     public void setPoints(int points) {
         this.points = points;
-    }
-
-    public CardPile getCardPile() {
-        return cardPile;
-    }
-
-    public void setCardPile(CardPile cardPile) {
-        this.cardPile = cardPile;
     }
 }

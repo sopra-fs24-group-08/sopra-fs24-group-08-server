@@ -4,6 +4,8 @@ package ch.uzh.ifi.hase.soprafs24.entity;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Internal User Representation
@@ -17,13 +19,14 @@ import java.io.Serializable;
  */
 //Add all the other variables mentioned on the diagrams.
 @Entity
-public class Player {
+public class Player implements  Serializable{
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
-    @MapsId
+    @MapsId  //same id as user
     @JoinColumn(name = "id")
     private User user;
 
@@ -31,24 +34,32 @@ public class Player {
     @JoinColumn(name = "game_id")
     private Game game;
 
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<Card> hand = new ArrayList<>();
+
+
     @Column(nullable = false)
     private int score = 0;
+
+    public Player() {
+    }
+
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public void setHand(List<Card> hand) {
+        this.hand = hand;
+    }
+
+    public void addCardToHand(Card card) {
+        this.hand.add(card);
+    }
 
     public Player(User user, Game game) {
         this.user = user;
         this.game = game;
         this.score = 0;
-        //this.isHinted = false;
-        //this.isOnTurn = false;
-        //this.isQuit = false;
-    }
-
-    public int getScore() {
-        return score;
-    }
-
-    public void setScore(int score) {
-        this.score = score;
     }
 
     public Long getId() {
@@ -75,6 +86,13 @@ public class Player {
         this.game = game;
     }
 
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
 
 
 }

@@ -66,4 +66,30 @@ public interface DTOMapper {
     FriendRequest convertFriendRequestDTOtoEntity(FriendRequestDTO friendRequestDTO);
     FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest);
 
+    @Mapping(source = "gameId", target = "gameId")
+    @Mapping(source = "players", target = "players")
+    @Mapping(source = "board", target = "board")
+    @Mapping(source = "cardPile.cards.size", target = "cardPileSize")
+    @Mapping(source = "gameStatus", target = "gameStatus")
+    @Mapping(source = "winner.id", target = "winnerId") // Direct mapping from winner reference
+    GameStateDTO convertEntityToGameStateDTO(Game game);
+
+    @Mapping(source = "id", target = "playerId")
+    @Mapping(source = "score", target = "score")
+    @Mapping(source = "cards", target = "cards")
+    PlayerDTO convertEntityToPlayerDTO(Player player);
+
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "color", target = "color")
+    @Mapping(source = "points", target = "points")
+    CardDTO convertEntityToCardDTO(Card card);
+
+    @Mapping(source = "gridSquares", target = "gridSquares")
+    BoardDTO convertEntityToBoardDTO(Board board);
+
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "color", target = "color")
+    @Mapping(source = "card", target = "card")
+    GridSquareDTO convertEntityToGridSquareDTO(GridSquare gridSquare);
+
 }

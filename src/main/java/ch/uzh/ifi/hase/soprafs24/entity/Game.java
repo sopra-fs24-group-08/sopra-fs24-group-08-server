@@ -18,15 +18,46 @@ public class Game implements Serializable {
     @Column(name = "game_id")
     private Long gameId;
 
-
-//Decide how exactly implement User/Player, M2 Report doesn't show enough
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL)
+    private Board board;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    private CardPile cardPile;
 
     @Column(nullable = true)
     private GameStatus gameStatus = GameStatus.ONGOING;
+
+    @ManyToOne
+    @JoinColumn(name = "winner_id")
+    private Player winner;
+
+
+    public Player getWinner() {
+        return winner;
+    }
+
+    public void setWinner(Player winner) {
+        this.winner = winner;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+
+    public CardPile getCardPile() {
+        return cardPile;
+    }
+
+    public void setCardPile(CardPile cardPile) {
+        this.cardPile = cardPile;
+    }
 
     public GameStatus getGameStatus() {
         return gameStatus;

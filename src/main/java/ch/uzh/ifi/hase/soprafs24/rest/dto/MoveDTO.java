@@ -3,31 +3,41 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 import ch.uzh.ifi.hase.soprafs24.constant.MoveType;
 
 public class MoveDTO {
-    private MoveType moveType;
-    private String player;
-    private int position; // Game logic stuff
+    private Long playerId;
+    private Long cardId;
+    private Integer position;
+    private MoveType moveType; // Enum to determine the move type
 
 
-    //see waht exactly to pass
-    public MoveDTO(String player, int position) {
-        this.player = player;
-        this.position = position;
+    public Long getPlayerId() {
+        return playerId;
     }
 
-    // Getters and Setters
-    public String getPlayer() {
-        return player;
+    public void setPlayerId(Long playerId) {
+        this.playerId = playerId;
     }
 
-    public void setPlayer(String player) {
-        this.player = player;
+    public Long getCardId() {
+        return cardId;
     }
 
-    public int getPosition() {
+    public void setCardId(Long cardId) {
+        this.cardId = cardId;
+    }
+
+    public Integer getPosition() {
         return position;
     }
 
-    public void setPosition(int position) {
+    public void setPosition(Integer position) {
         this.position = position;
+    }
+
+    public MoveType getMoveType() {
+        return moveType;
+    }
+
+    public void setMoveType(MoveType moveType) {
+        this.moveType = moveType;
     }
 }
