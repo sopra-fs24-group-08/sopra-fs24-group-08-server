@@ -1,7 +1,8 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
+import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import org.apache.catalina.connector.Request;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,6 @@ import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -35,18 +35,19 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
-    private final GameRepository gameRepository;
-    private GameService gameservice;
+    private final GameService gameService;
 
+    @Autowired
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
-                         @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,@Qualifier("gameRepository") GameRepository  gameRepository) {
+                         @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
+                         GameService gameService) { // Inject GameService here
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
-        this.gameRepository = gameRepository;
-    }
+        this.gameService = gameService;
 
+    }
     //get Friend list
-    public Set<User> getFriends(Long userId) {
+    public List<User> getFriends(Long userId) {
         User currentUser = userRepository.findByid(userId);
         if (currentUser == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the current user.");
@@ -179,7 +180,10 @@ public class FriendService {
         if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED){
             gameInvitation.setStatus(RequestStatus.ACCEPTED);
             // start a game session with 2 User
-            gameservice.startGameSession(userId, friendId);
+            // Feel free to change the name later, just wanted to seperate matchmaking vs friendly game
+            Game friendlyGame = gameService.createGame();
+
+            gameService.startFriendsGame(friendlyGame.getGameId(),userId, friendId);
         } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED){
             gameInvitation.setStatus(RequestStatus.DECLINED);
         }
@@ -225,8 +229,8 @@ public class FriendService {
         }else if (!currentUser.getFriends().contains(oldFriend)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not in your friend list.");
         }
-        currentUser.removeFriend(oldFriend);
-        oldFriend.removeFriend(currentUser);
+        currentUser.deleteFriend(oldFriend);
+        oldFriend.deleteFriend(currentUser);
     }
 
     //convert request to FriendRequestDTO

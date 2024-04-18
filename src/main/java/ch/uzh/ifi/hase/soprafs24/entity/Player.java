@@ -6,6 +6,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Internal User Representation
@@ -34,9 +35,10 @@ public class Player implements  Serializable{
     @JoinColumn(name = "game_id")
     private Game game;
 
+    /*@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Card> hand = new ArrayList<>();*/
     @OneToMany(cascade = CascadeType.ALL)
     private List<Card> hand = new ArrayList<>();
-
 
     @Column(nullable = false)
     private int score = 0;
@@ -52,14 +54,21 @@ public class Player implements  Serializable{
         this.hand = hand;
     }
 
-    public void addCardToHand(Card card) {
-        this.hand.add(card);
+    public void addCardToHand(Card card) {this.hand.add(card);
     }
+    public void removeCardFromHand(Card card){
+        this.hand.remove(card);
+    }
+    public Optional<Card> getCardFromHand(Long cardId) {
+        return hand.stream().filter(card -> card.getId().equals(cardId)).findFirst();
+    }
+
 
     public Player(User user, Game game) {
         this.user = user;
         this.game = game;
         this.score = 0;
+        this.hand = new ArrayList<>();
     }
 
     public Long getId() {
@@ -92,6 +101,14 @@ public class Player implements  Serializable{
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public void addScore(int additionalPoints) {
+        this.score += additionalPoints;
+    }
+    //Special events might make use of this.
+    public void subScore(int substractPoints) {
+        this.score -= substractPoints;
     }
 
 

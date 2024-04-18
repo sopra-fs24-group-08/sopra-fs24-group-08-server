@@ -18,23 +18,25 @@ public class DTOMapperTest {
     public void testCreateUser_fromUserPostDTO_toUser_success() {
         // create UserPostDTO
         UserPostDTO userPostDTO = new UserPostDTO();
-        userPostDTO.setPassword("password");
+        userPostDTO.setName("name");
         userPostDTO.setUsername("username");
 
         // MAP -> Create user
         User user = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
 
         // check content
-        assertEquals(userPostDTO.getPassword(), user.getPassword());
+        assertEquals(userPostDTO.getName(), user.getName());
         assertEquals(userPostDTO.getUsername(), user.getUsername());
     }
+
+
 
     @Test
     public void testGetUser_fromUser_toUserGetDTO_success() {
         // create User
         User user = new User();
-        user.setPassword("password");
-        user.setUsername("username");
+        user.setName("Firstname Lastname");
+        user.setUsername("firstname@lastname");
         user.setStatus(UserStatus.OFFLINE);
         user.setToken("1");
 
@@ -43,10 +45,9 @@ public class DTOMapperTest {
 
         // check content
         assertEquals(user.getId(), userGetDTO.getId());
-        //Would only make sense if I had it in my GetDTO but since I'm doing auth with token/id and we are only asked
-        // to change username/birthday i will never have to give back password to front
-        //assertEquals(user.getPassword(), userGetDTO.getPassword());
+        assertEquals(user.getName(), userGetDTO.getName());
         assertEquals(user.getUsername(), userGetDTO.getUsername());
         assertEquals(user.getStatus(), userGetDTO.getStatus());
     }
+
 }

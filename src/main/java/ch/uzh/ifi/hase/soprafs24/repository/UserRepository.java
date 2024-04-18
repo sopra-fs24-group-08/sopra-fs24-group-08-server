@@ -10,21 +10,12 @@ import java.util.Optional;
 @Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User>findById(Long userid);
+    User findByName(String name);
+    User findByUsername(String username);
+    User findByid(Long id);
 
-  User findByid(Long id);
-
-  User findByPassword(String password);
-
-  User findByUsername(String username);
-
-  User getUserById(long userId);
-
-
-  User findByToken(String token);
-
-
-
-  boolean existsById(Long id);
-
+    // Need this for authorization, to verify if the token is really a valid one
+    User findByToken(String token);
 }
+
+

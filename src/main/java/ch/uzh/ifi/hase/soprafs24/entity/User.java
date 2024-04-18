@@ -39,24 +39,39 @@ public class User implements Serializable {
   @GeneratedValue
   private Long id;
 
-  @Column(nullable = false, unique = true)
-  private String username;
+    @Column(nullable = false)
+    private String name;
 
-  @CreatedDate
-  @Column(nullable = false)
-  private LocalDate creation_date;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-  @Column(nullable = false)
-  private String password;
+    @Column(nullable = false)
+    private String password;
 
-  @Column(nullable = false, unique = true)
-  private String token;
+    @Column(nullable = false, unique = true)
+    private String token;
 
-  @Column(nullable = false)
-  private UserStatus status;
+    @Column(nullable = false)
+    private UserStatus status;
 
-  @Column(nullable = true)
-  private LocalDate birthday;
+    @Column(nullable = false)
+    private LocalDate creation_date;
+
+    @Column
+    private LocalDate birthday;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_friends",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "friend_id")
+    )
+    private List<User> friends;
+
+
+    @Column
+    private boolean inGame;
+    //Adjusting UserStatus and adding PLAYING maybe better?
 
 
   //lazy better when you have lots of data
@@ -69,23 +84,6 @@ public class User implements Serializable {
   private Set<Achievement> achievements = new HashSet<>();
 
   //Adjust friends depending on how others have implemented it
-  @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-  @JoinTable(
-          name = "user_friends",
-          joinColumns = @JoinColumn(name = "user_id"),
-          inverseJoinColumns = @JoinColumn(name = "friend_id")
-    )
-  private Set<User> friends = new HashSet<>();
-
-
-
-    public Set<Banner> getBanners() {
-        return banners;
-    }
-
-    public void setBanners(Set<Banner> banners) {
-        this.banners = banners;
-    }
 
     @ManyToMany
     @JoinTable(
@@ -122,20 +120,6 @@ public class User implements Serializable {
 
 
 
-public Set<User> getFriends() {
-    return this.friends;
-}
-
-public void addFriend(User friend) {
-    this.friends.add(friend);
-    friend.getFriends().add(this);
-}
-
-public void removeFriend(User friend) {
-    this.friends.remove(friend);
-    friend.getFriends().remove(this);
-}
-
 public Set<Achievement> getAchievements() {
   return achievements;
 }
@@ -156,6 +140,16 @@ public Long getId() {
 public void setId(Long id) {
   this.id = id;
 }
+
+
+public String getName() {
+      return name;
+  }
+
+  public void setName(String name) {
+        this.name = name;
+  }
+
 public String getUsername() {
     return username;
 }
@@ -210,5 +204,33 @@ public void setCreation_date(LocalDate creation_date){
 
     public void setCurrIcon(Icon currIcon) {
         this.currIcon = currIcon;
+    }
+
+
+    public Set<Banner> getBanners() {
+        return banners;
+    }
+
+    public void setBanners(Set<Banner> banners) {
+        this.banners = banners;
+    }
+
+    public List<User> getFriends(){
+        return friends;
+    }
+
+    public void addFriend(User friend){
+        this.friends.add(friend);
+    }
+
+    public void deleteFriend(User friend){
+        this.friends.remove(friend);
+    }
+
+    public Boolean getInGame() {
+        return inGame;
+    }
+    public void setInGame(Boolean inGame) {
+        this.inGame = inGame;
     }
 }

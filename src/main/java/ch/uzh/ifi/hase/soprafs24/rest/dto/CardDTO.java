@@ -6,11 +6,6 @@ public class CardDTO {
     private int points;
 
 
-    public CardDTO(Long id, String color, int points) {
-        this.id = id;
-        this.color = color;
-        this.points = points;
-    }
 
     // Getters and setters
     public Long getId() {

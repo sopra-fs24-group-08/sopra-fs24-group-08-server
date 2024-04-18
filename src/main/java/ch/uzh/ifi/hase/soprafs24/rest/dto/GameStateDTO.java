@@ -10,9 +10,19 @@ public class GameStateDTO {
     private Long gameId;
     private List<PlayerDTO> players;
     private BoardDTO board;
-    private int cardPileSize;
     private GameStatus gameStatus;
     private Long winnerId;
+    private Long currentTurnPlayerId;
+    private int cardPileSize;
+
+    public int getCardPileSize() {
+        return cardPileSize;
+    }
+
+    public void setCardPileSize(int cardPileSize) {
+        this.cardPileSize = cardPileSize;
+    }
+
 
     public GameStateDTO() {
     }
@@ -41,14 +51,6 @@ public class GameStateDTO {
         this.board = board;
     }
 
-    public int getCardPileSize() {
-        return cardPileSize;
-    }
-
-    public void setCardPileSize(int cardPileSize) {
-        this.cardPileSize = cardPileSize;
-    }
-
     public GameStatus getGameStatus() {
         return gameStatus;
     }
@@ -63,5 +65,13 @@ public class GameStateDTO {
 
     public void setWinnerId(Long winnerId) {
         this.winnerId = winnerId;
+    }
+
+    public Long getCurrentTurnPlayerId() {
+        return currentTurnPlayerId;
+    }
+
+    public void setCurrentTurnPlayerId(Long currentTurnPlayerId) {
+        this.currentTurnPlayerId = currentTurnPlayerId;
     }
 }

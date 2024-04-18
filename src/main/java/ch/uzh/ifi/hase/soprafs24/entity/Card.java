@@ -10,10 +10,6 @@ public class Card {
     private String color;
     private int points;
 
-    @ManyToOne
-    @JoinColumn(name = "card_pile_id", nullable = false)
-    private CardPile cardPile;
-
     public Card() {}
 
     public Card(String color, int points) {
@@ -21,7 +17,6 @@ public class Card {
         this.points = points;
     }
 
-    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -44,13 +39,5 @@ public class Card {
 
     public void setPoints(int points) {
         this.points = points;
-    }
-
-    public CardPile getCardPile() {
-        return cardPile;
-    }
-
-    public void setCardPile(CardPile cardPile) {
-        this.cardPile = cardPile;
     }
 }

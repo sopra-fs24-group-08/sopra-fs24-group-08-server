@@ -14,7 +14,6 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 
 @RestController
@@ -32,8 +31,7 @@ public class FriendRequestController {
     @PostMapping("/users/{userId}/friends/add")
     @ResponseStatus(HttpStatus.CREATED)
     public FriendGetDTO addFriendRequest(@RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
-       // userService.authenticateUser(authorization, userId);
-        System.out.println("Add request is being received");
+        userService.authenticateUser(authorization, userId);
         FriendRequest friendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
         User friend = friendService.addFriendRequest(userId, friendRequest);
         return DTOMapper.INSTANCE.convertEntityToFriendGetDTO(friend);
@@ -43,8 +41,7 @@ public class FriendRequestController {
     @GetMapping("/users/{userId}/polling")
     @ResponseStatus(HttpStatus.OK)
     public DeferredResult<List<FriendRequestDTO>> pollFriendRequest(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
-       // userService.authenticateUser(authorization, userId);
-        System.out.println("polling check for requests");
+        userService.authenticateUser(authorization, userId);
         DeferredResult<List<FriendRequestDTO>> deferredResult = new DeferredResult<>(GlobalConstants.POLL_TIMEOUT); // 5 seconds timeout
         friendService.pollUpdates(deferredResult, userId);
         return deferredResult;
@@ -54,9 +51,8 @@ public class FriendRequestController {
     @PostMapping("/users/{userId}/friendresponse")
     @ResponseStatus(HttpStatus.OK)
     public FriendRequestDTO handleFriendRequest(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
-        //userService.authenticateUser(authorization, userId);
+        userService.authenticateUser(authorization, userId);
         // turn DTO to entity
-        System.out.println("Response of Friend");
         FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
         //
         FriendRequest friendRequest = friendService.handleFriendRequest(userId, receivedFriendRequest);
@@ -67,7 +63,7 @@ public class FriendRequestController {
     @PostMapping("/game/invite/{userId}")
     @ResponseStatus(HttpStatus.CREATED)
     public FriendRequestDTO gameInvitation(@RequestBody FriendRequestDTO gameInvitationDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
-        //userService.authenticateUser(authorization, userId);
+        userService.authenticateUser(authorization, userId);
         FriendRequest gameInvitation = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(gameInvitationDTO);
         FriendRequest updateGameInvitation = friendService.inviteFriendToGame(userId, gameInvitation);
         return friendService.convertEntityToFriendRequestDTO(updateGameInvitation);
@@ -77,10 +73,10 @@ public class FriendRequestController {
     @PostMapping("/game/{userId}/invitationresponse")
     @ResponseStatus(HttpStatus.OK)
     public FriendRequestDTO handleGameInvitation(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
-      //  userService.authenticateUser(authorization, userId);
+        userService.authenticateUser(authorization, userId);
         // turn DTO to entity
         FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-        //x
+        //
         FriendRequest friendRequest = friendService.handleGameInvitation(userId, receivedFriendRequest);
         return friendService.convertEntityToFriendRequestDTO(friendRequest);
     }
@@ -91,7 +87,7 @@ public class FriendRequestController {
     public List<FriendGetDTO> deleteFriends(@PathVariable Long userId, @RequestParam(name = "friendId") Long friendId, @RequestHeader("Authorization") String authorization) {
 
         // authenticate user
-       // userService.authenticateUser(authorization, userId);
+        userService.authenticateUser(authorization, userId);
 
         // add friend by userId
         friendService.deleteFriend(userId, friendId);
@@ -110,10 +106,10 @@ public class FriendRequestController {
     public List<FriendGetDTO> getAllUsers(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
         // authorization
         System.out.println(authorization);
-      //  userService.authorizeUser(authorization);
+        userService.authorizeUser(authorization);
 
         // fetch all users in the internal representation
-        Set<User> friends = friendService.getFriends(userId);
+        List<User> friends = friendService.getFriends(userId);
         List<FriendGetDTO> friendGetDTOs = new ArrayList<>();
 
         // convert each user to the API representation

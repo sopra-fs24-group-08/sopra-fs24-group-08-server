@@ -4,8 +4,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.Card;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository("cardRepository")
+@Repository("CardRepository")
 public interface CardRepository extends JpaRepository<Card, Long> {
-    Card findByCardId(Long CardId);
-
+    // findById is already provided by JpaRepository
 }

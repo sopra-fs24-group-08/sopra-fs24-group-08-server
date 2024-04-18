@@ -1,12 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
-
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-//Add the variables that are necessary, we should stick to the diagrams
+
 @Entity
 @Table(name = "Game")
 public class Game implements Serializable {
@@ -24,16 +23,23 @@ public class Game implements Serializable {
     @OneToOne(cascade = CascadeType.ALL)
     private Board board;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private CardPile cardPile;
-
     @Column(nullable = true)
-    private GameStatus gameStatus = GameStatus.ONGOING;
+    private GameStatus gameStatus = GameStatus.STARTING;
 
     @ManyToOne
     @JoinColumn(name = "winner_id")
     private Player winner;
 
+    @Column(name = "current_turn_player_id")
+    private Long currentTurnPlayerId;  // Track whose turn it is
+
+    public Long getCurrentTurnPlayerId() {
+        return currentTurnPlayerId;
+    }
+
+    public void setCurrentTurnPlayerId(Long currentTurnPlayerId) {
+        this.currentTurnPlayerId = currentTurnPlayerId;
+    }
 
     public Player getWinner() {
         return winner;
@@ -49,14 +55,6 @@ public class Game implements Serializable {
 
     public void setBoard(Board board) {
         this.board = board;
-    }
-
-    public CardPile getCardPile() {
-        return cardPile;
-    }
-
-    public void setCardPile(CardPile cardPile) {
-        this.cardPile = cardPile;
     }
 
     public GameStatus getGameStatus() {
@@ -96,4 +94,7 @@ public class Game implements Serializable {
         this.players = players;
     }
 
+
 }
+
+
