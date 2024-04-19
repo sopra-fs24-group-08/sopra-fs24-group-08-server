@@ -1,22 +1,38 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.entity.GridSquare;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 
 import java.util.List;
 
-//add details later, template stuff now so it doesn't fail
 public class GameStateDTO {
+    private Long gameId;
     private List<PlayerDTO> players;
-    private String[] board;
-    private boolean gameWon;
-    private String winner;
+    private BoardDTO board;
+    private GameStatus gameStatus;
+    private Long winnerId;
+    private Long currentTurnPlayerId;
+    private int cardPileSize;
+
+    public int getCardPileSize() {
+        return cardPileSize;
+    }
+
+    public void setCardPileSize(int cardPileSize) {
+        this.cardPileSize = cardPileSize;
+    }
 
 
     public GameStateDTO() {
-        this.players = null;
-        this.board = new String[9];
-        this.gameWon = false;
-        this.winner = "";
+    }
+
+    public Long getGameId() {
+        return gameId;
+    }
+
+    public void setGameId(Long gameId) {
+        this.gameId = gameId;
     }
 
     public List<PlayerDTO> getPlayers() {
@@ -27,29 +43,35 @@ public class GameStateDTO {
         this.players = players;
     }
 
-
-    public String[] getBoard() {
+    public BoardDTO getBoard() {
         return board;
     }
 
-    public void setBoard(String[] board) {
+    public void setBoard(BoardDTO board) {
         this.board = board;
     }
 
-    public boolean isGameWon() {
-        return gameWon;
+    public GameStatus getGameStatus() {
+        return gameStatus;
     }
 
-    public void setGameWon(boolean gameWon) {
-        this.gameWon = gameWon;
+    public void setGameStatus(GameStatus gameStatus) {
+        this.gameStatus = gameStatus;
     }
 
-    public String getWinner() {
-        return winner;
+    public Long getWinnerId() {
+        return winnerId;
     }
 
-    public void setWinner(String winner) {
-        this.winner = winner;
+    public void setWinnerId(Long winnerId) {
+        this.winnerId = winnerId;
+    }
+
+    public Long getCurrentTurnPlayerId() {
+        return currentTurnPlayerId;
+    }
+
+    public void setCurrentTurnPlayerId(Long currentTurnPlayerId) {
+        this.currentTurnPlayerId = currentTurnPlayerId;
     }
 }
-

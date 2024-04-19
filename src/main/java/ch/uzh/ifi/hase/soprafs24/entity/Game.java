@@ -1,10 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-//Add the variables that are necessary, we should stick to the diagrams
+
 @Entity
 @Table(name = "Game")
 public class Game implements Serializable {
@@ -16,10 +17,55 @@ public class Game implements Serializable {
     @Column(name = "game_id")
     private Long gameId;
 
-
-//Decide how exactly implement User/Player, M2 Report doesn't show enough
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Player> players = new ArrayList<>();
+
+    @OneToOne(cascade = CascadeType.ALL)
+    private Board board;
+
+    @Column(nullable = false)
+    private GameStatus gameStatus = GameStatus.STARTING;
+
+    @ManyToOne
+    @JoinColumn(name = "winner_id")
+    private Player winner;
+    //might need to add cascade if it starts causing trouble
+
+    @Column(name = "current_turn_player_id")
+    private Long currentTurnPlayerId;  // Track whose turn it is
+
+    //add CardPile
+    public Long getCurrentTurnPlayerId() {
+        return currentTurnPlayerId;
+    }
+
+    public void setCurrentTurnPlayerId(Long currentTurnPlayerId) {
+        this.currentTurnPlayerId = currentTurnPlayerId;
+    }
+
+    public Player getWinner() {
+        return winner;
+    }
+
+    public void setWinner(Player winner) {
+        this.winner = winner;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+
+    public GameStatus getGameStatus() {
+        return gameStatus;
+    }
+
+    public void setGameStatus(GameStatus gameStatus) {
+        this.gameStatus = gameStatus;
+    }
 
     public Long getGameId() {
         return gameId;
@@ -47,7 +93,9 @@ public class Game implements Serializable {
     }
 
     public void setPlayers(List<Player> players) {
-        this.players = players;
+        this.players = new ArrayList<>(players);
     }
 
 }
+
+
