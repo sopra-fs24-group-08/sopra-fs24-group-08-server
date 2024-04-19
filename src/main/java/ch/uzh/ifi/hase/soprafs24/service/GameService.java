@@ -31,6 +31,7 @@ public class GameService {
         Board board = new Board();
         game.setBoard(board);
         gameRepository.save(game);
+        gameRepository.flush();
         return game;
     }
 
@@ -40,8 +41,8 @@ public class GameService {
     }
 
     public Game startGame(Long gameId, Long userId1, Long userId2) {
-        User user1 = userRepository.findById(userId1).orElseThrow();
-        User user2 = userRepository.findById(userId2).orElseThrow();
+        User user1 = userRepository.findById(userId1).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user2 = userRepository.findById(userId2).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
@@ -49,21 +50,30 @@ public class GameService {
         Player player2 = new Player(user2, game);
 
         boolean firstPlayerStarts = new Random().nextBoolean();
-        dealInitialCards(game.getBoard(), player1, player2, firstPlayerStarts);
+
+        if (firstPlayerStarts) {
+            dealInitialCards(game.getBoard(), player1, player2, true);
+            game.setCurrentTurnPlayerId(player1.getId());
+        } else {
+            dealInitialCards(game.getBoard(), player1, player2, false);
+            game.setCurrentTurnPlayerId(player2.getId());
+        }
+
 
         playerRepository.saveAll(Arrays.asList(player1, player2));
 
         game.setPlayers(Arrays.asList(player1, player2));
         game.setGameStatus(GameStatus.ONGOING);
-        gameRepository.save(game);
-        return game;
+
+        return gameRepository.save(game);
     }
 
     private void dealInitialCards(Board board, Player player1, Player player2, boolean firstPlayerStarts) {
         Player firstPlayer = firstPlayerStarts ? player1 : player2;
         Player secondPlayer = firstPlayerStarts ? player2 : player1;
-        giveCards(firstPlayer, board, 2);
-        giveCards(secondPlayer, board, 3);
+
+        giveCards(firstPlayer, board, 2); // First player gets 2 cards
+        giveCards(secondPlayer, board, 3); // Second player gets 3 cards
     }
 
     private void giveCards(Player player, Board board, int count) {

@@ -12,13 +12,13 @@ public class Board {
     private Long id;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Card> centralCardPile = new ArrayList<>();
+    private List<Card> centralCardPile = new ArrayList<Card>();
 
     @ElementCollection
-    private List<String> squareColors = new ArrayList<>(9);
+    private List<String> squareColors = new ArrayList<String>(9);
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Card> placedCards = new ArrayList<>(9);
+    private List<Card> placedCards = new ArrayList<Card>(9);
 
     public Board() {
         initializeCentralCardPile();
@@ -74,9 +74,12 @@ public class Board {
     }
 
     public Card drawCardFromPile() {
+        System.out.println(getCentralCardPile().size());
         if (!centralCardPile.isEmpty()) {
             return centralCardPile.remove(0);
         }
         return null; // or throw an exception if you prefer
     }
+
+
 }

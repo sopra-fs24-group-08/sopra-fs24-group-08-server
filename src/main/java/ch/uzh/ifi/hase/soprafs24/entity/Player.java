@@ -38,7 +38,7 @@ public class Player implements  Serializable{
     /*@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Card> hand = new ArrayList<>();*/
     @OneToMany(cascade = CascadeType.ALL)
-    private List<Card> hand = new ArrayList<>();
+    private List<Card> hand = new ArrayList<Card>();
 
     @Column(nullable = false)
     private int score = 0;

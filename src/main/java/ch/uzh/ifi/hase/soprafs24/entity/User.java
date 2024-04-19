@@ -5,39 +5,19 @@ import org.springframework.data.annotation.CreatedDate;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
-/**
- * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
- */
 @Entity
 @Table(name = "USER")
 public class User implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  @Id
-  @GeneratedValue
-  private Long id;
+    @Id
+    @GeneratedValue
+    private Long id;
 
     @Column(nullable = false)
     private String name;
@@ -60,7 +40,8 @@ public class User implements Serializable {
     @Column
     private LocalDate birthday;
 
-    @ManyToMany
+    // Using FetchType.LAZY for optimizing the loading of friends
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_friends",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -68,23 +49,17 @@ public class User implements Serializable {
     )
     private List<User> friends;
 
-
     @Column
     private boolean inGame;
-    //Adjusting UserStatus and adding PLAYING maybe better?
 
-
-  //lazy better when you have lots of data
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-          name = "user_achievements",
-          joinColumns = @JoinColumn(name = "user_id"),
-          inverseJoinColumns = @JoinColumn(name = "achievement_id")
-  )
-  private Set<Achievement> achievements = new HashSet<>();
-
-  //Adjust friends depending on how others have implemented it
-
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_achievements",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "achievement_id")
+    )
+    private Set<Achievement> achievements = new HashSet<>();
+    //Banners will be pretty rare so no need for .Lazy optim.
     @ManyToMany
     @JoinTable(
             name = "user_banners",
@@ -93,17 +68,18 @@ public class User implements Serializable {
     )
     private Set<Banner> banners = new HashSet<>();
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
             name = "user_icons",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "icon_id")
     )
-  private Set<Icon> icons = new HashSet<>();
+    private Set<Icon> icons = new HashSet<>();
 
-  @ManyToOne
-  @JoinColumn(name = "curr_icon_id")
-  private Icon currIcon;
+    //Icons will be pretty rare so no need for .Lazy optim.
+    @ManyToOne
+    @JoinColumn(name = "curr_icon_id")
+    private Icon currIcon;
 
 
   public Set<Icon> getIcons() {

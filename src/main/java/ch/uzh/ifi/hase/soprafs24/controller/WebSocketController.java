@@ -18,8 +18,8 @@ public class WebSocketController {
 
     @MessageMapping("/user")
     @SendTo("/topic/greetings")
-    public String greeting(String message) {
-        return "Check out this message: " + message;
+    public String greeting() {
+        return "Greetings User!";
     }
 
     @MessageMapping("/chat")

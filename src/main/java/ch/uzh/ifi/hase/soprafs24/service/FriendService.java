@@ -40,19 +40,23 @@ public class FriendService {
     @Autowired
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
-                         GameService gameService) { // Inject GameService here
+                         GameService gameService) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
         this.gameService = gameService;
 
     }
     //get Friend list
-    public List<User> getFriends(Long userId) {
+    /*public List<User> getFriends(Long userId) {
         User currentUser = userRepository.findByid(userId);
         if (currentUser == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the current user.");
         }
         return currentUser.getFriends();
+    }*/
+
+    public List<User> getFriendsQuery(Long userId) {
+        return userRepository.findFriendsByUserId(userId);
     }
 
     //Add friend request
@@ -166,25 +170,22 @@ public class FriendService {
     }
 
     //handle game invitation
+    //adjusted Method, trying to fix existing problems.
     @Transactional
-    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation){
-        // check if there does exist such a request
-        Long friendId = receivedGameInvitation.getSenderId();
-        FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, friendId, userId);
-        if (gameInvitation == null){
+    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation) {
+        System.out.println("HandleGameInv is there");
+        FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, receivedGameInvitation.getSenderId(), userId);
+        if (gameInvitation == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never invited you.");
-        }else if (gameInvitation.getStatus() != RequestStatus.SENT){
+        } else if (gameInvitation.getStatus() != RequestStatus.SENT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This game invitation has already been processed.");
         }
-        // change request status
-        if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED){
-            gameInvitation.setStatus(RequestStatus.ACCEPTED);
-            // start a game session with 2 User
-            // Feel free to change the name later, just wanted to seperate matchmaking vs friendly game
-            Game friendlyGame = gameService.createGame();
 
-            gameService.startFriendsGame(friendlyGame.getGameId(),userId, friendId);
-        } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED){
+        if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED) {
+            gameInvitation.setStatus(RequestStatus.ACCEPTED);
+            Game friendlyGame = gameService.createGame();
+            gameService.startFriendsGame(friendlyGame.getGameId(), userId, receivedGameInvitation.getSenderId());
+        } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED) {
             gameInvitation.setStatus(RequestStatus.DECLINED);
         }
         return gameInvitation;
