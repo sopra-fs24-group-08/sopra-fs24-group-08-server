@@ -16,6 +16,10 @@ public class Game implements Serializable {
     @Column(name = "game_id")
     private Long gameId;
 
+    // Hier wird eine One-to-One-Beziehung zwischen Game und ChatBox definiert
+    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL)
+    private ChatBox chatBox;
+
 
 //Decide how exactly implement User/Player, M2 Report doesn't show enough
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -25,11 +29,20 @@ public class Game implements Serializable {
         return gameId;
     }
 
-    public void setGameId(Long gameId) {
-        this.gameId = gameId;
+    public Game() {
+        // Beim Erstellen eines neuen Spielobjekts wird auch eine neue Chatbox erstellt und zugeordnet
+        this.chatBox = new ChatBox(this);
+    }
+    public ChatBox getChatBox() {
+        return chatBox;
     }
 
-    public Game() {
+    public void setChatBox(ChatBox chatBox) {
+        this.chatBox = chatBox;
+    }
+
+    public void setGameId(Long gameId) {
+        this.gameId = gameId;
     }
 
     public void addPlayer(Player player) {

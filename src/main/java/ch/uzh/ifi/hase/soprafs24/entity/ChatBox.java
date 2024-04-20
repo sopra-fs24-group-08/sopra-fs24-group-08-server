@@ -1,7 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
-import javax.persistence.*;
-import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -16,11 +14,17 @@ public class ChatBox {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    // Definiere eine Many-to-One-Beziehung zwischen ChatBox und Game,
+    // aber die Beziehung ist optional, um auch ChatBoxen ohne Spiel zuzuordnen
+    // @ManyToOne(optional = true)
+    // @JoinColumn(name = "game_id")
+    private Game game;
     @ManyToMany
     private Set<User> participants = new HashSet<>();
-
-    public ChatBox() {
+    public ChatBox(){
+    }
+    public ChatBox(Game game) {
+        this.game= game;
     }
 
     public Long getId() {
