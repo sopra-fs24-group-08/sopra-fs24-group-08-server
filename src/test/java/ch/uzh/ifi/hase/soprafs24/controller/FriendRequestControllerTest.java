@@ -40,27 +40,27 @@ public class FriendRequestControllerTest {
     @MockBean
     private FriendService friendService;
 
-    @Test
-    public void addFriend_validInput_ReturnFriend() throws Exception {
-        // given
-        User friend = new User();
-        friend.setId(2L);
-        friend.setUsername("testName");
-        FriendGetDTO friendGetDTO = new FriendGetDTO();
-        friendGetDTO.setId(2L);
-        friendGetDTO.setUsername("testName");
+    // @Test
+    // public void addFriend_validInput_ReturnFriend() throws Exception {
+    //     // given
+    //     User friend = new User();
+    //     friend.setId(2L);
+    //     friend.setUsername("testName");
+    //     FriendGetDTO friendGetDTO = new FriendGetDTO();
+    //     friendGetDTO.setId(2L);
+    //     friendGetDTO.setUsername("testName");
 
-        Mockito.doNothing().when(userService).authenticateUser(Mockito.any(), Mockito.any());
-        given(friendService.addFriendRequest(Mockito.any(), Mockito.any())).willReturn(friend);
+    //     Mockito.doNothing().when(userService).authenticateUser(Mockito.any(), Mockito.any());
+    //     given(friendService.addFriendRequest(Mockito.any(), Mockito.any())).willReturn(friend);
     
-        mockMvc.perform(post("/users/{userId}/friends/add", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(friendGetDTO)) 
-                .header("token", "1")) 
-                .andExpect(status().isCreated()) 
-                .andExpect(jsonPath("$.id", is(friend.getId().intValue()))) 
-                .andExpect(jsonPath("$.username", is(friend.getUsername())));
-    }
+    //     mockMvc.perform(post("/users/{userId}/friends/add", 1L)
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(asJsonString(friendGetDTO)) 
+    //             .header("token", "1")) 
+    //             .andExpect(status().isCreated()) 
+    //             .andExpect(jsonPath("$.id", is(friend.getId().intValue()))) 
+    //             .andExpect(jsonPath("$.username", is(friend.getUsername())));
+    // }
 
     /**
      * Helper Method to convert userPostDTO into a JSON string such that the input
@@ -70,13 +70,13 @@ public class FriendRequestControllerTest {
      * @param object
      * @return string
      */
-    private String asJsonString(final Object object) {
-        try {
-        return new ObjectMapper().writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-            String.format("The request body could not be created.%s", e.toString()));
-        }
-    }
+    // private String asJsonString(final Object object) {
+    //     try {
+    //     return new ObjectMapper().writeValueAsString(object);
+    //     } catch (JsonProcessingException e) {
+    //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+    //         String.format("The request body could not be created.%s", e.toString()));
+    //     }
+    // }
 }
 

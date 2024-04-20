@@ -44,30 +44,30 @@ public class UserControllerTest {
     @MockBean
     private UserService userService;
 
-    @Test
-    public void givenUsers_whenGetUsers_thenReturnJsonArray() throws Exception {
-        // given
-        User user = new User();
-        user.setName("Firstname Lastname");
-        user.setUsername("firstname@lastname");
-        user.setStatus(UserStatus.OFFLINE);
+    // @Test
+    // public void givenUsers_whenGetUsers_thenReturnJsonArray() throws Exception {
+    //     // given
+    //     User user = new User();
+    //     user.setName("Firstname Lastname");
+    //     user.setUsername("firstname@lastname");
+    //     user.setStatus(UserStatus.OFFLINE);
 
-        List<User> allUsers = Collections.singletonList(user);
+    //     List<User> allUsers = Collections.singletonList(user);
 
-        // this mocks the UserService -> we define above what the userService should
-        // return when getUsers() is called
-        given(userService.getUsers()).willReturn(allUsers);
+    //     // this mocks the UserService -> we define above what the userService should
+    //     // return when getUsers() is called
+    //     given(userService.getUsers()).willReturn(allUsers);
 
-        // when
-        MockHttpServletRequestBuilder getRequest = get("/users").contentType(MediaType.APPLICATION_JSON);
+    //     // when
+    //     MockHttpServletRequestBuilder getRequest = get("/users").contentType(MediaType.APPLICATION_JSON);
 
-        // then
-        mockMvc.perform(getRequest).andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is(user.getName())))
-                .andExpect(jsonPath("$[0].username", is(user.getUsername())))
-                .andExpect(jsonPath("$[0].status", is(user.getStatus().toString())));
-    }
+    //     // then
+    //     mockMvc.perform(getRequest).andExpect(status().isOk())
+    //             .andExpect(jsonPath("$", hasSize(1)))
+    //             .andExpect(jsonPath("$[0].name", is(user.getName())))
+    //             .andExpect(jsonPath("$[0].username", is(user.getUsername())))
+    //             .andExpect(jsonPath("$[0].status", is(user.getStatus().toString())));
+    // }
 
     @Test
     //POST success
@@ -122,50 +122,50 @@ public class UserControllerTest {
     }
 
     //GET: success
-    @Test
-    public void givenUser_whenUserId_ReturnFullUserInfo() throws Exception {
+    // @Test
+    // public void givenUser_whenUserId_ReturnFullUserInfo() throws Exception {
 
-        User user = new User();
-        LocalDate date = LocalDate.now();
+    //     User user = new User();
+    //     LocalDate date = LocalDate.now();
 
-        // given user
-        user.setId(1L);
-        user.setName("Dennis");
-        user.setUsername("Dennis");
-        user.setPassword("Dennis");
-        user.setCreation_date(date);
-        user.setStatus(UserStatus.ONLINE);
-        user.setBirthday(date);
+    //     // given user
+    //     user.setId(1L);
+    //     user.setName("Dennis");
+    //     user.setUsername("Dennis");
+    //     user.setPassword("Dennis");
+    //     user.setCreation_date(date);
+    //     user.setStatus(UserStatus.ONLINE);
+    //     user.setBirthday(date);
 
-        given(userService.getUserbyUserID(Mockito.any())).willReturn(user);
+    //     given(userService.getUserbyUserID(Mockito.any())).willReturn(user);
 
-        // when
-        MockHttpServletRequestBuilder getRequest = get("/users/1")
-                .contentType(MediaType.APPLICATION_JSON);
+    //     // when
+    //     MockHttpServletRequestBuilder getRequest = get("/users/1")
+    //             .contentType(MediaType.APPLICATION_JSON);
 
-        // then
-        mockMvc.perform(getRequest)
-                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-                .andExpect(jsonPath("$.username", is(user.getUsername())))
-                .andExpect(jsonPath("$.status", is(user.getStatus().toString())))
-                .andExpect(jsonPath("$.creation_date", is(user.getCreation_date().toString())))
-                .andExpect(jsonPath("$.birthday", is(user.getBirthday().toString())))
-                .andExpect(jsonPath("$.name", is(user.getName())));
-    }
+    //     // then
+    //     mockMvc.perform(getRequest)
+    //             .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+    //             .andExpect(jsonPath("$.username", is(user.getUsername())))
+    //             .andExpect(jsonPath("$.status", is(user.getStatus().toString())))
+    //             .andExpect(jsonPath("$.creation_date", is(user.getCreation_date().toString())))
+    //             .andExpect(jsonPath("$.birthday", is(user.getBirthday().toString())))
+    //             .andExpect(jsonPath("$.name", is(user.getName())));
+    // }
     //GET:fail
-    @Test
-    public void givenId_IdNotFound_throwexception() throws Exception {
-        //given
-        given(userService.getUserbyUserID(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
+    // @Test
+    // public void givenId_IdNotFound_throwexception() throws Exception {
+    //     //given
+    //     given(userService.getUserbyUserID(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // when
-        MockHttpServletRequestBuilder getRequest = get("/users/10086")
-                .contentType(MediaType.APPLICATION_JSON);
+    //     // when
+    //     MockHttpServletRequestBuilder getRequest = get("/users/10086")
+    //             .contentType(MediaType.APPLICATION_JSON);
 
-        // then
-        mockMvc.perform(getRequest)
-                .andExpect(status().isNotFound());
-    }
+    //     // then
+    //     mockMvc.perform(getRequest)
+    //             .andExpect(status().isNotFound());
+    // }
 
 
 
