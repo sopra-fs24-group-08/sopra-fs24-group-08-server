@@ -1,6 +1,8 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
+import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import org.apache.catalina.connector.Request;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,21 +35,28 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
-    private GameService gameService = new GameService();
+    private final GameService gameService;
 
-    public FriendService(@Qualifier("userRepository") UserRepository userRepository, 
-                        @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository) {
+    @Autowired
+    public FriendService(@Qualifier("userRepository") UserRepository userRepository,
+                         @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
+                         GameService gameService) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
-    }
+        this.gameService = gameService;
 
+    }
     //get Friend list
-    public List<User> getFriends(Long userId) {
+    /*public List<User> getFriends(Long userId) {
         User currentUser = userRepository.findByid(userId);
         if (currentUser == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the current user.");
         }
         return currentUser.getFriends();
+    }*/
+
+    public List<User> getFriendsQuery(Long userId) {
+        return userRepository.findFriendsByUserId(userId);
     }
 
     //Add friend request
@@ -161,26 +170,26 @@ public class FriendService {
     }
 
     //handle game invitation
+    //adjusted Method, trying to fix existing problems.
     @Transactional
-    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation){
-        // check if there does exist such a request
-        Long friendId = receivedGameInvitation.getSenderId();
-        FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, friendId, userId);
-        if (gameInvitation == null){
+    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation) {
+        System.out.println("HandleGameInv is there");
+        FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, receivedGameInvitation.getSenderId(), userId);
+        if (gameInvitation == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never invited you.");
-        }else if (gameInvitation.getStatus() != RequestStatus.SENT){
+        } else if (gameInvitation.getStatus() != RequestStatus.SENT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This game invitation has already been processed.");
         }
-        // change request status
-        if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED){
+
+        if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED) {
             gameInvitation.setStatus(RequestStatus.ACCEPTED);
-            // start a game session with 2 User
-            gameService.startGameSession(userId, friendId);
-        } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED){
+            Game friendlyGame = gameService.createGame();
+            gameService.startFriendsGame(friendlyGame.getGameId(), userId, receivedGameInvitation.getSenderId());
+        } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED) {
             gameInvitation.setStatus(RequestStatus.DECLINED);
         }
         return gameInvitation;
-    }    
+    }
 
 
     // check for polling updates
@@ -204,11 +213,11 @@ public class FriendService {
             // set request status as sent to avoid repeat send
             for (FriendRequest friendRequest: pendingRequests){
                 friendRequest.setStatus(RequestStatus.SENT);
-            }          
+            }
         }else {
             deferredResult.onTimeout(() -> deferredResult.setErrorResult(
-                ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
-                              .body("No updates at the moment, please try again later.")));
+                    ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
+                            .body("No updates at the moment, please try again later.")));
         }
     }
 
@@ -223,7 +232,7 @@ public class FriendService {
         }
         currentUser.deleteFriend(oldFriend);
         oldFriend.deleteFriend(currentUser);
-    }   
+    }
 
     //convert request to FriendRequestDTO
     public FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest) {

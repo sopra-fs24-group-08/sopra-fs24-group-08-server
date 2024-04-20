@@ -8,7 +8,6 @@ import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import ch.uzh.ifi.hase.soprafs24.service.FriendService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
@@ -64,6 +63,7 @@ public class FriendRequestController {
     @ResponseStatus(HttpStatus.CREATED)
     public FriendRequestDTO gameInvitation(@RequestBody FriendRequestDTO gameInvitationDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
         userService.authenticateUser(authorization, userId);
+        System.out.println("FriendInvSend");
         FriendRequest gameInvitation = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(gameInvitationDTO);
         FriendRequest updateGameInvitation = friendService.inviteFriendToGame(userId, gameInvitation);
         return friendService.convertEntityToFriendRequestDTO(updateGameInvitation);
@@ -74,6 +74,7 @@ public class FriendRequestController {
     @ResponseStatus(HttpStatus.OK)
     public FriendRequestDTO handleGameInvitation(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
         userService.authenticateUser(authorization, userId);
+        System.out.println("FriendInvResponse");
         // turn DTO to entity
         FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
         //
@@ -95,7 +96,7 @@ public class FriendRequestController {
         // get friendlist
 
         return getAllUsers(userId, authorization);
-    }    
+    }
 
     /*
     get all friends
@@ -109,7 +110,8 @@ public class FriendRequestController {
         userService.authorizeUser(authorization);
 
         // fetch all users in the internal representation
-        List<User> friends = friendService.getFriends(userId);
+        //List<User> friends = friendService.getFriends(userId);
+        List<User> friends = friendService.getFriendsQuery(userId);
         List<FriendGetDTO> friendGetDTOs = new ArrayList<>();
 
         // convert each user to the API representation

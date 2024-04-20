@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
+import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User Controller
@@ -120,5 +123,18 @@ public class UserController {
         userService.authenticateUser(authorization, userId);
         return true;
     }
+
+
+    @GetMapping("/users/{userId}/achievements")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Set<Achievement> getUserAchievements(@PathVariable Long userId) {
+        // Fetch the user by ID
+        User user = userService.getUserbyUserID(userId);
+        return user.getAchievements();
+  }
+
+
+
 
 }

@@ -1,11 +1,13 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
-
+import org.springframework.data.annotation.CreatedDate;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -36,7 +38,7 @@ public class User implements Serializable {
 
     @Column(nullable = false)
     private String password;
-    
+
     @Column(nullable = false, unique = true)
     private String token;
 
@@ -49,7 +51,11 @@ public class User implements Serializable {
     @Column
     private LocalDate birthday;
 
-    @ManyToMany
+    @Column
+    private boolean inGame;
+
+    // Using FetchType.LAZY for optimizing the loading of friends
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "user_friends",
         joinColumns = @JoinColumn(name = "user_id"),
@@ -57,8 +63,62 @@ public class User implements Serializable {
     )
     private List<User> friends;
 
-    @Column
-    private boolean inGame;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_achievements",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "achievement_id")
+    )
+    private Set<Achievement> achievements = new HashSet<>();
+    //Banners will be pretty rare so no need for .Lazy optim.
+    @ManyToMany
+    @JoinTable(
+            name = "user_banners",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "banner_id")
+    )
+    private Set<Banner> banners = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_icons",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "icon_id")
+    )
+    private Set<Icon> icons = new HashSet<>();
+
+    //Icons will be pretty rare so no need for .Lazy optim.
+    @ManyToOne
+    @JoinColumn(name = "curr_icon_id")
+    private Icon currIcon;
+
+
+    public Set<Icon> getIcons() {
+        return icons;
+    }
+
+    public void setIcons(Set<Icon> icons) {
+        this.icons = icons;
+    }
+
+    public void addIcon(Icon icon) {
+        this.icons.add(icon);
+    }
+
+
+
+    public Set<Achievement> getAchievements() {
+        return achievements;
+    }
+
+    public void setAchievements(Set<Achievement> achievements) {
+        this.achievements = achievements;
+    }
+
+    public void addAchievement(Achievement achievement) {
+        this.achievements.add(achievement);
+    }
+
 
     public Long getId() {
         return id;
@@ -107,15 +167,28 @@ public class User implements Serializable {
         this.status = status;
     }
 
-    public LocalDate getCreation_date() {return creation_date;}
-
-    public void setCreation_date(LocalDate creation_date) {this.creation_date = creation_date;}
-
     public LocalDate getBirthday() {
         return birthday;
     }
     public void setBirthday(LocalDate birthday) {
         this.birthday = birthday;
+    }
+
+    public Icon getCurrIcon() {
+        return currIcon;
+    }
+
+    public void setCurrIcon(Icon currIcon) {
+        this.currIcon = currIcon;
+    }
+
+
+    public Set<Banner> getBanners() {
+        return banners;
+    }
+
+    public void setBanners(Set<Banner> banners) {
+        this.banners = banners;
     }
 
     public List<User> getFriends(){
@@ -135,7 +208,5 @@ public class User implements Serializable {
     }
     public void setInGame(Boolean inGame) {
         this.inGame = inGame;
-    }    
-
+    }
 }
-
