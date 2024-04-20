@@ -24,8 +24,7 @@ public class WebSocketController {
 
     @MessageMapping("/chat")
     @SendTo("/chat/chatbox")
-    public String chatbox(String message){
-        return message; }
+    public String chatbox(String message){return message; }
 
     @MessageMapping("/announce")
     @SendTo("/topic/announcements")

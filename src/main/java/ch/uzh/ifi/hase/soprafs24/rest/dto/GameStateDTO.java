@@ -15,6 +15,9 @@ public class GameStateDTO {
     private Long currentTurnPlayerId;
     private int cardPileSize;
 
+    private Long chatBoxId;
+    public Long getChatBoxId() {return chatBoxId;}
+    public void setChatBoxId(Long chatBoxId) {this.chatBoxId = chatBoxId;}
     public int getCardPileSize() {
         return cardPileSize;
     }

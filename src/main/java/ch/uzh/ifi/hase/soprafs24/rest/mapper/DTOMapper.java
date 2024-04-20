@@ -90,6 +90,7 @@ public interface DTOMapper {
     @Mapping(source = "winner.id", target = "winnerId")
     @Mapping(source = "currentTurnPlayerId", target = "currentTurnPlayerId")
     @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
+    @Mapping(source = "chatBoxId", target = "chatBoxId")
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     @Mapping(source = "id", target = "id")
