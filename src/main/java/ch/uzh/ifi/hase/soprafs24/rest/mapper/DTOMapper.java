@@ -4,6 +4,9 @@ import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DTOMapper
@@ -50,6 +53,11 @@ public interface DTOMapper {
     @Mapping(source = "achievements", target = "achievements")
 
     UserGetDTO convertEntityToUserGetDTO(User user);
+    default List<IconGetDTO> mapIcons(Set<Icon> icons) {
+        return icons.stream()
+                .map(this::iconToIconGetDTO)
+                .collect(Collectors.toList());
+    }
 
     @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")

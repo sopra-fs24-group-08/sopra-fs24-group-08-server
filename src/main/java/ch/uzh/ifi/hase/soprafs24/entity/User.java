@@ -151,6 +151,7 @@ public class User implements Serializable {
     public void setPassword(String password) {
         this.password = password;
     }
+
     public String getToken() {
         return token;
     }
@@ -170,6 +171,7 @@ public class User implements Serializable {
     public LocalDate getBirthday() {
         return birthday;
     }
+
     public void setBirthday(LocalDate birthday) {
         this.birthday = birthday;
     }
@@ -206,7 +208,17 @@ public class User implements Serializable {
     public Boolean getInGame() {
         return inGame;
     }
+
     public void setInGame(Boolean inGame) {
         this.inGame = inGame;
     }
+
+    public LocalDate getCreation_date() {
+        return creation_date;
+    }
+
+    public void setCreation_date(LocalDate creation_date) {
+        this.creation_date = creation_date;
+    }
+
 }
