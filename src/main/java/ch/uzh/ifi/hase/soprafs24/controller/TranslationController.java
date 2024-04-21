@@ -11,7 +11,6 @@ public class TranslationController {
 
     @Autowired
     private TranslationService translationService;
-
     @PostMapping("/{targetLang}")
     public ResponseEntity<String> translateText(@RequestBody TranslationRequest request, @PathVariable String targetLang) {
         try {
