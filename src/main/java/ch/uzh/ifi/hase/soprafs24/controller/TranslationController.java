@@ -1,48 +1,39 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import com.google.cloud.translate.Translate;
-import com.google.cloud.translate.TranslateOptions;
-import com.google.cloud.translate.Translation;
+import ch.uzh.ifi.hase.soprafs24.service.TranslationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/translate")
 public class TranslationController {
 
-    private final Translate translate = TranslateOptions.getDefaultInstance().getService();
+    @Autowired
+    private TranslationService translationService;
 
-    @PostMapping("/translate/{language}")
-    public String translateText(@RequestBody TranslationRequest request, @PathVariable String language) {
-        Translation translation = translate.translate(
-                request.getText(),
-                Translate.TranslateOption.sourceLanguage(language),
-                Translate.TranslateOption.targetLanguage(request.getTargetLang())
-        );
-        return translation.getTranslatedText();
+    @PostMapping("/{targetLang}")
+    public String translateText(@RequestBody TranslationRequest request, @PathVariable String targetLang) {
+        return translationService.translateText(request.getMessage(), request.getSourceLang(), targetLang);
+    }
+}
+
+class TranslationRequest {
+    private String message;
+    private String sourceLang;
+
+    public String getMessage() {
+        return message;
     }
 
-    public static class TranslationRequest {
-        public String getText() {
-            return text;
-        }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-        public void setText(String text) {
-            this.text = text;
-        }
+    public String getSourceLang() {
+        return sourceLang;
+    }
 
-        public String getTargetLang() {
-            return targetLang;
-        }
-
-        public void setTargetLang(String targetLang) {
-            this.targetLang = targetLang;
-        }
-
-        private String text;
-        private String targetLang;
-
-        // Getters and setters
+    public void setSourceLang(String sourceLang) {
+        this.sourceLang = sourceLang;
     }
 }

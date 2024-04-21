@@ -1,31 +1,29 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
+@Service
 public class TranslationService {
 
-    private static final String API_KEY = "{key here}";
-    private static final String TRANSLATE_URL = "https://translation.googleapis.com/language/translate/v2?key=" + API_KEY;
+    @Value("${translate.api-key}")
+    private String apiKey;
 
-    public String translateText(String text, String targetLang) {
+    public String translateText(String text, String sourceLang, String targetLang) {
+        String url = "https://translation.googleapis.com/language/translate/v2";
         RestTemplate restTemplate = new RestTemplate();
-        String requestJson = buildRequestJson(text, targetLang);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(TRANSLATE_URL, requestJson, String.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("Authorization", "Bearer " + apiKey);  // API key usage
 
-        // Parse the response to extract the translated text
-        return parseTranslatedText(response.getBody());
-    }
+        String requestJson = String.format("{\"q\": \"%s\", \"source\": \"%s\", \"target\": \"%s\", \"format\": \"text\"}", text, sourceLang, targetLang);
+        HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
 
-    private String buildRequestJson(String text, String targetLang) {
-        // Build JSON request string
-        return "{ 'q': '" + text + "', 'target': '" + targetLang + "' }";
-    }
-
-    private String parseTranslatedText(String jsonResponse) {
-        // Implement JSON parsing logic
-        // Example: Use a JSON library to parse and return the translated text
-        return jsonResponse; // Simplified return for example purposes
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+        return response.getBody();
     }
 }
+
