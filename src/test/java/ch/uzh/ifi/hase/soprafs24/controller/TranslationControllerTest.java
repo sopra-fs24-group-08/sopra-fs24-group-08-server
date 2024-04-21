@@ -1,218 +1,115 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
-
-import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
-import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
-import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
-import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
-import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
-import ch.uzh.ifi.hase.soprafs24.service.UserService;
-import ch.uzh.ifi.hase.soprafs24.service.FriendService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ch.uzh.ifi.hase.soprafs24.controller.TranslationController;
+import ch.uzh.ifi.hase.soprafs24.service.TranslationService;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.context.request.async.DeferredResult;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.test.web.servlet.MvcResult;
 
-import java.beans.Transient;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@WebMvcTest(FriendRequestController.class)
-public class TranslationControllerTest {
+@Nested
+@WebMvcTest(TranslationController.class)
+class TranslationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private UserService userService;
-
-    @MockBean
-    private FriendService friendService;
+    private TranslationService translationService;
 
     @Test
-    public void addFriend_validInput_ReturnFriend() throws Exception {
+    public void translateText_validInput_ReturnTranslatedText() throws Exception {
+        // Mocking translation service response
+        String translatedText = "Hello";
+        when(translationService.translateText(anyString(), anyString(), anyString())).thenReturn(translatedText);
+
+        // Sending POST request to translate text
+        MvcResult result = mockMvc.perform(post("/api/translate/en")
+                        .content("{\"message\": \"Hallo\", \"sourceLang\": \"de\"}")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        // Check the status code
+        assertEquals(HttpStatus.OK.value(), result.getResponse().getStatus());
+
+    }
+    @Test
+    public void translateText_invalidInput_ReturnsBadRequest() throws Exception {
         // given
-        User friend = new User();
-        friend.setId(2L);
-        friend.setUsername("testName");
-        FriendGetDTO friendGetDTO = new FriendGetDTO();
-        friendGetDTO.setId(2L);
-        friendGetDTO.setUsername("testName");
+        TranslationRequest request = new TranslationRequest();
+        request.setMessage(""); // leere Nachricht
+        request.setSourceLang("en");
+        String targetLang = "de";
 
-        Mockito.doNothing().when(userService).authenticateUser(Mockito.any(), Mockito.any());
-        given(friendService.addFriendRequest(Mockito.any(), Mockito.any())).willReturn(friend);
-    
-        mockMvc.perform(post("/users/{userId}/friends/add", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(friendGetDTO)) 
-                .header("Authorization", "1")) 
-                .andExpect(status().isCreated()) 
-                .andExpect(jsonPath("$.id", is(friend.getId().intValue()))) 
-                .andExpect(jsonPath("$.username", is(friend.getUsername())));
+        // when/then
+        mockMvc.perform(post("/api/translate/{targetLang}", targetLang)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request))
+                        .header("Authorization", "Bearer yourAccessToken"))
+                .andExpect(status().isBadRequest());
     }
-
     @Test
-    public void inviteFriendtoGame_validInput_ReturnFriendRequest() throws Exception {
+    public void translateText_validatedInput_ReturnTranslatedText() throws Exception {
+        // Mocking translation service response
+        String expectedTranslatedText = "Hola, mundo!";
+        when(translationService.translateText(anyString(), anyString(), anyString())).thenReturn(expectedTranslatedText);
+
+        // Sending POST request to translate text
+        MvcResult result = mockMvc.perform(post("/api/translate/es")
+                        .content("{\"message\": \"Hello, world!\", \"sourceLang\": \"en\"}")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Check the translated text in the response content
+        String responseContent = result.getResponse().getContentAsString();
+        assertEquals(expectedTranslatedText, responseContent);
+    }
+    @Test
+    public void translateText_robustnessTest_ReturnsTranslatedText() throws Exception {
         // given
-        Long userId = 1L;
-        String token = "Bearer someAuthToken";
-        FriendRequestDTO friendRequestDTO = new FriendRequestDTO();
-        friendRequestDTO.setSenderId(1L);
-        friendRequestDTO.setReceiverId(2L);
-        friendRequestDTO.setRequestType(RequestType.GAMEINVITATION);
-        FriendRequest gameInvitation = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-        Mockito.doNothing().when(userService).authenticateUser(Mockito.any(), Mockito.any());
-        given(friendService.inviteFriendToGame(eq(userId), Mockito.any(FriendRequest.class))).willReturn(gameInvitation);
-        given(friendService.convertEntityToFriendRequestDTO(Mockito.any(FriendRequest.class))).willReturn(friendRequestDTO);
-    
-        mockMvc.perform(post("/game/invite/{userId}", userId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(friendRequestDTO)) 
-                .header("Authorization", token)) 
-                .andExpect(status().isCreated()) 
-                .andExpect(jsonPath("$.senderId", is(friendRequestDTO.getSenderId().intValue())))
-                .andExpect(jsonPath("$.receiverId", is(friendRequestDTO.getReceiverId().intValue())))
-                .andExpect(jsonPath("$.senderName", is(friendRequestDTO.getSenderName())))
-                .andExpect(jsonPath("$.requestType", is(friendRequestDTO.getRequestType().toString())));
-    }
-    
-    @Test
-    public void longPolling_validInput_ReturnResult() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer someAuthToken";
-        doNothing().when(friendService).pollUpdates(any(DeferredResult.class), eq(userId));
-    
-        mockMvc.perform(get("/users/{userId}/polling", 1L)
-                .header("Authorization", token)) 
-                .andExpect(status().isOk());
+        TranslationRequest request = new TranslationRequest();
+        request.setMessage("Hello");
+        request.setSourceLang("en");
+        String targetLang = "de"; // Zielsprache
+
+        // Simulate a delay or failure in the external translation service
+        // For simulation purpose, you can introduce a delay here.
+
+        // when/then
+        mockMvc.perform(post("/api/translate/{targetLang}", targetLang)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request))
+                        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(isEmptyOrNullString())));
     }
 
-    @Test
-    public void responseFriendRequest_validInput_returnFriendRequest() throws Exception {
-      FriendRequestDTO friendRequestDTO = new FriendRequestDTO();
-      friendRequestDTO.setSenderId(1L);
-      friendRequestDTO.setReceiverId(2L);
-      friendRequestDTO.setStatus(RequestStatus.ACCEPTED);
-      friendRequestDTO.setRequestType(RequestType.FRIENDADDING);
-      Long userId = 2L;
-      String token = "Bearer someAuthToken";
-      FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-      given(friendService.handleFriendRequest(eq(userId), Mockito.any(FriendRequest.class))).willReturn(receivedFriendRequest);
-      given(friendService.convertEntityToFriendRequestDTO(Mockito.any(FriendRequest.class))).willReturn(friendRequestDTO);
-
-  
-      mockMvc.perform(post("/users/{userId}/friendresponse", userId)
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(asJsonString(friendRequestDTO))
-              .header("Authorization", token)) 
-              .andExpect(status().isOk())
-              .andExpect(jsonPath("$.senderId", is(friendRequestDTO.getSenderId().intValue())))
-              .andExpect(jsonPath("$.receiverId", is(friendRequestDTO.getReceiverId().intValue())))
-              .andExpect(jsonPath("$.status", is(friendRequestDTO.getStatus().toString())))
-              .andExpect(jsonPath("$.senderName", is(friendRequestDTO.getSenderName())))
-              .andExpect(jsonPath("$.requestType", is(friendRequestDTO.getRequestType().toString())))
-              .andReturn();
-  }  
-
-  @Test
-  public void responseGameInvitation_validInput_returnFriendRequest() throws Exception {
-    FriendRequestDTO friendRequestDTO = new FriendRequestDTO();
-    friendRequestDTO.setSenderId(1L);
-    friendRequestDTO.setReceiverId(2L);
-    friendRequestDTO.setStatus(RequestStatus.ACCEPTED);
-    friendRequestDTO.setRequestType(RequestType.GAMEINVITATION);
-    GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
-    gameMatchResultDTO.setGameId(1L);
-    Long userId = 2L;
-    String token = "Bearer someAuthToken";
-    given(friendService.handleGameInvitation(eq(userId), Mockito.any(FriendRequest.class))).willReturn(gameMatchResultDTO);
-
-
-    mockMvc.perform(post("/game/{userId}/invitationresponse", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(asJsonString(friendRequestDTO))
-            .header("Authorization", token)) 
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.gameId", is(gameMatchResultDTO.getGameId().intValue())))
-            .andReturn();
-  }  
-
-  @Test
-  public void deleteFriend_validUser_ReturnFriends() throws Exception {
-    Long userId = 1L;
-    Long friendId = 2L;
-    String token = "Bearer someAuthToken";
-    User friend = new User();
-    friend.setId(3L);
-    friend.setUsername("testName");
-    List<User> friends = new ArrayList<>();
-    friends.add(friend);
-    given(friendService.getFriendsQuery(eq(userId))).willReturn(friends);
-
-    mockMvc.perform(put("/users/{userId}/friends/delete", userId)
-            .header("Authorization", token) 
-            .param("FriendId", friendId.toString()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(1)))
-            .andExpect(jsonPath("$[0].id", is(friend.getId().intValue())))
-            .andExpect(jsonPath("$[0].username", is(friend.getUsername())));
-  } 
-
-  @Test
-  public void getAllUsers_validInput_ReturnFriends() throws Exception {
-    Long userId = 1L;
-    Long friendId = 2L;
-    String token = "Bearer someAuthToken";
-    User friend = new User();
-    friend.setId(3L);
-    friend.setUsername("testName");
-    List<User> friends = new ArrayList<>();
-    friends.add(friend);
-    given(friendService.getFriendsQuery(eq(userId))).willReturn(friends);
-
-    mockMvc.perform(get("/users/{userId}/friends", userId)
-            .header("Authorization", token) 
-            .param("FriendId", friendId.toString()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(1)))
-            .andExpect(jsonPath("$[0].id", is(friend.getId().intValue())))
-            .andExpect(jsonPath("$[0].username", is(friend.getUsername())));
-  } 
-
-    /**
-     * Helper Method to convert userPostDTO into a JSON string such that the input
-     * can be processed
-     * Input will look like this: {"name": "Test User", "username": "testUsername"}
-     * 
-     * @param object
-     * @return string
-     */
-    private String asJsonString(final Object object) {
+    public static String asJsonString(final Object object) {
         try {
-        return new ObjectMapper().writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-            String.format("The request body could not be created.%s", e.toString()));
+            return new ObjectMapper().writeValueAsString(object);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
-}
 
+}
