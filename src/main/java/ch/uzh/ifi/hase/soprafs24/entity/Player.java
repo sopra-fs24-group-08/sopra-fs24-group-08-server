@@ -38,7 +38,8 @@ public class Player implements  Serializable{
     /*@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Card> hand = new ArrayList<>();*/
     @OneToMany(cascade = CascadeType.ALL)
-    private List<Card> hand = new ArrayList<Card>();
+    @JoinColumn(name = "player_id")
+    private List<Card> hand = new ArrayList<>();
 
     @Column(nullable = false)
     private int score = 0;
@@ -46,6 +47,7 @@ public class Player implements  Serializable{
     public Player() {
     }
 
+/*
     public List<Card> getHand() {
         return hand;
     }
@@ -61,15 +63,15 @@ public class Player implements  Serializable{
     }
     public Optional<Card> getCardFromHand(Long cardId) {
         return hand.stream().filter(card -> card.getId().equals(cardId)).findFirst();
-    }
-
+    }*/
+/*
 
     public Player(User user, Game game) {
         this.user = user;
         this.game = game;
         this.score = 0;
         this.hand = new ArrayList<>();
-    }
+    }*/
 
     public Long getId() {
         return id;
@@ -111,5 +113,24 @@ public class Player implements  Serializable{
         this.score -= substractPoints;
     }
 
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public void setHand(List<Card> hand) {
+        this.hand = hand;
+    }
+
+    public void addCardToHand(Card card) {
+        hand.add(card);
+    }
+
+    public void placeCard(GridSquare square, Card card) {
+        if (this.hand.contains(card)) {     // Check if the card is in the player's hand
+            this.hand.remove(card);
+            square.setCard(card);
+            this.score += card.getPoints();
+        }
+    }
 
 }

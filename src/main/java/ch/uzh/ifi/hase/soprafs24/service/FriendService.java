@@ -183,8 +183,8 @@ public class FriendService {
 
         if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED) {
             gameInvitation.setStatus(RequestStatus.ACCEPTED);
-            Game friendlyGame = gameService.createGame();
-            gameService.startFriendsGame(friendlyGame.getGameId(), userId, receivedGameInvitation.getSenderId());
+            Game friendlyGame = gameService.startGame(userId, receivedGameInvitation.getSenderId());
+            //gameService.startFriendsGame(friendlyGame.getGameId(), userId, receivedGameInvitation.getSenderId());
         } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED) {
             gameInvitation.setStatus(RequestStatus.DECLINED);
         }

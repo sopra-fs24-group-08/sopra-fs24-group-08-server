@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.rest.mapper;
 
 import ch.uzh.ifi.hase.soprafs24.entity.*;
+import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
@@ -86,25 +87,6 @@ public interface DTOMapper {
 
     User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
 
-    @Mapping(source = "id", target = "id")
-    @Mapping(source = "color", target = "color")
-    @Mapping(source = "points", target = "points")
-    CardDTO convertEntityToCardDTO(Card card);
-
-    @Mapping(source = "gameId", target = "gameId")
-    @Mapping(source = "players", target = "players")
-    @Mapping(source = "board", target = "board")
-    @Mapping(source = "gameStatus", target = "gameStatus")
-    @Mapping(source = "winner.id", target = "winnerId")
-    @Mapping(source = "currentTurnPlayerId", target = "currentTurnPlayerId")
-    @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
-    GameStateDTO convertEntityToGameStateDTO(Game game);
-
-    @Mapping(source = "id", target = "id")
-    @Mapping(source = "hand", target = "cards")
-    @Mapping(source = "score", target = "score")
-    @Mapping(target = "gameId", ignore = true)  // Assuming not directly available
-    PlayerDTO convertEntityToPlayerDTO(Player player);
 
     // User convert to FriendGetDTO to protect data
     @Mapping(source = "username", target = "username")

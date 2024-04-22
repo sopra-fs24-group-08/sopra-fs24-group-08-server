@@ -1,44 +1,78 @@
 package ch.uzh.ifi.hase.soprafs24.config;
 
-import ch.uzh.ifi.hase.soprafs24.service.UserService;
+import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.Map;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final String ORIGIN_LOCALHOST = "http://localhost:3000";
-    private static final String ORIGIN_PROD = "https://sopra-fs24-group-08-client.oa.r.appspot.com";
-
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic","/queue","/chat").setTaskScheduler(HBScheduler());
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.setUserDestinationPrefix("/user");
-
-    }
+    private static final String WS_LOCALHOST = "http://localhost:3000";
+    private static final String WS_PROD = "https://sopra-fs24-group-08-client.oa.r.appspot.com";
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins(WS_PROD, WS_LOCALHOST)
+                .withSockJS()
+                .setInterceptors(httpSessionHandshakeInterceptor());
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic", "/queue", "/chat").setTaskScheduler(heartBeatScheduler());
+        registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
     }
 
     @Bean
-    public TaskScheduler HBScheduler() {
-        // Verifies that connections is still working
+    public TaskScheduler heartBeatScheduler() {
         return new ThreadPoolTaskScheduler();
     }
+
+    @Bean
+    public HttpSessionHandshakeInterceptor httpSessionHandshakeInterceptor() {
+        return new HttpSessionHandshakeInterceptor() {
+            @Override
+            public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
+                // Extract userId and token from the request
+                UriComponentsBuilder uriComponents = UriComponentsBuilder.fromUri(request.getURI());
+                Map<String, String> queryParams = uriComponents.build().getQueryParams().toSingleValueMap();
+
+                String userIdStr = queryParams.get("userId");
+                String token = queryParams.get("token");
+
+                try {
+                    Long userId = Long.parseLong(userIdStr);
+                    if (userRepository.existsByUserIdAndToken(userId, token)) {
+                        attributes.put("userId", userId);
+                        return true; // Only proceed if both the userId and token are valid
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid userId format: " + userIdStr);
+                }
+                return false;
+            }
+        };
+    }
+
 }

@@ -238,11 +238,6 @@ public class UserService {
 
         return true;
     }
-    public Long getUserIdFromToken(String token){
-            Optional<Long> userId = userRepository.findUserIdByToken(token);
-        return userId.orElse(null);
-    }
-
 
 
 }

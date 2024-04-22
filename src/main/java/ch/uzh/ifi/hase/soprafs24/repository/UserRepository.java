@@ -12,11 +12,14 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT f FROM User u JOIN u.friends f WHERE u.id = :userId")
     List<User> findFriendsByUserId(@Param("userId") Long userId);
-    @Query("SELECT u.id FROM User u WHERE u.token = ?1")
-    Optional<Long> findUserIdByToken(String token);
+    /*@Query("SELECT u.id FROM User u WHERE u.token = ?1")
+    Optional<Long> findUserIdByToken(String token);*/
     User findByName(String name);
     User findByUsername(String username);
+    User findById(long id);
     User findByid(Long id);
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.id = :userId AND u.token = :token")
+    boolean existsByUserIdAndToken(@Param("userId") Long userId, @Param("token") String token);
 
     // Need this for authorization, to verify if the token is really a valid one
     User findByToken(String token);

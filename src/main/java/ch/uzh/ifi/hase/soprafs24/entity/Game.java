@@ -17,7 +17,7 @@ public class Game implements Serializable {
     @Column(name = "game_id")
     private Long gameId;
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -34,7 +34,6 @@ public class Game implements Serializable {
     @Column(name = "current_turn_player_id")
     private Long currentTurnPlayerId;  // Track whose turn it is
 
-    //add CardPile
     public Long getCurrentTurnPlayerId() {
         return currentTurnPlayerId;
     }
@@ -95,6 +94,12 @@ public class Game implements Serializable {
     public void setPlayers(List<Player> players) {
         this.players = new ArrayList<>(players);
     }
+
+    /*public void startGame() {
+        this.board.initializeBoard();
+        // Any card drawing now goes through the board
+        Card card = board.drawCard();
+    }*/
 
 }
 

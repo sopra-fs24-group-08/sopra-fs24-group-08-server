@@ -1,10 +1,11 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
-import ch.uzh.ifi.hase.soprafs24.constant.MoveType;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
+import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
+import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -20,15 +21,17 @@ public class GameService {
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final BoardRepository boardRepository;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate, BoardRepository boardRepository) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
         this.messagingTemplate = messagingTemplate;
+        this.boardRepository = boardRepository;
     }
-
+    //for gameId
     public Game createGame() {
         Game game = new Game();
         Board board = new Board();
@@ -39,84 +42,101 @@ public class GameService {
     }
 
     //Leaving in encase it's used for Polling or if we want to add different beh. to friendly games
-    public Game startFriendsGame(Long gameId,Long userId1, Long userId2){
-        return startGame(gameId,userId1,userId2);
+    public Game startFriendsGame(Long userId1, Long userId2){
+        return startGame(userId1,userId2);
     }
 
-    public Game startGame(Long gameId, Long userId1, Long userId2) {
-        User user1 = userRepository.findById(userId1).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        User user2 = userRepository.findById(userId2).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    public Game startGame(Long userId1, Long userId2) {
+        User user1 = userRepository.findByid(userId1);
+        User user2 = userRepository.findByid(userId2);
+        Game game = createGame();
 
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        //Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        initializePlayers(game,user1,user2);
+        performCoinFlip(game);
 
-        Player player1 = new Player(user1, game);
-        Player player2 = new Player(user2, game);
-
-        boolean firstPlayerStarts = new Random().nextBoolean();
-
-        if (firstPlayerStarts) {
-            dealInitialCards(game.getBoard(), player1, player2, true);
-            game.setCurrentTurnPlayerId(player1.getId());
-        } else {
-            dealInitialCards(game.getBoard(), player1, player2, false);
-            game.setCurrentTurnPlayerId(player2.getId());
-        }
-
-
-        playerRepository.saveAll(Arrays.asList(player1, player2));
-
-        game.setPlayers(Arrays.asList(player1, player2));
-        game.setGameStatus(GameStatus.ONGOING);
         gameRepository.save(game);
-        broadcastGameState(gameId, game);
         return game;
     }
 
-    private void dealInitialCards(Board board, Player player1, Player player2, boolean firstPlayerStarts) {
-        Player firstPlayer = firstPlayerStarts ? player1 : player2;
-        Player secondPlayer = firstPlayerStarts ? player2 : player1;
+    private void initializePlayers(Game game, User user1, User user2) {
+        Player player1 = new Player();
+        player1.setUser(user1);
+        player1.setGame(game);
 
-        giveCards(firstPlayer, board, 2); // First player gets 2 cards
-        giveCards(secondPlayer, board, 3); // Second player gets 3 cards
+        Player player2 = new Player();
+        player2.setUser(user2);
+        player2.setGame(game);
+        playerRepository.saveAll(Arrays.asList(player1, player2));
+        game.setPlayers(Arrays.asList(player1, player2));
+        game.setGameStatus(GameStatus.ONGOING);
     }
 
-    private void giveCards(Player player, Board board, int count) {
-        for (int i = 0; i < count; i++) {
-            Card card = board.drawCardFromPile();
-            if (card != null) {
-                player.addCardToHand(card);
-            }
-        }
+    private void performCoinFlip(Game game) {
+        boolean firstPlayerStarts = new Random().nextBoolean();
+        Player startingPlayer = firstPlayerStarts ? game.getPlayers().get(0) : game.getPlayers().get(1);
+        Player secondPlayer = firstPlayerStarts ? game.getPlayers().get(1) : game.getPlayers().get(0);
+
+        // Decide who starts and send initial game state
+        game.setCurrentTurnPlayerId(startingPlayer.getId());
+        sendInitialGameState(game);
     }
 
-    public void processMove(Long gameId, MoveDTO move) {
-        System.out.println("Move is being process");
-        if (move.getMoveType() == MoveType.PLACE) {
-            placeCard(gameId, move);
-        } else if (move.getMoveType() == MoveType.DRAW) {
-            drawCard(gameId, move);
-        } else {
-            throw new IllegalArgumentException("Unsupported move type: " + move.getMoveType());
-        }
+    private void sendInitialGameState(Game game) {
+        GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, game.getCurrentTurnPlayerId());
+        game.getPlayers().forEach(player -> {
+            GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, player.getUser().getId());
+            messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
+        });
     }
 
-    private void drawCard(Long gameId, MoveDTO move) {
-        Game game = gameRepository.findById(gameId).orElseThrow();
-        Player player = playerRepository.findById(move.getPlayerId()).orElseThrow();
+    private void dealInitialCards(Board board, Player firstPlayer, Player secondPlayer) {
+        board.drawCard(firstPlayer);
+        board.drawCard(firstPlayer);
+        board.drawCard(secondPlayer);
+        board.drawCard(secondPlayer);
+        board.drawCard(secondPlayer);
+
+
+        playerRepository.saveAll(Arrays.asList(firstPlayer, secondPlayer));
+    }
+
+
+    public Game processMove(Long gameId, MoveDTO move,Long playerId) {
+        System.out.println("Move is being processed");
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
+        Player player = playerRepository.findById(playerId).orElseThrow(() -> new RuntimeException("Player not found"));
         Board board = game.getBoard();
-        if (board.getCentralCardPile().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No more cards to draw");
-        }
-        Card card = board.drawCardFromPile();
-        player.addCardToHand(card);
-        playerRepository.save(player);
-        gameRepository.save(game);
+        switch (move.getMoveType()) {
+            case DRAW:
+                if (board != null) {
+                    board.drawCard(player);
+                }
+                break;
+            case PLACE:
+                Card card = player.getHand().stream()
+                        .filter(c -> c.getId().equals(move.getCardId()))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Card not found in player's hand"));
 
-        // Logic to switch the turn to the other player
-        switchTurns(game, player);
+                GridSquare square = board.getGridSquares().get(move.getPosition());
+                if (square != null && !square.isOccupied()) {
+                    player.placeCard(square, card);
+                }
+                else {
+                    throw new RuntimeException("Square is occupied or does not exist");
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid move type");
+        }
+        gameRepository.save(game);
+        return game;
     }
 
-    public void placeCard(Long gameId, MoveDTO move) {
+
+
+    /*public void placeCard(Long gameId, MoveDTO move) {
         System.out.println(move+ "trying to placeCard");
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
         Player player = playerRepository.findById(move.getPlayerId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
@@ -125,7 +145,7 @@ public class GameService {
         int position = move.getPosition();
         String squareColor = board.getSquareColor(position);
 
-        if (!board.isSquareOccupied(position)) {
+        if (!board.getGridSquares().isOccupied(position)) {
             int points = attemptToPlaceCardOnBoard(card, squareColor, board, position);
             if (points > 0) {
                 player.addScore(points);
@@ -139,7 +159,7 @@ public class GameService {
         } else {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Square already occupied");
         }
-    }
+  }*/
 
     private void switchTurns(Game game, Player currentPlayer) {
         game.getPlayers().forEach(p -> {
@@ -154,20 +174,7 @@ public class GameService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Game was not found"));
     }
 
-    public void processMove(Long gameId, MoveDTO move, Long playerId) {
-        /*Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        Player player = playerRepository.findById(playerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
-        validateMove(game, move, player);
 
-        if (move.getMoveType() == MoveType.PLACE) {
-            placeCard(game, move, player);
-        } else if (move.getMoveType() == MoveType.DRAW) {
-            drawCard(game, move, player);
-        }*/
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        gameRepository.save(game);
-        broadcastGameState(gameId, game);  // Broadcast updated game state after move
-    }
 
     private boolean validateMove(MoveDTO move) {
         // Your validation logic here
@@ -175,19 +182,14 @@ public class GameService {
     }
 
 
-    private void broadcastGameState(Long gameId, Game game) {
-        messagingTemplate.convertAndSend("/topic/gamestate/" + gameId, game);
+    private void broadcastGameState(Game game) {
+        game.getPlayers().forEach(player -> {
+            GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game,player.getId());
+            messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game", gameState);
+        });
     }
 
 
-    private int attemptToPlaceCardOnBoard(Card card, String squareColor, Board board, int position) {
-        int points = card.getPoints();
-        if (squareColor.equals(card.getColor())) {
-            points *= 2; // Double the points if colors match
-        }
-        board.setCardAtPosition(card, position);
-        return points;
-    }
 
     private void updateStateAfterPlay(Game game, Player player, Card card, GridSquare square) {
 
