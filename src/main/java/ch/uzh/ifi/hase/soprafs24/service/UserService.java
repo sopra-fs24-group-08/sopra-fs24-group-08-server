@@ -231,4 +231,18 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
         }
     }
+
+    // For WS Handshake , would prefer boolean return
+    public boolean checkTokenValidity(String token) {
+        authorizeUser(token);
+
+        return true;
+    }
+    public Long getUserIdFromToken(String token){
+            Optional<Long> userId = userRepository.findUserIdByToken(token);
+        return userId.orElse(null);
+    }
+
+
+
 }

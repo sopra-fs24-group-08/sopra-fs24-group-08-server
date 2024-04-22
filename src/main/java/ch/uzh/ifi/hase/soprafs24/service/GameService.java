@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,12 +19,14 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public Game createGame() {
@@ -64,8 +67,9 @@ public class GameService {
 
         game.setPlayers(Arrays.asList(player1, player2));
         game.setGameStatus(GameStatus.ONGOING);
-
-        return gameRepository.save(game);
+        gameRepository.save(game);
+        broadcastGameState(gameId, game);
+        return game;
     }
 
     private void dealInitialCards(Board board, Player player1, Player player2, boolean firstPlayerStarts) {
@@ -86,6 +90,7 @@ public class GameService {
     }
 
     public void processMove(Long gameId, MoveDTO move) {
+        System.out.println("Move is being process");
         if (move.getMoveType() == MoveType.PLACE) {
             placeCard(gameId, move);
         } else if (move.getMoveType() == MoveType.DRAW) {
@@ -112,6 +117,7 @@ public class GameService {
     }
 
     public void placeCard(Long gameId, MoveDTO move) {
+        System.out.println(move+ "trying to placeCard");
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
         Player player = playerRepository.findById(move.getPlayerId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
         Card card = player.getCardFromHand(move.getCardId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Card not found"));
@@ -127,7 +133,6 @@ public class GameService {
                 playerRepository.save(player);
                 gameRepository.save(game);
                 switchTurns(game, player);
-                // Optional: Send WebSocket update to all clients
             } else {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot place card on the chosen square");
             }
@@ -148,6 +153,32 @@ public class GameService {
         return gameRepository.findById(gameId).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Game was not found"));
     }
+
+    public void processMove(Long gameId, MoveDTO move, Long playerId) {
+        /*Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        Player player = playerRepository.findById(playerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+        validateMove(game, move, player);
+
+        if (move.getMoveType() == MoveType.PLACE) {
+            placeCard(game, move, player);
+        } else if (move.getMoveType() == MoveType.DRAW) {
+            drawCard(game, move, player);
+        }*/
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        gameRepository.save(game);
+        broadcastGameState(gameId, game);  // Broadcast updated game state after move
+    }
+
+    private boolean validateMove(MoveDTO move) {
+        // Your validation logic here
+        return true; // Simplified for example purposes
+    }
+
+
+    private void broadcastGameState(Long gameId, Game game) {
+        messagingTemplate.convertAndSend("/topic/gamestate/" + gameId, game);
+    }
+
 
     private int attemptToPlaceCardOnBoard(Card card, String squareColor, Board board, int position) {
         int points = card.getPoints();

@@ -9,15 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class GameController {
@@ -68,6 +68,7 @@ public class GameController {
 
     @MessageMapping("/game/{gameId}/move")
     public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move) {
+
         // should be secured to ensure that only players from the specific game can make moves
         gameService.processMove(gameId,move);
         Game updatedGame = gameService.retrieveGameState(gameId);
@@ -76,6 +77,15 @@ public class GameController {
         GameStateDTO gameStateDTO  = DTOMapper.INSTANCE.convertEntityToGameStateDTO(updatedGame);
         // Update all clients with the new game state after a move has been made
         messagingTemplate.convertAndSend("/topic/game/gameUpdate/" + gameId, gameStateDTO);
+    }
+
+    @MessageMapping("/game/move/{gameId}")
+    public void processMove(@DestinationVariable Long gameId, MoveDTO move, Principal principal) {
+        // Extract the user ID from the principal or session attributes
+        Long userId = Long.valueOf(principal.getName());
+
+        // Delegate to the service to process the move
+        gameService.processMove(gameId, move, userId);
     }
 
     // Additional methods like endGame, surrender, etc. can be added here.

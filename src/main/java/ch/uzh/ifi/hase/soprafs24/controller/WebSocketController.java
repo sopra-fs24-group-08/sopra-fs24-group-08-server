@@ -16,12 +16,6 @@ public class WebSocketController {
     //private final Logger log = LoggerFactory.getLogger(GameService.class);
 
 
-    @MessageMapping("/user")
-    @SendTo("/topic/greetings")
-    public String greeting() {
-        return "Greetings User!";
-    }
-
     @MessageMapping("/chat")
     @SendTo("/chat/chatbox")
     public String chatbox(String message){
