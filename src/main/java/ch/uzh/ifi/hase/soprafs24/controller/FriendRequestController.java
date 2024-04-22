@@ -85,12 +85,12 @@ public class FriendRequestController {
     // Delete friend
     @PutMapping("/users/{userId}/friends/delete")
     @ResponseStatus(HttpStatus.OK)
-    public List<FriendGetDTO> deleteFriends(@PathVariable Long userId, @RequestParam(name = "friendId") Long friendId, @RequestHeader("Authorization") String authorization) {
+    public List<FriendGetDTO> deleteFriends(@PathVariable Long userId, @RequestParam("FriendId") Long friendId, @RequestHeader("Authorization") String authorization) {
 
         // authenticate user
         userService.authenticateUser(authorization, userId);
 
-        // add friend by userId
+        // delete friend by userId
         friendService.deleteFriend(userId, friendId);
 
         // get friendlist
