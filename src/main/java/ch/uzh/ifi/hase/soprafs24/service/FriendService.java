@@ -14,9 +14,13 @@ import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
+import ch.uzh.ifi.hase.soprafs24.service.MatchService;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendRequestDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import javassist.tools.framedump;
 import org.springframework.stereotype.Service;
@@ -35,15 +39,20 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
+    private final PlayerRepository playerRepository;
     private final GameService gameService;
+    private final MatchService matchService;
 
     @Autowired
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
-                         GameService gameService) {
+                         @Qualifier("playerRepository") PlayerRepository playerRepository,
+                         GameService gameService, MatchService matchService) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
+        this.playerRepository = playerRepository;
         this.gameService = gameService;
+        this.matchService = matchService;
 
     }
     //get Friend list
@@ -106,7 +115,7 @@ public class FriendService {
     //Invitation to game request
     @Transactional
     public FriendRequest inviteFriendToGame(Long userId, FriendRequest gameInvitation){
-        // make sure the type of request is friendadding
+        // make sure the type of request is game invitation
         if (gameInvitation.getRequestType() != RequestType.GAMEINVITATION){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The request type is not GAMEINVITATION!");
         }
@@ -124,6 +133,13 @@ public class FriendService {
         if (!user.getFriends().contains(receiver)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not your friend.");
         }
+        // query if sender or receiver is already in a game
+        Player player1 = playerRepository.findByUser(user);
+        Player player2 = playerRepository.findByUser(receiver);
+        if (player1 != null || player2 != null){
+          throw new ResponseStatusException(HttpStatus.CONFLICT, "At least 1 of the users is already in game!");
+        }
+
         // query if exists the request from the same sender to the same receiver
         FriendRequest oldGameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, userId, receiverId);
         if (oldGameInvitation != null){
@@ -172,23 +188,26 @@ public class FriendService {
     //handle game invitation
     //adjusted Method, trying to fix existing problems.
     @Transactional
-    public FriendRequest handleGameInvitation(Long userId, FriendRequest receivedGameInvitation) {
+    public GameMatchResultDTO handleGameInvitation(Long userId, FriendRequest receivedGameInvitation) {
         System.out.println("HandleGameInv is there");
         FriendRequest gameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, receivedGameInvitation.getSenderId(), userId);
+        GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
         if (gameInvitation == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This person never invited you.");
         } else if (gameInvitation.getStatus() != RequestStatus.SENT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This game invitation has already been processed.");
         }
-
         if (receivedGameInvitation.getStatus() == RequestStatus.ACCEPTED) {
             gameInvitation.setStatus(RequestStatus.ACCEPTED);
             Game friendlyGame = gameService.createGame();
             gameService.startFriendsGame(friendlyGame.getGameId(), userId, receivedGameInvitation.getSenderId());
+            User user = userRepository.findByid(userId);
+            User friend = userRepository.findByid(receivedGameInvitation.getSenderId());
+            gameMatchResultDTO = matchService.setGameMatchResultDTO(user, friend, friendlyGame.getGameId());
         } else if (receivedGameInvitation.getStatus() == RequestStatus.DECLINED) {
             gameInvitation.setStatus(RequestStatus.DECLINED);
         }
-        return gameInvitation;
+        return gameMatchResultDTO;
     }
 
 

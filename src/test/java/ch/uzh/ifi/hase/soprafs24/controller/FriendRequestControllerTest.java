@@ -140,11 +140,11 @@ public class FriendRequestControllerTest {
     friendRequestDTO.setReceiverId(2L);
     friendRequestDTO.setStatus(RequestStatus.ACCEPTED);
     friendRequestDTO.setRequestType(RequestType.GAMEINVITATION);
+    GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
+    gameMatchResultDTO.setGameId(1L);
     Long userId = 2L;
     String token = "Bearer someAuthToken";
-    FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-    given(friendService.handleGameInvitation(eq(userId), Mockito.any(FriendRequest.class))).willReturn(receivedFriendRequest);
-    given(friendService.convertEntityToFriendRequestDTO(Mockito.any(FriendRequest.class))).willReturn(friendRequestDTO);
+    given(friendService.handleGameInvitation(eq(userId), Mockito.any(FriendRequest.class))).willReturn(gameMatchResultDTO);
 
 
     mockMvc.perform(post("/game/{userId}/invitationresponse", userId)
@@ -152,11 +152,7 @@ public class FriendRequestControllerTest {
             .content(asJsonString(friendRequestDTO))
             .header("Authorization", token)) 
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.senderId", is(friendRequestDTO.getSenderId().intValue())))
-            .andExpect(jsonPath("$.receiverId", is(friendRequestDTO.getReceiverId().intValue())))
-            .andExpect(jsonPath("$.status", is(friendRequestDTO.getStatus().toString())))
-            .andExpect(jsonPath("$.senderName", is(friendRequestDTO.getSenderName())))
-            .andExpect(jsonPath("$.requestType", is(friendRequestDTO.getRequestType().toString())))
+            .andExpect(jsonPath("$.gameId", is(gameMatchResultDTO.getGameId().intValue())))
             .andReturn();
   }  
 

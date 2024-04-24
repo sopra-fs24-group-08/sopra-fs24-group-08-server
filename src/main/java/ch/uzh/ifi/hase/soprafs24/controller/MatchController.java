@@ -39,6 +39,14 @@ public class MatchController {
       matchService.addUserToQueue(userId, deferredResult);
       return deferredResult;
     }
-    
+
+    // request to quit a game before a game is instantiated.
+    @DeleteMapping("/games/dequeue/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public String DequeueUser(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) { 
+      userService.authenticateUser(authorization, userId);
+      String result = matchService.cancelQueue(userId);
+      return result;
+    }
   
 }

@@ -8,5 +8,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository("playerRepository")
 public interface PlayerRepository extends JpaRepository<Player, Long> {
+  Player findByUser(User user);
 }
 

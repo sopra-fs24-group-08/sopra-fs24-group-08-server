@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import java.time.LocalDate;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,9 +14,10 @@ import org.springframework.http.HttpStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import org.springframework.web.context.request.async.DeferredResult;
@@ -28,77 +28,94 @@ import java.time.LocalDateTime;
 @Transactional
 public class MatchService {
 
-    // private LobbyRepository lobbyRepository;
-    private final UserRepository userRepository;
-    private final GameService gameService;
+  // private LobbyRepository lobbyRepository;
+  private final UserRepository userRepository;
+  private final GameService gameService;
+  private final PlayerRepository playerRepository;
 
-    @Autowired
-    public MatchService(@Qualifier("userRepository") UserRepository userRepository, GameService gameService) {
-        this.userRepository = userRepository;
-        this.gameService = gameService;
-    }
-    private final ConcurrentHashMap<Long, DeferredResult<GameMatchResultDTO>> presenceMap = new ConcurrentHashMap<>();// in <Long, User>, Long is the type of userId.
-    private final ConcurrentLinkedQueue<Long> queue = new ConcurrentLinkedQueue<>();
-
-    //put user into queue
-    public void addUserToQueue(Long userId,DeferredResult<GameMatchResultDTO> deferredResult){
-      User user = userRepository.findByid(userId);
-      if (user.getInGame()){
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "This game invitation has already been processed.");
-      }
-      if (presenceMap.putIfAbsent(userId, deferredResult) == null){
-        queue.offer(userId);
-        // match immidiately
-        matchUsers();
-      }
-    }
-
-    // check queue in a fixed frequency
-    @Scheduled(fixedRate = 10000)  // execute every 10 seconds
-    public void matchUsers() {
-      while (true){
-        Long firstId = queue.poll();
-        Long secondId = queue.poll();
-        if (firstId != null && secondId != null) {
-            //create a game, start a game.
-            System.out.println("Matched " + firstId + " with " + secondId);
-            Game game = gameService.createGame();
-            game = gameService.startGame(firstId, secondId, game.getGameId());
-            completeDeferredResult(firstId, secondId);
-            completeDeferredResult(secondId, firstId);
-        } else {
-            // haven't delete them from hashmap
-            if (firstId != null) queue.offer(firstId);
-            if (secondId != null) queue.offer(secondId);
-            break;
-        }
-      }
-    }
-
-    private void completeDeferredResult(Long userId, Long opponentId) {
-      DeferredResult<GameMatchResultDTO> deferredResult = presenceMap.remove(userId);
-      GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
-      User user = userRepository.findByid(userId);
-      User opponent = userRepository.findByid(opponentId);
-      if (user != null && opponent != null){
-        gameMatchResultDTO.setUserId1(userId);
-        gameMatchResultDTO.setUsername1(user.getUsername());
-        gameMatchResultDTO.setUserId2(opponentId);
-        gameMatchResultDTO.setUsername2(opponent.getUsername());        
-      }else{
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "userId can not be found.");
-      }
-      if (deferredResult != null) {
-          deferredResult.setResult(gameMatchResultDTO);
-      }
-    }
-
-    // cancel a user in queue
-    public boolean cancelQueue(Long userId) {
-      if (presenceMap.remove(userId) != null) {
-          queue.remove(userId);
-          return true;
-      }
-      return false;
+  @Autowired
+  public MatchService(@Qualifier("userRepository") UserRepository userRepository, 
+                      @Qualifier("playerRepository") PlayerRepository playerRepository,GameService gameService) {
+    this.userRepository = userRepository;
+    this.gameService = gameService;
+    this.playerRepository = playerRepository;
   }
+  private final ConcurrentHashMap<Long, DeferredResult<GameMatchResultDTO>> presenceMap = new ConcurrentHashMap<>();// in <Long, User>, Long is the type of userId.
+  private final ConcurrentLinkedQueue<Long> queue = new ConcurrentLinkedQueue<>();
+
+  //put user into queue
+  public void addUserToQueue(Long userId,DeferredResult<GameMatchResultDTO> deferredResult){
+    User user = userRepository.findByid(userId);
+    Player player = playerRepository.findByUser(user);
+    if (player != null){
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't get in queue while playing a game!");
+    }
+    if (presenceMap.putIfAbsent(userId, deferredResult) == null){
+      queue.offer(userId);
+      // match immidiately
+      matchUsers();
+    }
+  }
+
+  // check queue in a fixed frequency
+  @Scheduled(fixedRate = 10000)  // execute every 10 seconds
+  public void matchUsers() {
+    while (true){
+      Long firstId = queue.poll();
+      Long secondId = queue.poll();
+      if (firstId != null && secondId != null) {
+        //create a game, start a game.
+        System.out.println("Matched " + firstId + " with " + secondId);
+        Game game = gameService.createGame();
+        System.out.printf("create a game with Id: %d\n", game.getGameId());
+        game = gameService.startGame(game.getGameId(), firstId, secondId);
+        completeDeferredResult(firstId, secondId, game.getGameId());
+        completeDeferredResult(secondId, firstId, game.getGameId());
+      } else {
+        // haven't delete them from hashmap
+        if (firstId != null) queue.offer(firstId);
+        if (secondId != null) queue.offer(secondId);
+        break;
+      }
+    }
+  }
+
+  private void completeDeferredResult(Long userId, Long opponentId, Long gameId) {
+    DeferredResult<GameMatchResultDTO> deferredResult = presenceMap.remove(userId);
+    User user = userRepository.findByid(userId);
+    User opponent = userRepository.findByid(opponentId);
+    GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
+    if (user != null && opponent != null){
+      gameMatchResultDTO = setGameMatchResultDTO(user, opponent, gameId);    
+    }else{
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "userId can not be found.");
+    }
+    if (deferredResult != null) {
+      deferredResult.setResult(gameMatchResultDTO);
+    }
+  }
+
+  // cancel a user in queue
+  public String cancelQueue(Long userId) {
+    DeferredResult<GameMatchResultDTO> deferredResult = presenceMap.remove(userId);
+    GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
+    if (deferredResult != null) {
+      queue.remove(userId);
+      deferredResult.setResult(gameMatchResultDTO);
+      return "You're leave the queue now.";
+    }
+    return "You're not in the queue before.";
+  }
+
+  //set game match result dto
+  public GameMatchResultDTO setGameMatchResultDTO(User user1, User user2, Long gameId){
+    GameMatchResultDTO gameMatchResultDTO = new GameMatchResultDTO();
+    gameMatchResultDTO.setUserId1(user1.getId());
+    gameMatchResultDTO.setUsername1(user1.getUsername());
+    gameMatchResultDTO.setUserId2(user2.getId());
+    gameMatchResultDTO.setUsername2(user2.getUsername());  
+    gameMatchResultDTO.setGameId(gameId); 
+    return gameMatchResultDTO;     
+  }
+
 }

@@ -6,6 +6,7 @@ public class GameMatchResultDTO {
   private Long userId2;
   private String username1;
   private String username2;
+  private Long gameId;
 
   public Long getUserId1() {
       return userId1;
@@ -39,4 +40,11 @@ public class GameMatchResultDTO {
       this.username2 = username2;
   }
   
+  public Long getGameId() {
+      return gameId;
+  }
+
+  public void setGameId(Long gameId) {
+      this.gameId = gameId;
+  }
 }
