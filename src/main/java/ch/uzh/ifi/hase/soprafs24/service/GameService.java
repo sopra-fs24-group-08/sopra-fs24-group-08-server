@@ -46,6 +46,11 @@ public class GameService {
         return startGame(userId1,userId2);
     }
 
+    public Long coinFlip(Long playerId1,Long playerId2 ){
+        boolean firstPlayerStarts = new Random().nextBoolean();
+        return firstPlayerStarts ? playerId1 : playerId2;
+    }
+
     public Game startGame(Long userId1, Long userId2) {
         User user1 = userRepository.findByid(userId1);
         User user2 = userRepository.findByid(userId2);
@@ -69,7 +74,6 @@ public class GameService {
         player2.setGame(game);
         playerRepository.saveAll(Arrays.asList(player1, player2));
         game.setPlayers(Arrays.asList(player1, player2));
-        game.setGameStatus(GameStatus.ONGOING);
     }
 
     private void performCoinFlip(Game game) {
@@ -100,6 +104,22 @@ public class GameService {
 
         playerRepository.saveAll(Arrays.asList(firstPlayer, secondPlayer));
     }
+
+    public List<Player> getPlayersbygameId(Long gameId) {
+        return gameRepository.findPlayersByGameId(gameId);
+
+    }
+  /*  public GameState getGameStateForPlayer(Long gameId, String username) {
+        GameState fullGameState = gameRepository.findGameStateByGameId(gameId);
+        // Clone or modify the GameState to create a player-specific view
+        GameState playerGameState = new GameState();
+        playerGameState.setCommonElements(fullGameState.getCommonElements());  // e.g., board state, scores
+
+        // Filter out only the cards that belong to the player
+        playerGameState.setPlayerHand(fullGameState.getHands().get(username));
+
+        return playerGameState;
+    }*/
 
 
     public Game processMove(Long gameId, MoveDTO move,Long playerId) {

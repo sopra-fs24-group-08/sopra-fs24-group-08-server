@@ -8,8 +8,9 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class TranslationService {
 
-    @Value("${translate.api-key}")
-    private String apiKey;
+    @Value("${TRANSLATE_API_KEY}")
+    private String translationApiKey;
+
 
     public String translateText(String text, String sourceLang, String targetLang) {
         String url = "https://translation.googleapis.com/language/translate/v2";
@@ -17,7 +18,7 @@ public class TranslationService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + apiKey);
+        headers.add("Authorization", "Bearer " + translationApiKey);
 
         // Construct the request JSON, handle auto language detection
         String requestJson = "{\"q\": \"" + text + "\", \"target\": \"" + targetLang + "\"";

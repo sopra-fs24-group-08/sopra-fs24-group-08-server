@@ -8,6 +8,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import ch.uzh.ifi.hase.soprafs24.service.FriendService;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
@@ -29,11 +30,13 @@ public class FriendRequestController {
     // add friend request
     @PostMapping("/users/{userId}/friends/add")
     @ResponseStatus(HttpStatus.CREATED)
-    public FriendGetDTO addFriendRequest(@RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+    public void addFriendRequest(@RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+        System.out.println("User with id ");
         userService.authenticateUser(authorization, userId);
         FriendRequest friendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-        User friend = friendService.addFriendRequest(userId, friendRequest);
-        return DTOMapper.INSTANCE.convertEntityToFriendGetDTO(friend);
+        friendService.addFriendRequest(userId, friendRequest);
+
+
     }
 
     // Long-polling to check for adding friend requests/response and game invitation request/response
@@ -120,6 +123,9 @@ public class FriendRequestController {
         }
         return friendGetDTOs;
     }
+
+
+    ///user/{userId}/queue/friend-requests
 
 
 }

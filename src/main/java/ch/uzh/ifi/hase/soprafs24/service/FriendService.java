@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,7 +25,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -36,14 +39,17 @@ public class FriendService {
     private final UserRepository userRepository;
     private final FriendRequestRepository friendRequestRepository;
     private final GameService gameService;
+    private final SimpMessagingTemplate messagingTemplate; // WebSocket messaging template
+
 
     @Autowired
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
-                         GameService gameService) {
+                         GameService gameService, SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.friendRequestRepository = friendRequestRepository;
         this.gameService = gameService;
+        this.messagingTemplate = messagingTemplate;
 
     }
     //get Friend list
@@ -61,7 +67,7 @@ public class FriendService {
 
     //Add friend request
     @Transactional
-    public User addFriendRequest(Long userId, FriendRequest friendAdding){
+    public void addFriendRequest(Long userId, FriendRequest friendAdding){
         // make sure the type of request is friendadding
         if (friendAdding.getRequestType() != RequestType.FRIENDADDING){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The request type is not FRIENDADDING!");
@@ -84,24 +90,63 @@ public class FriendService {
         FriendRequest oldRequest = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.FRIENDADDING, userId, receiverId);
         if (oldRequest != null && (oldRequest.getStatus() == RequestStatus.SENT || oldRequest.getStatus() == RequestStatus.PENDING)){
             // query the creation_time
-            LocalDateTime previousTime = oldRequest.getCreationTime();
-            LocalDateTime nowTime = LocalDateTime.now();
-            Long duration = Duration.between(nowTime, previousTime).getSeconds();
-            if (duration < GlobalConstants.MAX_REQUEST_DURATION){
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "You've already sent a friend request to this user recently.");
-            }else{
-                // delete the old request if it's beyond 60 sec
-                friendRequestRepository.delete(oldRequest);
-            }
-        }
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "You've already sent a friend request to this user recently.");}
         // create new request and preserve into repository
         friendAdding.setSenderId(userId);
         friendAdding.setStatus(RequestStatus.PENDING);
         friendAdding.setCreationTime(LocalDateTime.now());
         friendRequestRepository.save(friendAdding);
         friendRequestRepository.flush();
-        return receiver;
+        FriendRequest newRequest = friendRequestRepository.findBySenderIdAndReceiverId(userId, receiverId);
+        FriendRequestDTO exportRequest = DTOMapper.INSTANCE.convertEntityToFriendRequestDTO(newRequest);
+        Map<String, Object> data = new HashMap<>();
+        data.put("friendRequest", exportRequest);
+        data.put("senderName",user.getUsername());
+        data.put("receiverName",receiver.getUsername());
+        data.put("toastId", friendAdding.getId());
+        System.out.println("About to send a FriendRequest from "+userId+" to "+ receiverId);
+        messagingTemplate.convertAndSend("/user/"+receiverId+"/friend-requests", data);
+
+
     }
+
+
+
+    //WS
+    public void acceptFriendRequest(Long userId, Long requestId) {
+        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalStateException("Friend request not found"));
+        if (friendRequest.getReceiverId().equals(userId) && friendRequest.getStatus() == RequestStatus.PENDING) {
+            friendRequest.setStatus(RequestStatus.ACCEPTED);
+            User user = userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("User not found"));
+            User sender = userRepository.findById(friendRequest.getSenderId()).orElseThrow(() -> new IllegalStateException("Sender not found"));
+            user.getFriends().add(sender);
+            sender.getFriends().add(user);
+            friendRequestRepository.save(friendRequest);
+
+            // Notify the sender that their friend request has been accepted
+            messagingTemplate.convertAndSendToUser(sender.getId().toString(), "/queue/friend-requests", "Your friend request has been accepted by " + user.getUsername());
+        }
+    }
+    //WS
+    public void declineFriendRequest(Long userId, Long requestId) {
+        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalStateException("Friend request not found"));
+        if (friendRequest.getReceiverId().equals(userId) && friendRequest.getStatus() == RequestStatus.PENDING) {
+            friendRequest.setStatus(RequestStatus.DECLINED);
+            friendRequestRepository.save(friendRequest);
+
+            User sender = userRepository.findById(friendRequest.getSenderId()).orElseThrow(() -> new IllegalStateException("Sender not found"));
+            // Notify the sender that their friend request has been declined
+            messagingTemplate.convertAndSendToUser(sender.getId().toString(), "/queue/friend-requests", "Your friend request has been declined by " + userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("User not found")).getUsername());
+        }
+    }
+
+    private void forwardToWebSocket(String message) {
+        // Forward to WebSocket using a specific topic or user queue
+        messagingTemplate.convertAndSend("/topic/messageRoute", message);
+    }
+
 
     //Invitation to game request
     @Transactional

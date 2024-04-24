@@ -31,6 +31,11 @@ public class Game implements Serializable {
     private Player winner;
     //might need to add cascade if it starts causing trouble
 
+
+    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL)//Chatrooms should get deleted once game ends
+    private ChatRoom chatRoom;
+
+
     @Column(name = "current_turn_player_id")
     private Long currentTurnPlayerId;  // Track whose turn it is
 
@@ -95,12 +100,13 @@ public class Game implements Serializable {
         this.players = new ArrayList<>(players);
     }
 
-    /*public void startGame() {
-        this.board.initializeBoard();
-        // Any card drawing now goes through the board
-        Card card = board.drawCard();
-    }*/
+    public ChatRoom getChatRoom() {
+        return chatRoom;
+    }
 
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
 }
 
 

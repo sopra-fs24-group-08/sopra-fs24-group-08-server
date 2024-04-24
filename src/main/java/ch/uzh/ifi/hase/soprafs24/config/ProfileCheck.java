@@ -1,3 +1,4 @@
+/*
 package ch.uzh.ifi.hase.soprafs24.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +10,7 @@ public class ProfileCheck {
 
     private final Environment environment;
 
-    @Value("${translate.api-key}")
+  //  @Value("${translate.api-key}")
     private String apiKey;
 
     public ProfileCheck(Environment environment) {
@@ -32,3 +33,4 @@ public class ProfileCheck {
     }
 }
 
+*/

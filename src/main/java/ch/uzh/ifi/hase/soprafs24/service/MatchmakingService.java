@@ -2,7 +2,11 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.MatchmakingResult;
+import ch.uzh.ifi.hase.soprafs24.repository.ChatMessageRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.ChatRoomRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.MatchmakingResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +18,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MatchmakingService {
 
     private final Map<Long, Long> waitingUsers = new ConcurrentHashMap<>();
-    @Autowired
-    private GameRepository gameRepository;
+    private final GameRepository gameRepository;
 
-    public MatchmakingResult joinPlayer(Long userId) {
+    @Autowired
+    public MatchmakingService(GameRepository gameRepository) {
+        this.gameRepository = gameRepository;
+    }
+
+    public synchronized MatchmakingResult joinPlayer(Long userId) {
         System.out.println("Attempting to add userId to waiting list: " + userId);
 
         // Null check for userId
@@ -31,6 +39,7 @@ public class MatchmakingService {
             System.out.println("UserId " + userId + " added to the matchmaking queue.");
         } else {
             System.out.println("UserId " + userId + " is already in the matchmaking queue.");
+            return new MatchmakingResult(false, null, null, null);
         }
 
         // Check if there are at least two players in the queue
@@ -41,14 +50,14 @@ public class MatchmakingService {
 
             // Create a new game but don't initialize yet
             Game game = new Game();
-            gameRepository.save(game); // Persist new game to the database
+            gameRepository.save(game); // Persist new game to the in memory database
 
             // Clear the users from the waiting list
             waitingUsers.remove(firstPlayerId);
             waitingUsers.remove(secondPlayerId);
 
-            return new MatchmakingResult(true, game.getGameId(), firstPlayerId, secondPlayerId);
-        }
+            System.out.println("New game created with ID: " + game.getGameId() + " for players " + firstPlayerId + " and " + secondPlayerId);
+            return new MatchmakingResult(true, game.getGameId(), firstPlayerId, secondPlayerId);        }
 
         return new MatchmakingResult(false, null, null, null);
     }

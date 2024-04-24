@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.TurnDecisionDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
@@ -15,6 +16,10 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class GameController {
@@ -95,15 +100,42 @@ public class GameController {
         });
     }*/
 
+    // /app/game/{gameId}/accept
+   /* @MessageMapping("/game/{gameId}/accept")
+    public void acceptGameInvitation(Long userId, @DestinationVariable Long gameId,) {
+        gameService.acceptInvitation(userId, gameId);
+        messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/responses", "Game invitation accepted!");
+    }   ///user/{userId}/queue/responses
+
+    // /app/game/{gameId}/accept
+    @MessageMapping("/game/{gameId}/decline")
+    public void declineGameInvitation(Long userId, @DestinationVariable Long gameId) {
+        gameService.declineInvitation(userId, gameId);
+        messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/responses", "Game invitation declined!");
+    }   ///user/{userId}/queue/responses*/
+
+    public void sendRequestWithGameId(FriendRequestDTO friendRequestDTO, Long gameId, String destination) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("friendRequest", friendRequestDTO);
+        data.put("gameId", gameId);
+        data.put("toastId", gameId.toString());
+
+        messagingTemplate.convertAndSend(destination, data);
+    }
 
 
-    @MessageMapping("/game/{gameId}/move")
+    @MessageMapping("/game/{gameId}/move/{userId}")
     public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
         String userId = (String) headerAccessor.getSessionAttributes().get("userId");
         Game updatedGame = gameService.processMove(gameId, move, Long.parseLong(userId));
-        GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(updatedGame, Long.parseLong(userId));
+        List<Player> players = gameService.getPlayersbygameId(gameId);
+        for (Player player : players) {
+            Long playerId =   player.getId();
+            GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(updatedGame,playerId);
 
-        messagingTemplate.convertAndSendToUser(userId, "/match/gameUpdate", gameStateDTO);
+            messagingTemplate.convertAndSendToUser(playerId.toString(), "/queue/game", gameStateDTO);
+        }
+
     }
 
     /*@MessageMapping("/game/{gameId}/move")
