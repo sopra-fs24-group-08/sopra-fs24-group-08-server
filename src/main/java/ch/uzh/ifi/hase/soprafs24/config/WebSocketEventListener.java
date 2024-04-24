@@ -11,6 +11,8 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
+        //Event raised when a new WebSocket client using a Simple Messaging Protocol (e. g. STOMP)
+        // as the WebSocket sub-protocol issues a connect request.
         System.out.println("New WebSocket Connection has been formed");
     }
 

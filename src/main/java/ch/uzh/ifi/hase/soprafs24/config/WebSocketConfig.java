@@ -4,6 +4,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -32,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(WS_PROD, WS_LOCALHOST)
+                .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setInterceptors(httpSessionHandshakeInterceptor());
     }
@@ -45,8 +46,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Bean
+    @Primary
     public TaskScheduler heartBeatScheduler() {
-        return new ThreadPoolTaskScheduler();
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(10);
+        scheduler.setThreadNamePrefix("WebSocketHeartbeat-");
+        scheduler.initialize();
+        return scheduler;
     }
 
     @Bean
@@ -54,7 +60,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         return new HttpSessionHandshakeInterceptor() {
             @Override
             public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-                // Extract userId and token from the request
                 UriComponentsBuilder uriComponents = UriComponentsBuilder.fromUri(request.getURI());
                 Map<String, String> queryParams = uriComponents.build().getQueryParams().toSingleValueMap();
 
@@ -65,10 +70,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     Long userId = Long.parseLong(userIdStr);
                     if (userRepository.existsByUserIdAndToken(userId, token)) {
                         attributes.put("userId", userId);
-                        return true; // Only proceed if both the userId and token are valid
+                        System.out.println("Handshake successful for userId: " + userId);
+                        return true; // Valid userId and token
+                    } else {
+                        System.err.println("Invalid token or userId: " + userIdStr + ", token: " + token);
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid userId format: " + userIdStr);
+                    System.err.println("Invalid userId format: " + userIdStr);
                 }
                 return false;
             }
@@ -76,3 +84,5 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
 }
+
+

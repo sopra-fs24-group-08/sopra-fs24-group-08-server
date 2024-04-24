@@ -29,5 +29,4 @@ public class TurnDecisionDTO {
     private Long starterPlayerId;
     private Boolean starterChoice;  // True if the player decides to go first
 
-    // Getters and setters
 }

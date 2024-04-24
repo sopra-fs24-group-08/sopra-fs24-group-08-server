@@ -16,7 +16,7 @@ import java.util.Random;
 
 @Controller
 public class MatchmakingController {
-
+    //Handle with Polling if possible other extend on this
     @Autowired
     private MatchmakingService matchmakingService;
     @Autowired
@@ -25,22 +25,30 @@ public class MatchmakingController {
     @MessageMapping("/matchmaking/join")
     @SendToUser("/queue/matchmaking")
     public void joinMatchmaking(SimpMessageHeaderAccessor headerAccessor) {
+        System.out.println("WE is trying to join jup");
         Long userId = (Long) headerAccessor.getSessionAttributes().get("userId");
+
         MatchmakingResult result = matchmakingService.joinPlayer(userId);
         if (result.isMatchFound()) {
-            // Send game ID and waiting notification
-            messagingTemplate.convertAndSendToUser(result.getFirstPlayerId().toString(), "/queue/matchmaking", new MatchmakingResponse("waiting_room", result.getGameId()));
-            messagingTemplate.convertAndSendToUser(result.getSecondPlayerId().toString(), "/queue/matchmaking", new MatchmakingResponse("waiting_room", result.getGameId()));
+            // Notify both users that they are matched
+            messagingTemplate.convertAndSendToUser(result.getFirstPlayerId().toString(), "/queue/matchmaking", new MatchmakingResponse("matched", result.getGameId()));
+            messagingTemplate.convertAndSendToUser(result.getSecondPlayerId().toString(), "/queue/matchmaking", new MatchmakingResponse("matched", result.getGameId()));
 
-            // Determine who decides the turn
-            decideTurns(result.getGameId(), result.getFirstPlayerId(), result.getSecondPlayerId());
+            // Send a decision request to one of the players
+
+            decideTurns(result.getGameId(), result.getFirstPlayerId(),result.getSecondPlayerId())   ;
         }
+    }
+
+    private void sendDecisionRequest(Long gameId, Long playerId) {
+        // Send a message to the chosen player to decide who starts
+     //   messagingTemplate.convertAndSendToUser(playerId.toString(), "/queue/turn-decision", new TurnDecisionRequest("Do you want to go first?", gameId));
     }
 
     private void decideTurns(Long gameId, Long firstPlayerId, Long secondPlayerId) {
         boolean firstPlayerStarts = new Random().nextBoolean();
         Long chooserPlayerId = firstPlayerStarts ? firstPlayerId : secondPlayerId;
         String congrats = "U have won the coin flip!,would you like to go first?";;
-        messagingTemplate.convertAndSendToUser(chooserPlayerId.toString(), "/queue/game-start", new TurnDecisionRequestDTO(gameId,congrats));
+        messagingTemplate.convertAndSendToUser(chooserPlayerId.toString(), "/queue/turn-decision", new TurnDecisionRequestDTO(gameId,congrats));
     }
 }
