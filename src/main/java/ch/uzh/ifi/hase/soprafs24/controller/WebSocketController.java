@@ -82,7 +82,6 @@ public class WebSocketController {
             messagingTemplate.convertAndSend("/user/"+userId, "Game invitation accepted!");
         }
     }
-
     // Handle game invitation decline
     @MessageMapping("/game/{userId}/decline")
     public void declineGameInvitation(@Payload GameInvitationDTO response, @DestinationVariable Long userId) {
@@ -93,10 +92,7 @@ public class WebSocketController {
 
     }
 }
-
-
-
-    // Endpoint for handling in-game chat, demonstrating how to send messages to a specific game's chatbox
+// Endpoint for handling in-game chat, demonstrating how to send messages to a specific game's chatbox
     /*@MessageMapping("/game/{gameId}/chat")
     public void gameChat(@DestinationVariable Long gameId, String message) {
         // Assuming a method exists to send a chat message to all subscribers of a game's chat
