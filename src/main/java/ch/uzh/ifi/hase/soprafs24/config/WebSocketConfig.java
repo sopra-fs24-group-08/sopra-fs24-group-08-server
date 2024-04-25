@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -46,13 +47,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Bean
-    @Primary
     public TaskScheduler heartBeatScheduler() {
-        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        /*ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(10);
         scheduler.setThreadNamePrefix("WebSocketHeartbeat-");
-        scheduler.initialize();
-        return scheduler;
+        scheduler.initialize();*/
+        return new ThreadPoolTaskScheduler();
     }
 
     @Bean
@@ -74,15 +74,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         return true; // Valid userId and token
                     } else {
                         System.err.println("Invalid token or userId: " + userIdStr + ", token: " + token);
+                        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return false;
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("Invalid userId format: " + userIdStr);
+                    return false;
                 }
-                return false;
             }
         };
     }
-
 }
 
 

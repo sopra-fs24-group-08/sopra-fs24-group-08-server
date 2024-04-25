@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameInvitationDTO;
 import org.apache.catalina.connector.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -96,7 +97,7 @@ public class FriendService {
         friendAdding.setStatus(RequestStatus.PENDING);
         friendAdding.setCreationTime(LocalDateTime.now());
         friendRequestRepository.save(friendAdding);
-        friendRequestRepository.flush();
+        friendRequestRepository.flush();//fix newREquest dupli another time
         FriendRequest newRequest = friendRequestRepository.findBySenderIdAndReceiverId(userId, receiverId);
         FriendRequestDTO exportRequest = DTOMapper.INSTANCE.convertEntityToFriendRequestDTO(newRequest);
         Map<String, Object> data = new HashMap<>();
@@ -109,36 +110,47 @@ public class FriendService {
 
 
     }
+    public void acceptedGameInvitation(Long senderId, Long receiverId) {
+        FriendRequest gameInvite = friendRequestRepository.findBySenderIdAndReceiverId(senderId, receiverId);
+        if (gameInvite == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend request not found.");
+        }
+        messagingTemplate.convertAndSend("/user/"+senderId, "Game invitation accepted!");
+    }   ///user/{userId}/queue/responses
 
+    // /app/game/{gameId}/accept
+    public void declinedGameInvitation(Long senderId, Long receiverId) {
+        FriendRequest gameInvite = friendRequestRepository.findBySenderIdAndReceiverId(senderId, receiverId);
+        messagingTemplate.convertAndSend("/user/"+senderId, "Game invitation accepted!");
+    }   ///user/{userId}/queue/responses*/
 
 
     //WS
-    public void acceptFriendRequest(Long userId, Long requestId) {
-        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalStateException("Friend request not found"));
-        if (friendRequest.getReceiverId().equals(userId) && friendRequest.getStatus() == RequestStatus.PENDING) {
-            friendRequest.setStatus(RequestStatus.ACCEPTED);
-            User user = userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("User not found"));
-            User sender = userRepository.findById(friendRequest.getSenderId()).orElseThrow(() -> new IllegalStateException("Sender not found"));
-            user.getFriends().add(sender);
-            sender.getFriends().add(user);
-            friendRequestRepository.save(friendRequest);
+    public FriendRequest acceptFriendRequest(Long senderId, Long receiverId) {
+        // Fetch the existing friend request
+        FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(senderId, receiverId);
 
-            // Notify the sender that their friend request has been accepted
-            messagingTemplate.convertAndSendToUser(sender.getId().toString(), "/queue/friend-requests", "Your friend request has been accepted by " + user.getUsername());
+        if (friendRequest == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend request not found.");
         }
+
+        // Update the status of the friend request
+        friendRequest.setStatus(RequestStatus.ACCEPTED);
+        friendRequestRepository.save(friendRequest);
+
+        return friendRequest;
     }
     //WS
-    public void declineFriendRequest(Long userId, Long requestId) {
-        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalStateException("Friend request not found"));
-        if (friendRequest.getReceiverId().equals(userId) && friendRequest.getStatus() == RequestStatus.PENDING) {
+    public void declineFriendRequest(Long senderId, Long receiverId) {
+        FriendRequest friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(senderId, receiverId);
+        if (friendRequest.getReceiverId().equals(receiverId) && friendRequest.getStatus() == RequestStatus.PENDING) {
             friendRequest.setStatus(RequestStatus.DECLINED);
             friendRequestRepository.save(friendRequest);
 
             User sender = userRepository.findById(friendRequest.getSenderId()).orElseThrow(() -> new IllegalStateException("Sender not found"));
             // Notify the sender that their friend request has been declined
-            messagingTemplate.convertAndSendToUser(sender.getId().toString(), "/queue/friend-requests", "Your friend request has been declined by " + userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("User not found")).getUsername());
+            //FIx later
+            messagingTemplate.convertAndSendToUser(sender.getId().toString(), "/queue/friend-requests", "Your friend request has been declined by " );
         }
     }
 
@@ -186,6 +198,14 @@ public class FriendService {
         gameInvitation.setStatus(RequestStatus.PENDING);
         friendRequestRepository.save(gameInvitation);
         friendRequestRepository.flush();
+        FriendRequestDTO exportRequest = DTOMapper.INSTANCE.convertEntityToFriendRequestDTO(gameInvitation);
+        Map<String, Object> data = new HashMap<>();
+        data.put("gameinvitation", exportRequest);
+        data.put("senderName",user.getUsername());
+        data.put("receiverName",receiver.getUsername());
+        data.put("toastId", gameInvitation.getId());
+        System.out.println("About to send a Game Invite from "+userId+" to "+ receiverId);
+        messagingTemplate.convertAndSend("/user/"+receiverId+"/game-invitations", data);
         return gameInvitation;
     }
 
