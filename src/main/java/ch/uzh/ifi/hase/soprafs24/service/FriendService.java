@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -75,7 +72,7 @@ public class FriendService {
         }
         // query if there exists such a user
         Long receiverId = friendAdding.getReceiverId();
-        if (receiverId == userId){
+        if (Objects.equals(receiverId, userId)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't add yourself as a friend!");
         }
         User receiver = userRepository.findByid(receiverId);
@@ -98,15 +95,9 @@ public class FriendService {
         friendAdding.setCreationTime(LocalDateTime.now());
         friendRequestRepository.save(friendAdding);
         friendRequestRepository.flush();//fix newREquest dupli another time
-        FriendRequest newRequest = friendRequestRepository.findBySenderIdAndReceiverId(userId, receiverId);
-        FriendRequestDTO exportRequest = DTOMapper.INSTANCE.convertEntityToFriendRequestDTO(newRequest);
-        Map<String, Object> data = new HashMap<>();
-        data.put("friendRequest", exportRequest);
-        data.put("senderName",user.getUsername());
-        data.put("receiverName",receiver.getUsername());
-        data.put("toastId", friendAdding.getId());
+        FriendRequestDTO exportRequest = DTOMapper.INSTANCE.convertEntityToFriendRequestDTO(friendAdding);
         System.out.println("About to send a FriendRequest from "+userId+" to "+ receiverId);
-        messagingTemplate.convertAndSend("/user/"+receiverId+"/friend-requests", data);
+        messagingTemplate.convertAndSend("/user/"+receiverId+"/friend-requests", exportRequest);
 
 
     }
@@ -301,6 +292,7 @@ public class FriendService {
 
     //convert request to FriendRequestDTO
     public FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest) {
+        System.out.println("converting friendRequest to FriendRequestDTO"+friendRequest);
         FriendRequestDTO dto = new FriendRequestDTO();
         Long senderId = friendRequest.getSenderId();
         Long receiverId = friendRequest.getReceiverId();

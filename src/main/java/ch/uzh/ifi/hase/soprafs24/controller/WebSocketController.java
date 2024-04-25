@@ -61,7 +61,7 @@ public class WebSocketController {
         return message;
     }
 
-    @MessageMapping("/{userId}/friend-requests/respond")
+    @MessageMapping("/{userId}/friend-requests/responds")
     public void respondToFriendRequest(@DestinationVariable Long userId, @Payload FriendRequestDTO response) {
         // Assume userId matches the receiverId for validation
         if (!userId.equals(response.getReceiverId())) {
