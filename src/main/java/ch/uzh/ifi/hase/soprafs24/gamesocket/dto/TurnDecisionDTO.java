@@ -1,13 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.gamesocket.dto;
 
 public class TurnDecisionDTO {
-    public Boolean getStarterChoice() {
-        return starterChoice;
-    }
-
-    public void setStarterChoice(Boolean starterChoice) {
-        this.starterChoice = starterChoice;
-    }
 
     public Long getStarterPlayerId() {
         return starterPlayerId;
@@ -27,6 +20,15 @@ public class TurnDecisionDTO {
 
     private Long gameId;
     private Long starterPlayerId;
-    private Boolean starterChoice;  // True if the player decides to go first
+
+    public Long getOtherPlayerId() {
+        return otherPlayerId;
+    }
+
+    public void setOtherPlayerId(Long otherPlayerId) {
+        this.otherPlayerId = otherPlayerId;
+    }
+
+    private Long otherPlayerId;  // True if the player decides to go first
 
 }

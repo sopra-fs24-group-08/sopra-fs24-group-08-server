@@ -57,14 +57,14 @@ public class GameService {
         Game game = createGame();
 
         //Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        initializePlayers(game,user1,user2);
+        initializeMatchedFriends(game,user1,user2);
         performCoinFlip(game);
 
         gameRepository.save(game);
         return game;
     }
 
-    private void initializePlayers(Game game, User user1, User user2) {
+    private void initializeMatchedFriends(Game game, User user1, User user2) {
         Player player1 = new Player();
         player1.setUser(user1);
         player1.setGame(game);
@@ -74,6 +74,37 @@ public class GameService {
         player2.setGame(game);
         playerRepository.saveAll(Arrays.asList(player1, player2));
         game.setPlayers(Arrays.asList(player1, player2));
+        gameRepository.save(game);
+    }
+
+
+    private Game initializeMatchedUsers(Game game, User user1, User user2) {
+        Player player1 = new Player();
+        player1.setUser(user1);
+        player1.setGame(game);
+
+        Player player2 = new Player();
+        player2.setUser(user2);
+        player2.setGame(game);
+        playerRepository.saveAll(Arrays.asList(player1, player2));
+        game.setPlayers(Arrays.asList(player1, player2));
+        game.setGameStatus(GameStatus.ONGOING);
+        gameRepository.save(game);
+        return game;
+
+    }
+
+    public boolean verifyTurnDecision(Long gameId,Long userId,Long user2Id) {
+        Game flipgame = gameRepository.findByGameId(gameId);
+        //check if they are ingame
+        return (Objects.equals(flipgame.getGameStatus().toString(), "COINFLIP"));
+    }
+
+    public Game startMatchedGame(Long gameId,Long userToStart, Long user2){
+        User userW = userRepository.findByid(userToStart);
+        User userL = userRepository.findByid(user2);
+        Game game = gameRepository.findByGameId(gameId);
+        return initializeMatchedUsers(game,userW, userL);
     }
 
     private void performCoinFlip(Game game) {
@@ -82,9 +113,12 @@ public class GameService {
         Player secondPlayer = firstPlayerStarts ? game.getPlayers().get(1) : game.getPlayers().get(0);
 
         // Decide who starts and send initial game state
+        game.setGameStatus(GameStatus.COINFLIP);
         game.setCurrentTurnPlayerId(startingPlayer.getId());
         sendInitialGameState(game);
     }
+
+
 
     private void sendInitialGameState(Game game) {
         GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, game.getCurrentTurnPlayerId());
@@ -93,6 +127,9 @@ public class GameService {
             messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
         });
     }
+
+
+
 
     private void dealInitialCards(Board board, Player firstPlayer, Player secondPlayer) {
         board.drawCard(firstPlayer);

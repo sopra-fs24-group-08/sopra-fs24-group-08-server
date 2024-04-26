@@ -51,13 +51,11 @@ public class MatchmakingController {
 
     private void SendCoinFlipDecision(Long gameId, Long firstPlayerId, Long secondPlayerId) {
         Long chosenPlayerId = gameService.coinFlip(firstPlayerId, secondPlayerId);
-        String congrats = "U have won the coin flip!,would you like to go first?";;
+        String congrats = "U have won the coin flip!,would you like to go first?";
         String waitMessage = "Wait for your opponent to choose the order.";
-
-        messagingTemplate.convertAndSendToUser(chosenPlayerId.toString(), "/queue/match/turn-decision", new TurnDecisionRequestDTO(gameId,congrats));
-
         Long otherPlayerId = (chosenPlayerId.equals(firstPlayerId)) ? secondPlayerId : firstPlayerId;
-        messagingTemplate.convertAndSendToUser(otherPlayerId.toString(), "/queue/match/turn-decision", waitMessage);
+        messagingTemplate.convertAndSendToUser(chosenPlayerId.toString(), "user/queue/game/"+gameId+"turn-decision", new TurnDecisionRequestDTO(gameId,otherPlayerId,congrats));
+        messagingTemplate.convertAndSendToUser(otherPlayerId.toString(), "user/queue/game/"+gameId+"turn-decision",  new TurnDecisionRequestDTO(gameId,chosenPlayerId,waitMessage));
 }
 
 }

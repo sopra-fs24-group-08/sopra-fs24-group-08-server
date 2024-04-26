@@ -111,7 +111,8 @@ public class UserController {
      */
     @PutMapping(value = "/logout/{id}")
     @ResponseBody
-    public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id) {
+    public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id,String token) {
+        userService.checkTokenValidity(token);
         User loggedUser = userService.logoutUserbyUserID(id);
         return DTOMapper.INSTANCE.convertEntityToLogoutUserGetDTO(loggedUser);
     }

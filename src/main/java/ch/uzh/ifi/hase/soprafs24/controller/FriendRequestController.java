@@ -72,16 +72,6 @@ public class FriendRequestController {
         return friendService.convertEntityToFriendRequestDTO(updateGameInvitation);
     }
 
-    @PostMapping("/users/{userId}/friendresponse")
-    @ResponseStatus(HttpStatus.OK)
-    public boolean handleFriendRequest(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization) {
-        // Authenticate the user making the request
-        userService.authenticateUser(authorization, userId);
-
-        // Convert DTO to entity
-        FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
-    return true;
-    }
 
    /* // Handle game invitation
     @PostMapping("/game/{userId}/invitationresponse")

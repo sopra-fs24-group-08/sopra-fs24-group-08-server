@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +68,7 @@ public class GameController {
 //        // Broadcast the initial game state to all players in the game
 //        messagingTemplate.convertAndSend("/topic/game/gameState/" + game.getGameId(), gameStateDTO);
 //    }
-
+        //"/topic/game/{gameId}/gameState,gameStateDTO)
     /*@MessageMapping("/game/start")
     public void startGame(@Payload GameStartRequestDTO request, SimpMessageHeaderAccessor headerAccessor) {
         String userId = (String) headerAccessor.getSessionAttributes().get("userId");
@@ -89,16 +90,20 @@ public class GameController {
         messagingTemplate.convertAndSend("/topic/game/gameUpdate/" + gameId, gameStateDTO);
     }
 */
-  /*  @MessageMapping("/game/{gameId}/start")
-    public void startGame(@DestinationVariable Long gameId, @Payload TurnDecisionDTO decision) {
-        Game game = gameService.startGame(gameId, decision.getStarterPlayerId(), decision.getStarterChoice());
-        GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, decision.getStarterPlayerId());
-        // Broadcast the initial game state to all players in the game
-        game.getPlayers().forEach(player -> {
-            GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, player.getUser().getId());
-            messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
-        });
-    }*/
+  @PostMapping("/game/{gameId}/start")
+  @ResponseStatus(HttpStatus.OK)
+    public void startGame(@PathVariable Long gameId,TurnDecisionDTO decision) {
+      if (!gameService.verifyTurnDecision(gameId, decision.getStarterPlayerId(), decision.getOtherPlayerId())) {
+          throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid game start decision");
+      }
+
+      Game game = gameService.startMatchedGame(gameId, decision.getStarterPlayerId(), decision.getOtherPlayerId());
+      // Broadcast the initial game state to all players in the game
+      game.getPlayers().forEach(player -> {
+          GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, player.getUser().getId());
+          messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
+      });
+  }
 
     // /app/game/{gameId}/accept
    /* @MessageMapping("/game/{gameId}/accept")
@@ -124,8 +129,9 @@ public class GameController {
     }
 
 
-    @MessageMapping("/game/{gameId}/move/{userId}")
+    @MessageMapping("/game/{gameId}/move")
     public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
+        System.out.println("Checking"+ headerAccessor);
         String userId = (String) headerAccessor.getSessionAttributes().get("userId");
         Game updatedGame = gameService.processMove(gameId, move, Long.parseLong(userId));
         List<Player> players = gameService.getPlayersbygameId(gameId);

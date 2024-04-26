@@ -60,7 +60,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         return new HttpSessionHandshakeInterceptor() {
             @Override
             public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-                UriComponentsBuilder uriComponents = UriComponentsBuilder.fromUri(request.getURI());
+                UriComponentsBuilder
+                        uriComponents = UriComponentsBuilder.fromUri(request.getURI());
                 Map<String, String> queryParams = uriComponents.build().getQueryParams().toSingleValueMap();
 
                 String userIdStr = queryParams.get("userId");

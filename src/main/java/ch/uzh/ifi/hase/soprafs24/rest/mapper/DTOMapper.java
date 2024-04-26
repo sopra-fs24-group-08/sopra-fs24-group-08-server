@@ -52,6 +52,7 @@ public interface DTOMapper {
     @Mapping(target = "icons", expression = "java(mapIcons(user.getIcons()))")
     @Mapping(source = "banners", target = "banners")
     @Mapping(source = "achievements", target = "achievements")
+    @Mapping(source = "token", target = "token")
 
     UserGetDTO convertEntityToUserGetDTO(User user);
     default List<IconGetDTO> mapIcons(Set<Icon> icons) {
