@@ -11,10 +11,9 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT f FROM User u JOIN u.friends f WHERE u.id = :userId")
     List<User> findFriendsByUserId(@Param("userId") Long userId);
-    User findByName(String name);
     User findByUsername(String username);
     User findByid(Long id);
-
+    User findByPassword(String password);
     // Need this for authorization, to verify if the token is really a valid one
     User findByToken(String token);
 }

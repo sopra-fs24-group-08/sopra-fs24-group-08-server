@@ -26,7 +26,6 @@ public interface DTOMapper {
     //Functional Mapping Working for the OutsideGame Features
     @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")
-    @Mapping(source = "name", target = "name")
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "token", ignore = true)
@@ -42,7 +41,6 @@ public interface DTOMapper {
     BannerGetDTO bannerToBannerDTO(Banner banner);
     AchievementGetDTO achievementToAchievementDTO(Achievement achievement);
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "name", target = "name")
     @Mapping(source = "username", target = "username")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "birthday", target = "birthday")
@@ -63,7 +61,6 @@ public interface DTOMapper {
     @Mapping(source = "password", target = "password")
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "name", ignore = true)
     @Mapping(target = "token", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "creation_date", ignore = true)
@@ -79,7 +76,6 @@ public interface DTOMapper {
     @Mapping(source = "password", target = "password")
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "name", ignore = true)
     @Mapping(target = "token", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "creation_date", ignore = true)

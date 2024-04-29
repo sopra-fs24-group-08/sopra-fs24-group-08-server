@@ -67,7 +67,7 @@ public class UserController {
     /*
       Login: Post API to login user
      */
-    @PostMapping("/login")
+    @PostMapping("/users/login")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public UserGetDTO loginUser(@RequestBody LoginUserPostDTO loginUserPostDTO) {
@@ -107,13 +107,14 @@ public class UserController {
     }
 
     /*
-    Logout: Change status of profile
+    Logout: Change status of profile //Why are we returning user information back after client logs out?
      */
-    @PutMapping(value = "/logout/{id}")
+    @PutMapping(value = "/users/{userId}/logout")
+    @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public LogoutUserGetDTO logoutUser(@PathVariable("id") Long id) {
-        User loggedUser = userService.logoutUserbyUserID(id);
-        return DTOMapper.INSTANCE.convertEntityToLogoutUserGetDTO(loggedUser);
+    public void logoutUser(@PathVariable("userId") Long userId ,@RequestHeader("Authorization") String authorization) {
+        userService.authenticateUser(authorization, userId);
+        userService.logoutUserbyUserID(userId);
     }
 
     // authenticate user

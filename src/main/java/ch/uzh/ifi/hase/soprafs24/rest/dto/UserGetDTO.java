@@ -9,7 +9,6 @@ import java.util.List;
 public class UserGetDTO {
 
   private Long id;
-  private String name;
   private String username;
   private UserStatus status;
   private LocalDate creation_date;
@@ -63,13 +62,6 @@ public class UserGetDTO {
       this.id = id;
   }
 
-  public String getName() {
-      return name;
-  }
-
-  public void setName(String name) {
-      this.name = name;
-  }
 
   public String getUsername() {
       return username;

@@ -7,7 +7,6 @@ import java.time.LocalDate;
 public class OtherUserGetDTO {
 
     private Long id;
-    private String name;
     private String username;
     private UserStatus status;
 
@@ -23,13 +22,6 @@ public class OtherUserGetDTO {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getUsername() {
         return username;
