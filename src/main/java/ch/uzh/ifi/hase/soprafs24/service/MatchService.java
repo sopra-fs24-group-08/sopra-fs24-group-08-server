@@ -10,19 +10,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.context.request.async.DeferredResult;
+
+import java.time.LocalDateTime;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.GameState;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
-import org.springframework.web.context.request.async.DeferredResult;
-
-import java.time.LocalDateTime;
+import ch.uzh.ifi.hase.soprafs24.service.SseManagerService;
 
 @Service
 @Transactional
@@ -32,13 +34,16 @@ public class MatchService {
   private final UserRepository userRepository;
   private final GameService gameService;
   private final PlayerRepository playerRepository;
+  private final SseManagerService sseManagerService;
 
   @Autowired
   public MatchService(@Qualifier("userRepository") UserRepository userRepository, 
-                      @Qualifier("playerRepository") PlayerRepository playerRepository,GameService gameService) {
+                      @Qualifier("playerRepository") PlayerRepository playerRepository,GameService gameService, 
+                      SseManagerService sseManagerService) {
     this.userRepository = userRepository;
-    this.gameService = gameService;
     this.playerRepository = playerRepository;
+    this.gameService = gameService;
+    this.sseManagerService = sseManagerService;
   }
   private final ConcurrentHashMap<Long, DeferredResult<GameMatchResultDTO>> presenceMap = new ConcurrentHashMap<>();// in <Long, User>, Long is the type of userId.
   private final ConcurrentLinkedQueue<Long> queue = new ConcurrentLinkedQueue<>();
@@ -69,6 +74,7 @@ public class MatchService {
         Game game = gameService.createGame();
         System.out.printf("create a game with Id: %d\n", game.getGameId());
         game = gameService.startGame(game.getGameId(), firstId, secondId);
+        System.out.printf("####2##board: %s", game.getBoard().getSquareColor(0));
         completeDeferredResult(firstId, secondId, game.getGameId());
         completeDeferredResult(secondId, firstId, game.getGameId());
       } else {

@@ -4,7 +4,9 @@ import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Game")
@@ -33,6 +35,10 @@ public class Game implements Serializable {
 
     @Column(name = "current_turn_player_id")
     private Long currentTurnPlayerId;  // Track whose turn it is
+
+    public Game() {
+      this.board = new Board();
+    }
 
     //add CardPile
     public Long getCurrentTurnPlayerId() {
@@ -75,9 +81,6 @@ public class Game implements Serializable {
         this.gameId = gameId;
     }
 
-    public Game() {
-    }
-
     public void addPlayer(Player player) {
         players.add(player);
         player.setGame(this);
@@ -89,7 +92,7 @@ public class Game implements Serializable {
     }
 
     public List<Player> getPlayers() {
-        return players;
+      return players;
     }
 
     public void setPlayers(List<Player> players) {

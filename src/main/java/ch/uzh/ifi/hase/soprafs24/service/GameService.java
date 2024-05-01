@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -28,11 +31,20 @@ public class GameService {
 
     public Game createGame() {
         Game game = new Game();
-        Board board = new Board();
-        game.setBoard(board);
+        // Board board = new Board();
+        // game.setBoard(board);
         gameRepository.save(game);
         gameRepository.flush();
         return game;
+    }
+
+    public Game findGame(Long gameId){
+      Game game = gameRepository.findByGameId(gameId);
+      if (game != null){
+        return game;
+      }else{
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Coundn't find the game.");
+      }
     }
 
     //Leaving in encase it's used for Polling or if we want to add different beh. to friendly games
@@ -43,7 +55,6 @@ public class GameService {
     public Game startGame(Long gameId, Long userId1, Long userId2) {
         User user1 = userRepository.findById(userId1).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         User user2 = userRepository.findById(userId2).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
         Player player1 = new Player(user1, game);
@@ -53,19 +64,21 @@ public class GameService {
 
         if (firstPlayerStarts) {
             dealInitialCards(game.getBoard(), player1, player2, true);
-            game.setCurrentTurnPlayerId(player1.getId());
+            game.setCurrentTurnPlayerId(player1.getUser().getId());
         } else {
             dealInitialCards(game.getBoard(), player1, player2, false);
-            game.setCurrentTurnPlayerId(player2.getId());
+            game.setCurrentTurnPlayerId(player2.getUser().getId());
+            System.out.printf("2:current player Id: %d\n", game.getCurrentTurnPlayerId());
         }
 
-
         playerRepository.saveAll(Arrays.asList(player1, player2));
-
         game.setPlayers(Arrays.asList(player1, player2));
-        game.setGameStatus(GameStatus.ONGOING);
 
-        return gameRepository.save(game);
+
+        game.setGameStatus(GameStatus.ONGOING);
+        game = gameRepository.save(game);
+        gameRepository.flush();
+        return game;
     }
 
     private void dealInitialCards(Board board, Player player1, Player player2, boolean firstPlayerStarts) {
@@ -197,5 +210,6 @@ public class GameService {
 
         gameRepository.save(game);
     }
+
 
 }

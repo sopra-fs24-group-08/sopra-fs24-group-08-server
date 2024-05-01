@@ -2,8 +2,13 @@ package ch.uzh.ifi.hase.soprafs24.rest.mapper;
 
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
+import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
+
+import org.apache.catalina.webresources.Cache;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,7 +38,12 @@ public interface DTOMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "creation_date", ignore = true)
     @Mapping(target = "birthday", ignore = true)
-
+    @Mapping(target = "icons", ignore = true)
+    @Mapping(target = "achievements", ignore = true)
+    @Mapping(target = "currIcon", ignore = true)
+    @Mapping(target = "banners", ignore = true)
+    @Mapping(target = "inGame", ignore = true)  
+    @Mapping(target = "friends", ignore = true)  
     User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
 
 
@@ -68,7 +78,12 @@ public interface DTOMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "creation_date", ignore = true)
     @Mapping(target = "birthday", ignore = true)
-
+    @Mapping(target = "icons", ignore = true)
+    @Mapping(target = "achievements", ignore = true)
+    @Mapping(target = "currIcon", ignore = true)
+    @Mapping(target = "banners", ignore = true)
+    @Mapping(target = "inGame", ignore = true)  
+    @Mapping(target = "friends", ignore = true)  
     User convertLoginUserPostDTOtoEntity(LoginUserPostDTO loginUserPostDTO);
 
     @Mapping(source = "status", target = "status")
@@ -77,13 +92,17 @@ public interface DTOMapper {
     @Mapping(source = "username", target = "username")
     @Mapping(source = "birthday", target = "birthday")
     @Mapping(source = "password", target = "password")
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "name", ignore = true)
     @Mapping(target = "token", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "creation_date", ignore = true)
-
+    @Mapping(target = "icons", ignore = true)
+    @Mapping(target = "achievements", ignore = true)
+    @Mapping(target = "currIcon", ignore = true)
+    @Mapping(target = "banners", ignore = true)
+    @Mapping(target = "inGame", ignore = true)  
+    @Mapping(target = "friends", ignore = true)  
     User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
 
     @Mapping(source = "id", target = "id")
@@ -97,25 +116,35 @@ public interface DTOMapper {
     @Mapping(source = "gameStatus", target = "gameStatus")
     @Mapping(source = "winner.id", target = "winnerId")
     @Mapping(source = "currentTurnPlayerId", target = "currentTurnPlayerId")
-    @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
+    // @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
+
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "hand", target = "cards")
+    @Mapping(source = "hand", target = "cards", qualifiedByName = "mapHandCards")
     @Mapping(source = "score", target = "score")
-    @Mapping(target = "gameId", ignore = true)  // Assuming not directly available
+    @Mapping(source = "playerName", target = "playerName")
+    // @Mapping(target = "gameId", ignore = true)  // Assuming not directly available
     PlayerDTO convertEntityToPlayerDTO(Player player);
+
+    @Mapping(source = "gridSquares", target = "gridSquares")
+    BoardDTO convertEntityBoardDTO(Board board);
 
     // User convert to FriendGetDTO to protect data
     @Mapping(source = "username", target = "username")
     @Mapping(source = "id", target = "id")
-
     FriendGetDTO convertEntityToFriendGetDTO(User user);
 
     // friendRequestDTO convert to friendRequest entity and converse
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationTime", ignore = true)    
     FriendRequest convertFriendRequestDTOtoEntity(FriendRequestDTO friendRequestDTO);
+
+    @Mapping(target = "senderName", ignore = true)
+    @Mapping(target = "receiverName", ignore = true)
     FriendRequestDTO convertEntityToFriendRequestDTO(FriendRequest friendRequest);
 
     // convert to other user
     OtherUserGetDTO convertEntityToOtherUserGetDTO(User user);
+
 }

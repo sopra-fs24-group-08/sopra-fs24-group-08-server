@@ -11,8 +11,8 @@ public class GridSquare {
 
     private String color;
 
-    @ManyToOne
-    private Board board;
+    // @ManyToOne
+    // private Board board;
 
     @OneToOne(optional = true)
     private Card card;
@@ -41,12 +41,12 @@ public class GridSquare {
         this.card = card;
     }
 
-    public Board getBoard() {
-        return board;
-    }
+    // public Board getBoard() {
+    //     return board;
+    // }
 
-    public void setBoard(Board board) {
-        this.board = board;
-    }
+    // public void setBoard(Board board) {
+    //     this.board = board;
+    // }
 
 }

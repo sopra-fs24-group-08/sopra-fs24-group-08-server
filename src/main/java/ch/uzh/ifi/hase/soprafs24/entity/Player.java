@@ -23,7 +23,7 @@ import java.util.Optional;
 public class Player implements  Serializable{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
@@ -43,7 +43,11 @@ public class Player implements  Serializable{
     @Column(nullable = false)
     private int score = 0;
 
-    public Player() {
+    @Column
+    private String playerName;
+
+    public Player(){
+      
     }
 
     public List<Card> getHand() {
@@ -71,8 +75,12 @@ public class Player implements  Serializable{
         this.hand = new ArrayList<>();
     }
 
+    public String getPlayerName(){
+      return this.user.getUsername();
+    }
+
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(Long id) {

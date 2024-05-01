@@ -63,7 +63,4 @@ public class GameState {
         this.board = board;
     }
 
-
-
-
 }

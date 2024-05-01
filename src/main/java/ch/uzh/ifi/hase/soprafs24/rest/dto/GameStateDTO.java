@@ -13,15 +13,15 @@ public class GameStateDTO {
     private GameStatus gameStatus;
     private Long winnerId;
     private Long currentTurnPlayerId;
-    private int cardPileSize;
+    // private int cardPileSize;
 
-    public int getCardPileSize() {
-        return cardPileSize;
-    }
+    // public int getCardPileSize() {
+    //     return cardPileSize;
+    // }
 
-    public void setCardPileSize(int cardPileSize) {
-        this.cardPileSize = cardPileSize;
-    }
+    // public void setCardPileSize(int cardPileSize) {
+    //     this.cardPileSize = cardPileSize;
+    // }
 
 
     public GameStateDTO() {

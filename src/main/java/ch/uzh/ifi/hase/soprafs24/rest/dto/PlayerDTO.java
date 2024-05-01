@@ -4,8 +4,8 @@ import java.util.List;
 
 public class PlayerDTO {
     private Long id;
-    private Long gameId;
-    private String username; // Optional, based on what you want to show
+    // private Long gameId;
+    private String playerName; // Optional, based on what you want to show
     private int score;
     private List<CardDTO> cards;
 
@@ -25,13 +25,13 @@ public class PlayerDTO {
         this.id = id;
     }
 
-    public Long getGameId() {
-        return gameId;
-    }
+    // public Long getGameId() {
+    //     return gameId;
+    // }
 
-    public void setGameId(Long gameId) {
-        this.gameId = gameId;
-    }
+    // public void setGameId(Long gameId) {
+    //     this.gameId = gameId;
+    // }
 
 
     public int getScore() {
@@ -40,6 +40,14 @@ public class PlayerDTO {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public String getPlayerName() {
+      return playerName;
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
     }
 
 }
