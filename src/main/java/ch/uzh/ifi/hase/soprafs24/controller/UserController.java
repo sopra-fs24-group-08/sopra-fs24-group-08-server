@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * User Controller
+ * User Controll er
  * This class is responsible for handling all REST request that are related to
  * the user.
  * The controller will receive the request and delegate the execution to the
