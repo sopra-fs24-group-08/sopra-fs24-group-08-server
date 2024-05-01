@@ -218,6 +218,7 @@ public class UserService {
         }
         User userByToken = userRepository.findByToken(token);
         if (userByToken == null) {
+            System.out.println("problematic"+ token);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");
         }
     }

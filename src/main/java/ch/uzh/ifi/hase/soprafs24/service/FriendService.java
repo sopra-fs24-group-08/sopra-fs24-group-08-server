@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendGetDTO;
 import org.apache.catalina.connector.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,14 +22,14 @@ import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendRequestDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
 import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
-import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
-import javassist.tools.framedump;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -55,14 +56,6 @@ public class FriendService {
         this.matchService = matchService;
 
     }
-    //get Friend list
-    /*public List<User> getFriends(Long userId) {
-        User currentUser = userRepository.findByid(userId);
-        if (currentUser == null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Can find the current user.");
-        }
-        return currentUser.getFriends();
-    }*/
 
     public List<User> getFriendsQuery(Long userId) {
         return userRepository.findFriendsByUserId(userId);
@@ -77,7 +70,7 @@ public class FriendService {
         }
         // query if there exists such a user
         Long receiverId = friendAdding.getReceiverId();
-        if (receiverId == userId){
+        if (Objects.equals(receiverId, userId)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't add yourself as a friend!");
         }
         User receiver = userRepository.findByid(receiverId);
@@ -95,7 +88,7 @@ public class FriendService {
             // query the creation_time
             LocalDateTime previousTime = oldRequest.getCreationTime();
             LocalDateTime nowTime = LocalDateTime.now();
-            Long duration = Duration.between(nowTime, previousTime).getSeconds();
+            long duration = Duration.between(nowTime, previousTime).getSeconds();
             if (duration < GlobalConstants.MAX_REQUEST_DURATION){
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "You've already sent a friend request to this user recently.");
             }else{
@@ -112,6 +105,19 @@ public class FriendService {
         return receiver;
     }
 
+    @Transactional
+    public User addFriendAutomatically(Long userId, FriendGetDTO fakefriendRequest){
+        User user = userRepository.findByid(userId);
+        long friendId = fakefriendRequest.getId();
+        User friend = userRepository.findByid(friendId);
+        user.addFriend(friend);
+        friend.addFriend(user);
+        userRepository.save(user);
+        userRepository.save(friend);
+        userRepository.flush();
+        return user;
+    }
+
     //Invitation to game request
     @Transactional
     public FriendRequest inviteFriendToGame(Long userId, FriendRequest gameInvitation){
@@ -121,7 +127,7 @@ public class FriendService {
         }
         // query if there exists such a user
         Long receiverId = gameInvitation.getReceiverId();
-        if (receiverId == userId){
+        if (Objects.equals(receiverId, userId)){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't invite yourself into a game!");
         }
         User receiver = userRepository.findByid(receiverId);

@@ -150,6 +150,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ResponseBody
     public void logoutUser(@PathVariable("userId") Long userId ,@RequestHeader("Authorization") String authorization) {
+        System.out.println("User with the following userId and token is trying t log out:"+userId+authorization);
         userService.authenticateUser(authorization, userId);
         userService.logoutUserbyUserID(userId);
     }

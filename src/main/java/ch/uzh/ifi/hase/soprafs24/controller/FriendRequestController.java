@@ -26,6 +26,17 @@ public class FriendRequestController {
         this.friendService = friendService;
     }
 
+    @PostMapping("/users/{userId}/friends/testadd")
+    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseBody
+    public boolean addFriendTestingPurpose(@PathVariable long userId,@RequestHeader("Authorization") String authorization, @RequestBody FriendGetDTO friendGetDTO) {
+        userService.authenticateUser(authorization, userId);
+        User updatedUser = friendService.addFriendAutomatically(userId, friendGetDTO);
+        return true;
+        //Just for testing purposes while I refactor the client and don't want to majorly affect anybody elses stuff.
+    }
+
+
     // add friend request
     @PostMapping("/users/{userId}/friends/add")
     @ResponseStatus(HttpStatus.CREATED)
