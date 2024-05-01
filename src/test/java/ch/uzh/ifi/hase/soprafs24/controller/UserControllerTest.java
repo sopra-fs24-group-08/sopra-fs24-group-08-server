@@ -75,14 +75,12 @@ public class UserControllerTest {
         // given
         User user = new User();
         user.setId(1L);
-        user.setName("Test User");
         user.setUsername("testUsername");
         user.setToken("1");
         user.setPassword("testPassword");
         user.setStatus(UserStatus.OFFLINE);
 
         UserPostDTO userPostDTO = new UserPostDTO();
-        userPostDTO.setName("Test User");
         userPostDTO.setUsername("testUsername");
         userPostDTO.setPassword("testPassword");
 
@@ -97,7 +95,6 @@ public class UserControllerTest {
         mockMvc.perform(postRequest)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-                .andExpect(jsonPath("$.name", is(user.getName())))
                 .andExpect(jsonPath("$.username", is(user.getUsername())))
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
@@ -106,7 +103,6 @@ public class UserControllerTest {
     public void doubledUser_validInput_throwexceptions() throws Exception {
         // given
         UserPostDTO userPostDTO = new UserPostDTO();
-        userPostDTO.setName("Test User");
         userPostDTO.setUsername("testUsername");
         userPostDTO.setPassword("testPassword");
         given(userService.createUser(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.CONFLICT));
@@ -177,7 +173,6 @@ public class UserControllerTest {
 
         // given user
         user.setId(189L);
-        user.setName("SoPra555");
         user.setUsername("SoPra555");
         user.setPassword("SoPra555");
         user.setCreation_date(date);
@@ -185,7 +180,7 @@ public class UserControllerTest {
 
         EditUserPutDTO editUserPutDTO = new EditUserPutDTO();
 
-        given(userService.editUserbyUserID(Mockito.any())).willReturn(user);
+        given(userService.editUserbyUser(Mockito.any())).willReturn(user);
 
         // when
         MockHttpServletRequestBuilder putRequest = put("/users/189")
@@ -202,7 +197,7 @@ public class UserControllerTest {
         // given$
         EditUserPutDTO editUserPutDTO = new EditUserPutDTO();
 
-        given(userService.editUserbyUserID(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
+        given(userService.editUserbyUser(Mockito.any())).willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
 
         // when

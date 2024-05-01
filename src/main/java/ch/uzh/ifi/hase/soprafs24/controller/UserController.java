@@ -4,12 +4,15 @@ import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs24.service.FriendService;
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +44,7 @@ public class UserController {
         // fetch all users in the internal representation
         List<User> users = userService.getUsers();
         List<OtherUserGetDTO> userGetDTOs = new ArrayList<>();
+        System.out.println(users);
 
         // convert each user to the API representation
         for (User user : users) {
@@ -72,45 +76,78 @@ public class UserController {
     @ResponseBody
     public UserGetDTO loginUser(@RequestBody LoginUserPostDTO loginUserPostDTO) {
         User userCredentials = DTOMapper.INSTANCE.convertLoginUserPostDTOtoEntity(loginUserPostDTO);
+        System.out.println("credentials"+userCredentials);
         User userData = userService.loginCredentials(userCredentials);
+        System.out.println("credentials"+userData);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
     }
     /*
       Get by id
      */
-    @GetMapping(value = "/users/self/{userId}")
+    //Properly fix all the HTTP codes so they match up
+    @GetMapping(value = "/users/{userId}/{profileId}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @ResponseBody
-    public UserGetDTO getUserSelfbyID(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
+    public ResponseEntity<?> getUserById(@RequestHeader("Authorization") String authorization, @PathVariable Long userId, @PathVariable Long profileId) {
+        userService.authenticateUser(authorization, userId);
+
+        User userData = userService.getUserbyUserID(Objects.equals(userId, profileId) ? userId : profileId);
+        System.out.println(userData + " User Data");
+
+        return ResponseEntity.accepted().body(Objects.equals(userId, profileId) ?
+                DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData) :
+                DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(userData));
+    }
+
+
+    @GetMapping(value = "/users/{userId}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseBody
+    public UserGetDTO getMyProfile(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
         userService.authenticateUser(authorization, userId);
         User userData = userService.getUserbyUserID(userId);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(userData);
     }
 
-    @GetMapping(value = "/users/other/{userId}")
+
+    @GetMapping(value = "/users/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseBody
+    public ResponseEntity<UserGetDTO> getFriendDTO(@RequestHeader("Authorization") String authorization, @PathVariable Long userId, @PathVariable Long friendId) {
+        userService.authenticateUser(authorization, userId);
+        UserGetDTO friendDTO = userService.getSpecificFriendDTO(userId, friendId);
+        if (friendDTO != null) {
+            return ResponseEntity.ok(friendDTO);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    /*@GetMapping(value = "/users/other/{userId}")
     @ResponseBody
     public OtherUserGetDTO getOtherUserbyID(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
         userService.authorizeUser(authorization);
         User userData = userService.getUserbyUserID(userId);
         return DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(userData);
-    }
+    }*/
 
     /*
       Edit: put
        */
-    @PutMapping(value = "/users/{id}")
+    @PutMapping(value = "/users/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT) //请求成功后不返回信息 只有204代码
     @ResponseBody
-    public void editUser(@RequestBody EditUserPutDTO editUserPutDTO, @PathVariable("id") Long id) {
+    public void editUser(@RequestBody EditUserPutDTO editUserPutDTO, @PathVariable("userId") Long userId,@RequestHeader("Authorization") String authorization) {
+        userService.authenticateUser(authorization,userId);
         User editUser = DTOMapper.INSTANCE.convertEditUserPutDTOtoEntity(editUserPutDTO);
-        editUser.setId(id);
-        User edited_user = userService.editUserbyUserID(editUser);
+        editUser.setId(userId);
+        userService.editUserbyUser(editUser);
     }
 
     /*
     Logout: Change status of profile //Why are we returning user information back after client logs out?
      */
     @PutMapping(value = "/users/{userId}/logout")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @ResponseBody
     public void logoutUser(@PathVariable("userId") Long userId ,@RequestHeader("Authorization") String authorization) {
         userService.authenticateUser(authorization, userId);
@@ -134,6 +171,7 @@ public class UserController {
         User user = userService.getUserbyUserID(userId);
         return user.getAchievements();
   }
+
 
 
 

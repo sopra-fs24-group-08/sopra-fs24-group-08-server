@@ -68,8 +68,6 @@ public interface DTOMapper {
 
     User convertLoginUserPostDTOtoEntity(LoginUserPostDTO loginUserPostDTO);
 
-    @Mapping(source = "status", target = "status")
-    LogoutUserGetDTO convertEntityToLogoutUserGetDTO(User user);
 
     @Mapping(source = "username", target = "username")
     @Mapping(source = "birthday", target = "birthday")

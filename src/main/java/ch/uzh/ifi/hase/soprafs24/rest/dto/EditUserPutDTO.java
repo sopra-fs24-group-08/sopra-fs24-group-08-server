@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public class EditUserPutDTO {
     private String username;
     private LocalDate birthday;
-
+    //Here pass achievements,Banners,Icons as well but another time.
     private String password;
 
     public String getPassword() {return password;}

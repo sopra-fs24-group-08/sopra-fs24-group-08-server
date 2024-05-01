@@ -9,9 +9,7 @@ public class OtherUserGetDTO {
     private Long id;
     private String username;
     private UserStatus status;
-
     private LocalDate creation_date;
-
     private LocalDate birthday;
 
     public Long getId() {
@@ -21,6 +19,7 @@ public class OtherUserGetDTO {
     public void setId(Long id) {
         this.id = id;
     }
+
 
 
     public String getUsername() {

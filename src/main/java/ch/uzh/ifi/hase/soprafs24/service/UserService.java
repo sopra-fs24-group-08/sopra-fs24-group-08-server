@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,16 +30,16 @@ import java.util.*;
 @Transactional
 public class UserService {
 
-  private final Logger log = LoggerFactory.getLogger(UserService.class);
+    private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-  private final UserRepository userRepository;
-  private final AchievementRepository achievementRepository;
-  private final IconRepository iconRepository;
+    private final UserRepository userRepository;
+    private final AchievementRepository achievementRepository;
+    private final IconRepository iconRepository;
 
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository,
-                       AchievementRepository achievementRepository,IconRepository iconRepository) {
+                       AchievementRepository achievementRepository, IconRepository iconRepository) {
         this.userRepository = userRepository;
         this.achievementRepository = achievementRepository;
         this.iconRepository = iconRepository;
@@ -64,7 +65,8 @@ public class UserService {
         if (defaultIcon != null) {
             newUser.setCurrIcon(defaultIcon); // Set the current icon to the default
             newUser.addIcon(defaultIcon); // Add the default icon to the user's collection
-        } else {
+        }
+        else {
             log.warn("Default icon not found.");
         }
         //No clue about Optional.ofNullable, IDE recommend and it works
@@ -79,7 +81,8 @@ public class UserService {
             Achievement predefinedAchievementTest = achievementOptional2.get();
             newUser.addAchievement(predefinedAchievementTest);
 
-        } else {
+        }
+        else {
             // Handle the case where the achievement is not found
             log.error("Predefined achievement not found. User created without this achievement.");
             // Optionally, throw an exception or take other actions as needed
@@ -95,12 +98,13 @@ public class UserService {
     //Registration
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
-        User userByPassword= userRepository.findByPassword(userToBeCreated.getPassword());
+        User userByPassword = userRepository.findByPassword(userToBeCreated.getPassword());
         String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
-        if (userByUsername != null &&  userByPassword!= null) {
+        if (userByUsername != null && userByPassword != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     String.format(baseErrorMessage, "username and the name", "are"));
-        } else if (userByUsername != null) {
+        }
+        else if (userByUsername != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(baseErrorMessage, "username", "is"));
         }
     }
@@ -129,9 +133,7 @@ public class UserService {
     }
 
     public User getUserbyUserID(Long id) {
-        System.out.println("gettingUser");
         User userById = userRepository.findByid(id);
-        System.out.println("gettingUser");
 
         String uniqueErrorMessage = "User with id %s not found!";
         if (userById == null) {
@@ -140,36 +142,38 @@ public class UserService {
         return userById;
     }
 
-    public User editUserbyUserID(User user) {
 
-        Long userid = user.getId();
-        String username = user.getUsername();
-        LocalDate birthday = user.getBirthday();
-        String password = user.getPassword();
-        User userbyID = userRepository.findByid(userid);
-
-        String notFoundErrorMessage = "User with user id %s not found!";
-        if (userbyID == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(notFoundErrorMessage, userid));
+    public User editUserbyUser(User editedUser) {
+        Long id = editedUser.getId();
+        User newUser = userRepository.findByid(id); //Check Logic still applies despite DTOs
+        if(userRepository.findByUsername(editedUser.getUsername())!=null & (!Objects.equals(newUser.getUsername(), editedUser.getUsername()))){
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The username you desired is already in use, try a different one.");
+        }
+        if(!Objects.equals(editedUser.getUsername(), "") & newUser.getUsername() != null) {
+            newUser.setUsername(editedUser.getUsername());
         }
 
-        String uniqueErrorMessage = "Username already exist";
-        User existingUser = userRepository.findByUsername(username);
+        if(editedUser.getBirthday() != null) {
+            newUser.setBirthday(editedUser.getBirthday());
+        }
 
-        if (existingUser != null && !existingUser.getId().equals(userid)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, uniqueErrorMessage);
+        if(newUser.getBirthday()!= null && editedUser.getBirthday()==null){
+            newUser.setBirthday(editedUser.getBirthday());
         }
-        if (username != null) {                 //如果没有被输入，那么返回的就是null，这里就不会进行编辑
-            userbyID.setUsername(username);
+
+        if(!Objects.equals(editedUser.getPassword(), "") & newUser.getPassword() != null) {
+            newUser.setPassword(editedUser.getPassword());
         }
-        if (birthday != null) {
-            userbyID.setBirthday(birthday);
-        }
-        if (password != null) {
-            userbyID.setPassword(password);
-        }
-        return userbyID;
+
+        userRepository.save(newUser);
+        userRepository.flush();
+        return newUser;
+        //We shouldn't be returning s
     }
+
+
+
 
     public User logoutUserbyUserID(Long userid) {
         // Input: user id
@@ -178,7 +182,7 @@ public class UserService {
         User userbyID = userRepository.findByid(userid);
         userbyID.setStatus(UserStatus.OFFLINE);
         return userbyID;
-    }
+    } //Why returning  User
 
     public void unlockIconUser(Long userId, Long iconId) {
         User user = userRepository.findById(userId).orElseThrow(
@@ -190,6 +194,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    //will either scrap the editUser yet again or add extra rest controller so I don't have to waste time refactoring tests of others.
     public Icon chooseIconUser(Long userId, Long iconId) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -207,25 +212,59 @@ public class UserService {
         return iconToSelect;
     }
 
-    public void authorizeUser(String token){
-        if (token != null && token.startsWith("Bearer ")){
+    public void authorizeUser(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
         User userByToken = userRepository.findByToken(token);
-        if (userByToken == null){
+        if (userByToken == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");
         }
     }
 
-    // For Authentication
-    public void authenticateUser(String token, Long userid){
+
+    // For Authentication, was for handshake, now using for edit, feel free to refactor later.
+    public void authenticateUser(String token, Long userid) {
         User userById = userRepository.findByid(userid);
         // handle token
-        if (token != null && token.startsWith("Bearer ")){
+        if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        if (userById == null || !userById.getToken().equals(token)){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No access to user data!");
+        if (userById == null || !userById.getToken().equals(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No access to user data!");
         }
     }
+    /**
+     * Retrieves a specific friend's User object for a given user.
+     *
+     * @param userId The ID of the user whose friend list is to be checked.
+     * @param friendId The ID of the friend to be retrieved.
+     * @return The friend User object if found, otherwise null.
+     */
+    public User getSpecificFriend(Long userId, Long friendId) {
+        List<User> friends = userRepository.findFriendsByUserId(userId);
+        return friends.stream()
+                .filter(friend -> friend.getId().equals(friendId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public UserGetDTO getSpecificFriendDTO(Long userId, Long friendId) {
+        User friend = getSpecificFriend(userId, friendId); // Your existing method
+        return mapToDTO(friend);
+    }
+    private UserGetDTO mapToDTO(User user) {
+        UserGetDTO dto = new UserGetDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setStatus(user.getStatus());
+        dto.setCreation_date(user.getCreation_date());
+        dto.setBirthday(user.getBirthday());
+        dto.setCurrIcon(user.getCurrIcon());
+        return dto;
+    }
 }
+
+
+
+
