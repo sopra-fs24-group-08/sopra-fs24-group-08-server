@@ -38,7 +38,7 @@ class TranslationControllerTest {
 
     @Test
     public void translateText_validInput_ReturnTranslatedText() throws Exception {
-        // Mocking translation service response
+        // Mocking translation  service response
         String translatedText = "Hello";
         when(translationService.translateText(anyString(), anyString(), anyString())).thenReturn(translatedText);
 
