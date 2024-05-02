@@ -17,7 +17,7 @@ public class Game implements Serializable {
     @Column(name = "game_id")
     private Long gameId;
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -31,10 +31,14 @@ public class Game implements Serializable {
     private Player winner;
     //might need to add cascade if it starts causing trouble
 
+
+    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL)//Chatrooms should get deleted once game ends
+    private ChatRoom chatRoom;
+
+
     @Column(name = "current_turn_player_id")
     private Long currentTurnPlayerId;  // Track whose turn it is
 
-    //add CardPile
     public Long getCurrentTurnPlayerId() {
         return currentTurnPlayerId;
     }
@@ -96,6 +100,13 @@ public class Game implements Serializable {
         this.players = new ArrayList<>(players);
     }
 
+    public ChatRoom getChatRoom() {
+        return chatRoom;
+    }
+
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
 }
 
 

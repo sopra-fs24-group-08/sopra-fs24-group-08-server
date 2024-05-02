@@ -7,6 +7,7 @@ public class Card {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String color;
     private int points;
 
@@ -40,4 +41,5 @@ public class Card {
     public void setPoints(int points) {
         this.points = points;
     }
+
 }

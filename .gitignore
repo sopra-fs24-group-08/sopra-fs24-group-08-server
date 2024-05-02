@@ -1,4 +1,7 @@
 *.class
+.env
+application-local.properties
+Profilecheck
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

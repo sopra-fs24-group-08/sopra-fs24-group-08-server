@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository("userRepository")   //在JPA里都定义好了 不用自己写
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -14,6 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     User findByUsername(String username);
     User findByid(Long id);
     User findByPassword(String password);
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.id = :userId AND u.token = :token")
+    boolean existsByUserIdAndToken(@Param("userId") Long userId, @Param("token") String token);
+
     // Need this for authorization, to verify if the token is really a valid one
     User findByToken(String token);
 }
