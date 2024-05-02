@@ -11,7 +11,7 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
-        System.out.println("New WebSocket Connection has been formed");
+        System.out.println("New WebSocket Connection has been formed by "+event);
     }
 
     @EventListener

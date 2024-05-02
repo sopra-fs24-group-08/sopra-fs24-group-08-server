@@ -1,4 +1,3 @@
-/*
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
@@ -35,16 +34,17 @@ public class WebSocketController {
     }
 
 
-    // Endpoint for handling in-game chat, demonstrating how to send messages to a specific game's chatbox
-    */
-/*@MessageMapping("/game/{gameId}/chat")
+
+
+
+  /*  // Endpoint for handling in-game chat, demonstrating how to send messages to a specific game's chatbox
+@MessageMapping("/game/{gameId}/chat")
     public void gameChat(@DestinationVariable Long gameId, String message) {
         // Assuming a method exists to send a chat message to all subscribers of a game's chat
         gameService.broadcastChatMessage(gameId, message);
-    }*//*
-
+    }
+*/
 
 
 }
 
-*/
