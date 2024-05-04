@@ -1,16 +1,16 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 public class MatchmakingResult {
-    private boolean matchFound;
-    private Long gameId;
-    private Long firstPlayerId;
-    private Long secondPlayerId;
+    private final boolean matchFound;
+    private final Long gameId;
+    private final boolean isFirst;
+    private final Long opponentId;
 
-    public MatchmakingResult(boolean matchFound, Long gameId, Long firstPlayerId, Long secondPlayerId) {
+    public MatchmakingResult(boolean matchFound, Long gameId, boolean isFirst, Long opponentId) {
         this.matchFound = matchFound;
         this.gameId = gameId;
-        this.firstPlayerId = firstPlayerId;
-        this.secondPlayerId = secondPlayerId;
+        this.isFirst = isFirst;
+        this.opponentId = opponentId;
     }
 
     public boolean isMatchFound() {
@@ -21,11 +21,12 @@ public class MatchmakingResult {
         return gameId;
     }
 
-    public Long getFirstPlayerId() {
-        return firstPlayerId;
+    public boolean isFirst() {
+        return isFirst;
     }
 
-    public Long getSecondPlayerId() {
-        return secondPlayerId;
+    public Long getOpponentId() {
+        return opponentId;
     }
 }
+

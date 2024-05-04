@@ -5,44 +5,59 @@ import ch.uzh.ifi.hase.soprafs24.entity.ChatRoom;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.ChatMessageRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.ChatRoomRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.MessagePostDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class ChatService {
 
+    private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final UserRepository userRepository;
+    private final GameRepository gameRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatService(ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository, UserRepository userRepository) {
+    @Autowired
+    public ChatService(UserRepository userRepository, ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository, GameRepository gameRepository, SimpMessagingTemplate messagingTemplate) {
+        this.userRepository = userRepository;
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
-        this.userRepository = userRepository;
+        this.gameRepository = gameRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
-    public ChatRoom createOrGetChatRoom(Long participantOneId, Long participantTwoId) {
-        return chatRoomRepository.findChatRoomByParticipants(participantOneId, participantTwoId)
-                .orElseGet(() -> {
-                    User participantOne = userRepository.findById(participantOneId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + participantOneId));
-                    User participantTwo = userRepository.findById(participantTwoId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + participantTwoId));
-                    ChatRoom newRoom = new ChatRoom(participantOne, participantTwo);
-                    return chatRoomRepository.save(newRoom);
-                });
+    public void sendChatMessage(Long gameId, MessagePostDTO messagePostDTO) {
+        User sender = userRepository.findById(messagePostDTO.getSenderId()).orElseThrow(() -> new RuntimeException("User not found"));
+        ChatRoom chatRoom = chatRoomRepository.findByGameId(gameId).orElseThrow(() -> new RuntimeException("ChatRoom not found for gameId: " + gameId));
+
+        ChatMessage chatMessage = new ChatMessage(chatRoom, sender, messagePostDTO.getMessage());
+        chatMessageRepository.save(chatMessage);
+
+        Map<String, Object> messageDetails = new HashMap<>();
+        messageDetails.put("id", chatMessage.getId());
+        messageDetails.put("messageContent", chatMessage.getMessageContent());
+        messageDetails.put("timestamp", chatMessage.getTimestamp().toString());
+        messageDetails.put("senderId", sender.getId());
+        messageDetails.put("senderUsername", sender.getUsername());
+
+
+        messagingTemplate.convertAndSend(String.format("/topic/chat/%s", gameId), messageDetails);
     }
 
-    public ChatMessage saveChatMessage(ChatMessage chatMessage) {
-        return chatMessageRepository.save(chatMessage);
-    }
 
-    @Transactional
-    public void deleteChatMessagesByRoom(Long roomId) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("ChatRoom not found with ID: " + roomId));
-        chatMessageRepository.deleteByChatRoom(room);
-        chatRoomRepository.delete(room);  // Optional: if you also want to delete the room itself
+    private ChatRoom createChatRoom(Long gameId) {
+        // Logic to create a new chat room
+        ChatRoom newChatRoom = new ChatRoom();
+        newChatRoom.setGame(gameRepository.findById(gameId).orElseThrow(
+                () -> new RuntimeException("Game not found for gameId: " + gameId)
+        ));
+        return chatRoomRepository.save(newChatRoom);
     }
 }

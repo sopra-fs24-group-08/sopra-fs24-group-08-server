@@ -84,7 +84,7 @@ public class FriendRequestController {
     }
 
     // Handle game invitation
-    @PostMapping("/game/{userId}/invitationresponse")
+  /*  @PostMapping("/game/{userId}/invitationresponse")
     @ResponseStatus(HttpStatus.OK)
     public GameMatchResultDTO handleGameInvitation(@PathVariable Long userId, @RequestBody FriendRequestDTO friendRequestDTO, @RequestHeader("Authorization") String authorization){
         userService.authenticateUser(authorization, userId);
@@ -92,9 +92,9 @@ public class FriendRequestController {
         // turn DTO to entity
         FriendRequest receivedFriendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(friendRequestDTO);
         //
-        GameMatchResultDTO gameMatchResultDTO = friendService.handleGameInvitation(userId, receivedFriendRequest);
-        return gameMatchResultDTO;
-    }
+//        GameMatchResultDTO gameMatchResultDTO = friendService.handleGameInvitation(userId, receivedFriendRequest);
+       // return gameMatchResultDTO;
+    }*/
 
     /*// Delete friend
     @PutMapping("/users/{userId}/friends/delete")

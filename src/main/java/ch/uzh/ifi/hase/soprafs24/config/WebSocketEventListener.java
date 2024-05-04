@@ -11,15 +11,12 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
-        //Event raised when a new WebSocket client using a Simple Messaging Protocol (e. g. STOMP)
-        // as the WebSocket sub-protocol issues a connect request.
-        System.out.println("New WebSocket Connection has been formed");
+        System.out.println("New WebSocket connection established for userId"+event);
     }
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        System.out.println("Session Disconnected: " + sessionId);
-
+        System.out.println("WebSocket session disconnected: " + sessionId);
     }
 }

@@ -27,6 +27,18 @@ public class ChatMessage {
     @Column(nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
+    public ChatMessage(ChatRoom chatRoom, User sender, String messageContent) {
+        this.chatRoom = chatRoom;
+        this.sender = sender;
+        this.messageContent = messageContent;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public ChatMessage() {
+
+    }
+
+
     public Long getId() {
         return id;
     }
@@ -51,19 +63,19 @@ public class ChatMessage {
         this.sender = sender;
     }
 
-    public String getMessageContent() {
-        return messageContent;
-    }
-
-    public void setMessageContent(String messageContent) {
-        this.messageContent = messageContent;
-    }
-
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getMessageContent() {
+        return messageContent;
+    }
+
+    public void setMessageContent(String messageContent) {
+        this.messageContent = messageContent;
     }
 }

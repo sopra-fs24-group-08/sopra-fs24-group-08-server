@@ -50,11 +50,6 @@ public class WebSocketController {
     private UserService userService;
 
 
-    @MessageMapping("/chat")
-    @SendTo("/chat/chatbox")
-    public String chatbox(String message){
-        return message; }
-
     @MessageMapping("/announce")
     @SendTo("/topic/announcements")
     public String announce(String message) {

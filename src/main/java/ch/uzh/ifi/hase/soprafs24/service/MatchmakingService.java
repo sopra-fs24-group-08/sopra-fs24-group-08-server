@@ -2,12 +2,8 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.MatchmakingResult;
-import ch.uzh.ifi.hase.soprafs24.repository.ChatMessageRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.ChatRoomRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.MatchmakingResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
@@ -17,48 +13,77 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class MatchmakingService {
 
-    private final Map<Long, Long> waitingUsers = new ConcurrentHashMap<>();
-    private final GameRepository gameRepository;
+    private final Map<Long, String> playerQueue = new ConcurrentHashMap<>();
+    private final SimpMessagingTemplate messagingTemplate;
+    private final GameService gameService;
 
     @Autowired
-    public MatchmakingService(GameRepository gameRepository) {
-        this.gameRepository = gameRepository;
+    public MatchmakingService(SimpMessagingTemplate messagingTemplate, GameService gameService) {
+        this.messagingTemplate = messagingTemplate;
+        this.gameService = gameService;
     }
 
-    public synchronized MatchmakingResult joinPlayer(Long userId) {
-        System.out.println("Attempting to add userId to waiting list: " + userId);
+    public void addToQueue(Long playerId) {
+        if (playerId == null) {
+            System.out.println("Attempted to add null playerId to queue");
+            return; // Handle or log the error as needed
+        }
+        System.out.println("User with id " + playerId + " added to queue");
+        playerQueue.put(playerId, ""); // Use an empty string or a specific placeholder if the value must not be null
+        checkForMatches();
+        broadcastMatchmakingUpdate(playerId, "joined");
+    }
 
-        // Null check for userId
-        if (userId == null) {
-            System.err.println("Error: Attempt to add null userId to waiting list");
-            return new MatchmakingResult(false, null, null, null);
+
+    public void removeFromQueue(Long playerId) {
+        System.out.println("User with id " + playerId + " removed to queue");
+        if (playerQueue.remove(playerId) != null) {
+            broadcastMatchmakingUpdate(playerId, "left");
+        }
+    }
+
+    private void broadcastMatchmakingUpdate(Long playerId, String action) {
+        String message = String.format("Player%d has %s the matchmaking.", playerId, action);
+        messagingTemplate.convertAndSend("/topic/matchmaking/"+playerId, message);
+    }
+
+    private void checkForMatches() {
+        Iterator<Long> iterator = playerQueue.keySet().iterator();
+        if (iterator.hasNext()) {
+            Long playerOneId = iterator.next();
+            if (iterator.hasNext()) {
+                Long playerTwoId = iterator.next();
+
+                // Start a new game for the two players
+                //TODO FIX BOARD
+                Game game = gameService.startGame(playerOneId, playerTwoId);
+                Long gameId = game.getGameId();
+
+                // Notify both players of the match result
+                notifyPlayers(playerOneId, playerTwoId, gameId, game);
+
+                // Remove players from the queue
+                playerQueue.remove(playerOneId);
+                playerQueue.remove(playerTwoId);
+            }
+        }
+    }
+
+    private void notifyPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
+        Long firstPlayerId = game.getCurrentTurnPlayerId();
+        if (firstPlayerId == null) {
+            System.err.println("Error: Current turn player ID is null.");
+            return;
         }
 
-        // Put the user in the waiting list
-        if (waitingUsers.putIfAbsent(userId, System.currentTimeMillis()) == null) {
-            System.out.println("UserId " + userId + " added to the matchmaking queue.");
-        } else {
-            System.out.println("UserId " + userId + " is already in the matchmaking queue.");
-            return new MatchmakingResult(false, null, null, null);
-        }
+        boolean isFirstPlayerPlayerOne = firstPlayerId.equals(playerOneId);
+        MatchmakingResult resultForPlayerOne = new MatchmakingResult(true, gameId, isFirstPlayerPlayerOne, playerTwoId);
+        MatchmakingResult resultForPlayerTwo = new MatchmakingResult(true, gameId, !isFirstPlayerPlayerOne, playerOneId);
+        System.out.println(resultForPlayerOne+" Result for PlayerOne");
 
-        // Check if there are at least two players in the queue
-        if (waitingUsers.size() >= 2) {
-            Iterator<Long> iterator = waitingUsers.keySet().iterator();
-            Long firstPlayerId = iterator.next();
-            Long secondPlayerId = iterator.next();
+        System.out.println(resultForPlayerTwo+" Result for PlayerTwo");
 
-            // Create a new game but don't initialize yet
-            Game game = new Game();
-            gameRepository.save(game); // Persist new game to the in memory database
-
-            // Clear the users from the waiting list
-            waitingUsers.remove(firstPlayerId);
-            waitingUsers.remove(secondPlayerId);
-
-            System.out.println("New game created with ID: " + game.getGameId() + " for players " + firstPlayerId + " and " + secondPlayerId);
-            return new MatchmakingResult(true, game.getGameId(), firstPlayerId, secondPlayerId);        }
-
-        return new MatchmakingResult(false, null, null, null);
+        messagingTemplate.convertAndSend("/topic/matchmaking/" + playerOneId.toString(), resultForPlayerOne);
+        messagingTemplate.convertAndSend("/topic/matchmaking/" + playerTwoId.toString(), resultForPlayerTwo);
     }
 }

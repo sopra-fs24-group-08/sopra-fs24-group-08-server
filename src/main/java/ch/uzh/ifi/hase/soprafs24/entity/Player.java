@@ -23,10 +23,9 @@ import java.util.Optional;
 public class Player implements  Serializable{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId  //same id as user
     @JoinColumn(name = "id")
     private User user;
@@ -35,8 +34,7 @@ public class Player implements  Serializable{
     @JoinColumn(name = "game_id")
     private Game game;
 
-    /*@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Card> hand = new ArrayList<>();*/
+
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "player_id")
     private List<Card> hand = new ArrayList<>();
@@ -47,31 +45,6 @@ public class Player implements  Serializable{
     public Player() {
     }
 
-/*
-    public List<Card> getHand() {
-        return hand;
-    }
-
-    public void setHand(List<Card> hand) {
-        this.hand = hand;
-    }
-
-    public void addCardToHand(Card card) {this.hand.add(card);
-    }
-    public void removeCardFromHand(Card card){
-        this.hand.remove(card);
-    }
-    public Optional<Card> getCardFromHand(Long cardId) {
-        return hand.stream().filter(card -> card.getId().equals(cardId)).findFirst();
-    }*/
-/*
-
-    public Player(User user, Game game) {
-        this.user = user;
-        this.game = game;
-        this.score = 0;
-        this.hand = new ArrayList<>();
-    }*/
 
     public Long getId() {
         return id;

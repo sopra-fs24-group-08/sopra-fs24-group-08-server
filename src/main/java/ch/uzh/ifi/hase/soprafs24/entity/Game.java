@@ -32,9 +32,8 @@ public class Game implements Serializable {
     //might need to add cascade if it starts causing trouble
 
 
-    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL)//Chatrooms should get deleted once game ends
+    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private ChatRoom chatRoom;
-
 
     @Column(name = "current_turn_player_id")
     private Long currentTurnPlayerId;  // Track whose turn it is

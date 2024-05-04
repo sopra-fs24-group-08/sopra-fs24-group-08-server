@@ -22,14 +22,24 @@ public class GameService {
     private final PlayerRepository playerRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final BoardRepository boardRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate, BoardRepository boardRepository) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate, BoardRepository boardRepository, ChatRoomRepository chatRoomRepository) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
         this.messagingTemplate = messagingTemplate;
         this.boardRepository = boardRepository;
+        this.chatRoomRepository = chatRoomRepository;
+    }
+
+    public Game getGame(Long gameId) {
+        return gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
+    }
+
+    public void updateGame(Game game) {
+        gameRepository.save(game);
     }
     //for gameId
     public Game createGame() {
@@ -42,16 +52,13 @@ public class GameService {
     }
 
     //Leaving in encase it's used for Polling or if we want to add different beh. to friendly games
-    public Game startFriendsGame(Long userId1, Long userId2){
-        return startGame(userId1,userId2);
-    }
 
     public Long coinFlip(Long playerId1,Long playerId2 ){
         boolean firstPlayerStarts = new Random().nextBoolean();
         return firstPlayerStarts ? playerId1 : playerId2;
     }
 
-    public Game startGame(Long userId1, Long userId2) {
+    /*public Game startGame(Long userId1, Long userId2) {
         User user1 = userRepository.findByid(userId1);
         User user2 = userRepository.findByid(userId2);
         Game game = createGame();
@@ -62,7 +69,88 @@ public class GameService {
 
         gameRepository.save(game);
         return game;
+    }*/
+    //new
+    public Game startGame(Long userId1, Long userId2) {
+        User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found"));
+        User user2 = userRepository.findById(userId2).orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("about to create new game");
+        Game game = new Game();
+
+        System.out.println("about to create board");
+        Board board = new Board();
+        board.initializeBoard();
+        game.setBoard(board);
+
+        // Create the chat room here, after initializing the board and before adding players
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.setGame(game);  // Link the chat room to the game
+        chatRoomRepository.save(chatRoom);  // Save the new chat room
+        game.setChatRoom(chatRoom);  // Set the chat room for the game
+
+        System.out.println("Converting User to player");
+        Player player1 = convertUserToPlayer(user1, game);
+        Player player2 = convertUserToPlayer(user2, game);
+
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        game.setGameStatus(GameStatus.COINFLIP);
+
+        performCoinFlipAndInitializeGame(player1, player2, game);
+
+        gameRepository.save(game);  // Save the game after all initial setups
+
+        System.out.println("Game and chat room initialized");
+        return game;
     }
+
+    //new
+
+    private Player convertUserToPlayer(User user, Game game) {
+        user.setInGame(true);   //Player can only be player if user counterpart is actually ingame otherwise it shouldnt' be allowed.
+        Player player = new Player();
+        player.setUser(user);
+        player.setGame(game);
+        // No need to set player ID as it uses @MapsId with User ID
+        userRepository.save(user);
+        playerRepository.save(player);
+        return player;
+    }
+
+    //new
+    private void performCoinFlipAndInitializeGame(Player player1, Player player2, Game game) {
+        System.out.println("about to play coin flip" + player1.getId() + " " + player2.getId()+ player1);
+        boolean isFirstPlayerPlayer1 = Math.random() < 0.5;
+        Player firstPlayer = isFirstPlayerPlayer1 ? player1 : player2;
+
+        // Ensure you are setting the current turn player ID
+        game.setCurrentTurnPlayerId(firstPlayer.getId());
+
+        // Make sure you persist any changes to the game entity
+
+        gameRepository.save(game);
+
+        // Proceed to deal initial cards
+        dealInitialCards(firstPlayer, player1 == firstPlayer ? player2 : player1, game);
+    }
+    //new
+    private void dealInitialCards(Player firstPlayer, Player secondPlayer, Game game) {
+        // Assuming each player draws three cards as an example
+        game.getBoard().drawCard(firstPlayer);
+        game.getBoard().drawCard(firstPlayer);
+
+        game.getBoard().drawCard(secondPlayer);
+        game.getBoard().drawCard(secondPlayer);
+        game.getBoard().drawCard(secondPlayer);
+
+        // Save the players to persist card changes
+        playerRepository.save(firstPlayer);
+        playerRepository.save(secondPlayer);
+
+    }
+
+
+
 
     private void initializeMatchedFriends(Game game, User user1, User user2) {
         Player player1 = new Player();
@@ -115,6 +203,7 @@ public class GameService {
         // Decide who starts and send initial game state
         game.setGameStatus(GameStatus.COINFLIP);
         game.setCurrentTurnPlayerId(startingPlayer.getId());
+        gameRepository.save(game);
         sendInitialGameState(game);
     }
 
@@ -129,18 +218,6 @@ public class GameService {
     }
 
 
-
-
-    private void dealInitialCards(Board board, Player firstPlayer, Player secondPlayer) {
-        board.drawCard(firstPlayer);
-        board.drawCard(firstPlayer);
-        board.drawCard(secondPlayer);
-        board.drawCard(secondPlayer);
-        board.drawCard(secondPlayer);
-
-
-        playerRepository.saveAll(Arrays.asList(firstPlayer, secondPlayer));
-    }
 
     public List<Player> getPlayersbygameId(Long gameId) {
         return gameRepository.findPlayersByGameId(gameId);

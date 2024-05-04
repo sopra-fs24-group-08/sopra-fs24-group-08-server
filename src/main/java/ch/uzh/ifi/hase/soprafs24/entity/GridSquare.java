@@ -16,8 +16,14 @@ public class GridSquare {
     private Board board;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "card_id", referencedColumnName = "id")
+    @JoinColumn(name = "card_id")
     private Card card;
+
+    @Column(nullable = false)
+    private boolean isCardPile = false;
+
+    public GridSquare() {
+    }
 
     public Long getId() {
         return id;
@@ -31,12 +37,12 @@ public class GridSquare {
         return color;
     }
 
-    public boolean isOccupied() {
-        return this.card != null;
-    }
-
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public boolean isOccupied() {
+        return this.card != null;
     }
 
     public Board getBoard() {
@@ -55,4 +61,11 @@ public class GridSquare {
         this.card = card;
     }
 
+    public boolean isCardPile() {
+        return isCardPile;
+    }
+
+    public void setCardPile(boolean cardPile) {
+        isCardPile = cardPile;
+    }
 }

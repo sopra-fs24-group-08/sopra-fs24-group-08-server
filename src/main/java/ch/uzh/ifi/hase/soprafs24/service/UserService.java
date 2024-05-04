@@ -222,7 +222,11 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current user with an unauthorized token.");
         }
     }
-
+    //only for ws
+    public boolean validateUserIdToken(Long userId, String token) {
+        User user = userRepository.findById(userId).orElse(null);
+        return user != null && user.getToken().equals(token);
+    }
 
     // For Authentication, was for handshake, now using for edit, feel free to refactor later.
     public void authenticateUser(String token, Long userid) {

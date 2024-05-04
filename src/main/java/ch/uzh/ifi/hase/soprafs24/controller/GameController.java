@@ -45,6 +45,13 @@ public class GameController {
         return game.getGameId();
     }
 
+    @MessageMapping("/game/update")
+    @SendTo("/topic/game/{gameId}")
+    public Game updateGame(@Payload Game game) {
+        gameService.updateGame(game);
+        return game;
+    }
+
 //    @PutMapping("/game/{gameId}/testStart")
 //    @ResponseBody
 //    public GameStateDTO startTestGame(@PathVariable("gameId") Long gameId, @RequestBody GameStartRequestDTO request) {

@@ -18,13 +18,28 @@ public class Board {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "board")
     private List<GridSquare> gridSquares = new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "card_pile_square_id")  // Explicitly referencing the special grid square for the card pile
+    private GridSquare cardPileSquare;
+
+    // Represents the card pile directly
     @OneToMany(cascade = CascadeType.ALL)
-    private List<Card> cards = new ArrayList<>();  // Represents the card pile directly
+    private List<Card> cards = new ArrayList<>();
 
     public void initializeBoard() {
         initializeSquares();
         initializeCardPile();
     }
+
+    // Getters and setters for all fields including new cardPileSquare
+    public GridSquare getCardPileSquare() {
+        return cardPileSquare;
+    }
+
+    public void setCardPileSquare(GridSquare cardPileSquare) {
+        this.cardPileSquare = cardPileSquare;
+    }
+
 
     public Long getId() {
         return id;
@@ -51,31 +66,32 @@ public class Board {
     }
 
     public void initializeSquares() {
-        this.cards = new ArrayList<>();  // Initialize the card pile
         String[] colors = {"Red", "Blue", "Green", "Yellow", "Black", "Orange"};
         int index = 0;
         boolean whiteUsed = false;
 
         for (int i = 0; i < 9; i++) {
             GridSquare square = new GridSquare();
-            if (i == 4) {  // Central square for CardPile
-                // Skip setting color or adding to gridSquares as this is reserved for CardPile
-            } else {
-                if (!whiteUsed && i == 8) {  // Ensuring at least one white square
-                    square.setColor("White");
-                    whiteUsed = true;
-                } else if (!whiteUsed && colors[index % colors.length].equals("White")) {
-                    square.setColor(colors[index % colors.length]);
-                    whiteUsed = true;
-                    index++;
-                } else {
-                    square.setColor(colors[index % colors.length]);
-                    index++;
-                }
-                gridSquares.add(square);  // Add to the board
+            square.setBoard(this);
+
+            if (i == 4) {
+                this.cardPileSquare = square;
+                square.setCardPile(true);
+                gridSquares.add(square);
+                continue;
             }
+
+            if (!whiteUsed && i == 8) {  // Ensuring at least one white square, we can alter it depending on if we add special events or not
+                square.setColor("White");
+                whiteUsed = true;
+            } else {
+                square.setColor(colors[index % colors.length]);
+                index++;
+            }
+            gridSquares.add(square);
         }
     }
+
 
     private void initializeCardPile() {
         Random random = new Random();
