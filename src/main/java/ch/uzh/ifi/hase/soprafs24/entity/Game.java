@@ -76,8 +76,8 @@ public class Game implements Serializable {
     }
 
     public Game() {
+      this.board = new Board();
     }
-
     public void addPlayer(Player player) {
         players.add(player);
         player.setGame(this);

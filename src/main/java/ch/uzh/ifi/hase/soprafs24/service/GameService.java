@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
 import ch.uzh.ifi.hase.soprafs24.constant.MoveType;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
@@ -10,7 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -28,8 +33,8 @@ public class GameService {
 
     public Game createGame() {
         Game game = new Game();
-        Board board = new Board();
-        game.setBoard(board);
+        // Board board = new Board();
+        // game.setBoard(board);
         gameRepository.save(game);
         gameRepository.flush();
         return game;
@@ -43,7 +48,6 @@ public class GameService {
     public Game startGame(Long gameId, Long userId1, Long userId2) {
         User user1 = userRepository.findById(userId1).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         User user2 = userRepository.findById(userId2).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
         Player player1 = new Player(user1, game);
@@ -53,19 +57,41 @@ public class GameService {
 
         if (firstPlayerStarts) {
             dealInitialCards(game.getBoard(), player1, player2, true);
-            game.setCurrentTurnPlayerId(player1.getId());
+            game.setCurrentTurnPlayerId(player1.getUser().getId());
         } else {
             dealInitialCards(game.getBoard(), player1, player2, false);
-            game.setCurrentTurnPlayerId(player2.getId());
+            game.setCurrentTurnPlayerId(player2.getUser().getId());
+            System.out.printf("2:current player Id: %d\n", game.getCurrentTurnPlayerId());
         }
 
-
         playerRepository.saveAll(Arrays.asList(player1, player2));
-
         game.setPlayers(Arrays.asList(player1, player2));
-        game.setGameStatus(GameStatus.ONGOING);
 
-        return gameRepository.save(game);
+
+        game.setGameStatus(GameStatus.ONGOING);
+        game = gameRepository.save(game);
+        gameRepository.flush();
+        return game;
+    }
+
+    public void checkTurn(Long gameId, Long userId){
+      System.out.println("****check turn****");
+      Game game = retrieveGameState(gameId);
+      if (game.getCurrentTurnPlayerId() != userId){
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "It's not your turn, you can't make any movements");
+      }
+    }
+
+    public Player getOpponent(Long gameId, Long userId){
+      Game game = retrieveGameState(gameId);
+      Player opponent = null;
+      for (Player player: game.getPlayers()){
+        if (player.getId() != userId){
+          opponent = player;
+        }
+      }
+      if (opponent == null){throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Didn't find the opponent.");}
+      return opponent;      
     }
 
     private void dealInitialCards(Board board, Player player1, Player player2, boolean firstPlayerStarts) {
@@ -86,13 +112,18 @@ public class GameService {
     }
 
     public void processMove(Long gameId, MoveDTO move) {
+      System.out.println("****process move****");
+      if (move != null){
         if (move.getMoveType() == MoveType.PLACE) {
-            placeCard(gameId, move);
-        } else if (move.getMoveType() == MoveType.DRAW) {
-            drawCard(gameId, move);
-        } else {
-            throw new IllegalArgumentException("Unsupported move type: " + move.getMoveType());
-        }
+          placeCard(gameId, move);
+      } else if (move.getMoveType() == MoveType.DRAW) {
+          drawCard(gameId, move);
+      } else {
+          throw new IllegalArgumentException("Unsupported move type: " + move.getMoveType());
+      }
+      }else{
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The move is empty.");
+      }
     }
 
     private void drawCard(Long gameId, MoveDTO move) {
@@ -112,6 +143,7 @@ public class GameService {
     }
 
     public void placeCard(Long gameId, MoveDTO move) {
+      System.out.printf("****placeCard****, %d, %d, %d\n", gameId, move.getPlayerId(), move.getCardId());
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
         Player player = playerRepository.findById(move.getPlayerId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
         Card card = player.getCardFromHand(move.getCardId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Card not found"));
@@ -127,6 +159,10 @@ public class GameService {
                 playerRepository.save(player);
                 gameRepository.save(game);
                 switchTurns(game, player);
+                if (checkGameOverConditions(game)){
+                  Long winnerId = getWinningPlayer(game.getGameId()).getId();
+                  endGame(gameId, winnerId);
+                }
                 // Optional: Send WebSocket update to all clients
             } else {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot place card on the chosen square");
@@ -137,11 +173,30 @@ public class GameService {
     }
 
     private void switchTurns(Game game, Player currentPlayer) {
-        game.getPlayers().forEach(p -> {
-            if (!p.getId().equals(currentPlayer.getId())) {
-                game.setCurrentTurnPlayerId(p.getId());
-            }
-        });
+      game.getPlayers().forEach(p -> {
+          if (!p.getId().equals(currentPlayer.getId())) {
+              game.setCurrentTurnPlayerId(p.getId());
+          }
+      });
+    }
+
+    public void quitGame(Long gameId, Long userId){
+      Player opponent = getOpponent(gameId, userId);
+      endGame(gameId, opponent.getId());
+    }
+
+    public List<Long> getPlayerId(Long gameId){
+      Game game = retrieveGameState(gameId);
+      return game.getPlayers().stream().map(player -> player.getId()).collect(Collectors.toList());
+    }
+
+    public boolean wipeGame(Long gameId){
+      Game game = retrieveGameState(gameId);
+      if (game.getGameStatus() == GameStatus.WINNER){
+        gameRepository.deleteById(gameId);
+        return true;
+      }
+      return false;
     }
 
     public Game retrieveGameState(Long gameId){
@@ -157,13 +212,22 @@ public class GameService {
         board.setCardAtPosition(card, position);
         return points;
     }
+    
+  
 
     private void updateStateAfterPlay(Game game, Player player, Card card, GridSquare square) {
 
     }
 
-    private void checkGameOverConditions(Game game) {
+    private boolean checkGameOverConditions(Game game) {
         // Logic to check if the game should end
+        int count = 0;
+        for (GridSquare gridSquare: game.getBoard().getGridSquares()){
+          if (gridSquare.getCard() != null){
+            count += 1;
+          }
+        }
+        return (count == GlobalConstants.TOTAL_CARD);
     }
 
     public Player getWinningPlayer(Long gameId){
@@ -197,5 +261,6 @@ public class GameService {
 
         gameRepository.save(game);
     }
+
 
 }

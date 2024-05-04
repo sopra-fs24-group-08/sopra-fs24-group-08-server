@@ -91,7 +91,7 @@ public interface DTOMapper {
     @Mapping(source = "gameStatus", target = "gameStatus")
     @Mapping(source = "winner.id", target = "winnerId")
     @Mapping(source = "currentTurnPlayerId", target = "currentTurnPlayerId")
-    @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
+    // @Mapping(target = "cardPileSize", ignore = true)  // If not applicable
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     @Mapping(source = "id", target = "id")
@@ -99,6 +99,9 @@ public interface DTOMapper {
     @Mapping(source = "score", target = "score")
     @Mapping(target = "gameId", ignore = true)  // Assuming not directly available
     PlayerDTO convertEntityToPlayerDTO(Player player);
+
+    @Mapping(source = "gridSquares", target = "gridSquares")
+    BoardDTO convertEntityBoardDTO(Board board);
 
     // User convert to FriendGetDTO to protect data
     @Mapping(source = "username", target = "username")

@@ -40,10 +40,16 @@ public class Player implements  Serializable{
     @OneToMany(cascade = CascadeType.ALL)
     private List<Card> hand = new ArrayList<Card>();
 
+    @Column
+    private String playerName;
+
     @Column(nullable = false)
     private int score = 0;
 
     public Player() {
+    }
+    public String getPlayerName(){
+      return this.user.getUsername();
     }
 
     public List<Card> getHand() {
