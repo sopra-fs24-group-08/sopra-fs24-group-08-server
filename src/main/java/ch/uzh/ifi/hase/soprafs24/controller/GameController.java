@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Controller
+@RestController
 public class GameController {
 
     private final Logger log = LoggerFactory.getLogger(GameService.class);
@@ -45,12 +45,16 @@ public class GameController {
         return game.getGameId();
     }
 
-    @MessageMapping("/game/update")
-    @SendTo("/topic/game/{gameId}")
-    public Game updateGame(@Payload Game game) {
-        gameService.updateGame(game);
-        return game;
+    @GetMapping("/game/{gameId}/{playerId}/start")
+    @ResponseStatus(HttpStatus.OK)
+    public void startGame(@PathVariable Long gameId, @PathVariable Long playerId) {
+        Game game = gameService.getGame(gameId);
+        GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
+        // Send state update to all clients (or just the relevant client) via WebSocket
+        System.out.println("You are about to receive this playerspecificstate!!" + playerSpecificState);
+        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, playerSpecificState);
     }
+
 
 //    @PutMapping("/game/{gameId}/testStart")
 //    @ResponseBody
@@ -97,20 +101,7 @@ public class GameController {
         messagingTemplate.convertAndSend("/topic/game/gameUpdate/" + gameId, gameStateDTO);
     }
 */
-  @PostMapping("/game/{gameId}/start")
-  @ResponseStatus(HttpStatus.OK)
-    public void startGame(@PathVariable Long gameId,TurnDecisionDTO decision) {
-      if (!gameService.verifyTurnDecision(gameId, decision.getStarterPlayerId(), decision.getOtherPlayerId())) {
-          throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid game start decision");
-      }
 
-      Game game = gameService.startMatchedGame(gameId, decision.getStarterPlayerId(), decision.getOtherPlayerId());
-      // Broadcast the initial game state to all players in the game
-      game.getPlayers().forEach(player -> {
-          GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, player.getUser().getId());
-          messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
-      });
-  }
 
     // /app/game/{gameId}/accept
    /* @MessageMapping("/game/{gameId}/accept")
@@ -135,21 +126,6 @@ public class GameController {
         messagingTemplate.convertAndSend(destination, data);
     }
 
-
-    @MessageMapping("/game/{gameId}/move")
-    public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
-        System.out.println("Checking"+ headerAccessor);
-        String userId = (String) headerAccessor.getSessionAttributes().get("userId");
-        Game updatedGame = gameService.processMove(gameId, move, Long.parseLong(userId));
-        List<Player> players = gameService.getPlayersbygameId(gameId);
-        for (Player player : players) {
-            Long playerId =   player.getId();
-            GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(updatedGame,playerId);
-
-            messagingTemplate.convertAndSendToUser(playerId.toString(), "/queue/game", gameStateDTO);
-        }
-
-    }
 
     /*@MessageMapping("/game/{gameId}/move")
     public void handleMove(@DestinationVariable Long gameId,@Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {

@@ -1,23 +1,50 @@
 package ch.uzh.ifi.hase.soprafs24.gamesocket.dto;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.CardDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GridSquareDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class GameStateDTO {
+
     private Long gameId;
-    private List<CardDTO> playerHand;
+    private List<CardDTO> playerHand; // Ensure this is filtered per the specific player
     private List<GridSquareDTO> gridSquares;
     private int currentScore;
+    private int opponentScore;
     private Long currentPlayerId;
     private GameStatus gameStatus;
     private Long currentTurnPlayerId;
-    private Long winnerId;
+    private int cardPileSize;
+
+    public Long getWinnerId() {
+        return winnerId;
+    }
+
+    public void setWinnerId(Long winnerId) {
+        this.winnerId = winnerId;
+    }
+
+    private Long winnerId; // ID of the winner, null if no winner yet
+
+
+    @Override
+    public String toString() {
+        return "GameStateDTO{" +
+                "gameId=" + gameId +
+                ", playerHand=" + playerHand +
+                ", gridSquares=" + gridSquares +
+                ", currentScore=" + currentScore +
+                ", opponentScore=" + opponentScore +
+                ", currentPlayerId=" + currentPlayerId +
+                ", gameStatus=" + gameStatus +
+                ", currentTurnPlayerId=" + currentTurnPlayerId +
+                ", cardPileSize=" + cardPileSize +
+                '}';
+    }
+
+    public GameStateDTO() {}
 
     public Long getGameId() {
         return gameId;
@@ -35,7 +62,6 @@ public class GameStateDTO {
         this.playerHand = playerHand;
     }
 
-
     public List<GridSquareDTO> getGridSquares() {
         return gridSquares;
     }
@@ -44,13 +70,20 @@ public class GameStateDTO {
         this.gridSquares = gridSquares;
     }
 
-
     public int getCurrentScore() {
         return currentScore;
     }
 
     public void setCurrentScore(int currentScore) {
         this.currentScore = currentScore;
+    }
+
+    public int getOpponentScore() {
+        return opponentScore;
+    }
+
+    public void setOpponentScore(int opponentScore) {
+        this.opponentScore = opponentScore;
     }
 
     public Long getCurrentPlayerId() {
@@ -77,15 +110,11 @@ public class GameStateDTO {
         this.currentTurnPlayerId = currentTurnPlayerId;
     }
 
-    public Long getWinnerId() {
-        return winnerId;
+    public int getCardPileSize() {
+        return cardPileSize;
     }
 
-    public void setWinnerId(Long winnerId) {
-        this.winnerId = winnerId;
+    public void setCardPileSize(int cardPileSize) {
+        this.cardPileSize = cardPileSize;
     }
-
-
-
-    // Getters and Setters
 }

@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs24.rest.dto;
 import ch.uzh.ifi.hase.soprafs24.constant.MoveType;
 
 public class MoveDTO {
+    private Long gameId;
     private Long playerId;
     private Long cardId;
     private Integer position;

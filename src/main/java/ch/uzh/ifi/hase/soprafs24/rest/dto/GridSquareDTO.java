@@ -9,11 +9,25 @@ public class GridSquareDTO {
     private boolean occupied;
     private CardDTO card; // Add a CardDTO object to represent the card on the square
 
+    public GridSquareDTO() {}
+
     public GridSquareDTO(Long id, String color, boolean occupied, CardDTO card) {
         this.id = id;
         this.color = color;
         this.occupied = occupied;
         this.card = card;
+    }
+
+
+
+    @Override
+    public String toString() {
+        return "GridSquareDTO{" +
+                "id=" + id +
+                ", color='" + color + '\'' +
+                ", occupied=" + occupied +
+                ", card=" + (card != null ? card.toString() : "null") +
+                '}';
     }
 
     // Getters and setters

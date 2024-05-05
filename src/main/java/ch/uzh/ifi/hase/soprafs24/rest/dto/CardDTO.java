@@ -15,6 +15,15 @@ public class CardDTO {
         this.points = points;
     }
 
+    @Override
+    public String toString() {
+        return "CardDTO{" +
+                "id=" + id +
+                ", color='" + color + '\'' +
+                ", points=" + points +
+                '}';
+    }
+
     public int getPoints() {
         return points;
     }

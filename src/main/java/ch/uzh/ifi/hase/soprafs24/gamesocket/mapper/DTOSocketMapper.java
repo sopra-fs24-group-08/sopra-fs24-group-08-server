@@ -9,6 +9,7 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.CardDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GridSquareDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -18,40 +19,57 @@ import java.util.stream.Collectors;
 public interface DTOSocketMapper {
     DTOSocketMapper INSTANCE = Mappers.getMapper(DTOSocketMapper.class);
 
-    @Mapping(source = "gameId", target = "gameId")
-    @Mapping(source = "gameStatus", target = "gameStatus")
-    @Mapping(source = "currentTurnPlayerId", target = "currentTurnPlayerId")
-    @Mapping(source = "winner.id", target = "winnerId")
+
+    // Updated DTO mappings to utilize direct list mapping
+    @Mapping(target = "card", source = "card", qualifiedByName = "safeCard")
+    GridSquareDTO convertEntityToGridSquareDTO(GridSquare square);
+
+    // Rename or clarify usage
+    @Named("defaultCard")
+    CardDTO convertEntityToCardDTO(Card card);
+
+    @Named("safeCard")
+    default CardDTO safeConvertEntityToCardDTO(Card card) {
+        if (card == null) {
+            return null;
+        }
+        return convertEntityToCardDTO(card);
+    }
+
+    default GridSquareDTO safeConvertEntityToGridSquareDTO(GridSquare square) {
+        if (square == null) {
+            return null;
+        }
+        return convertEntityToGridSquareDTO(square);
+    }
+
+    @Mapping(target = "winnerId", expression = "java(game.getWinner() != null ? game.getWinner().getId() : null)")
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     default GameStateDTO convertEntityToGameStateDTOForPlayer(Game game, Long playerId) {
-        GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game); // Use the basic mapping then modify
+        GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
 
         Player player = game.getPlayers().stream()
-                .filter(p -> p.getUser().getId().equals(playerId))
+                .filter(p -> p.getId().equals(playerId))
                 .findFirst()
                 .orElse(null);
 
         if (player != null) {
-            List<CardDTO> playerCards = player.getHand().stream()
-                    .map(this::convertEntityToCardDTO)
-                    .collect(Collectors.toList());
-            gameStateDTO.setPlayerHand(playerCards);
+            gameStateDTO.setPlayerHand(player.getHand().stream().map(this::safeConvertEntityToCardDTO).collect(Collectors.toList()));
+            gameStateDTO.setCurrentScore(player.getScore());
+
+            Player opponent = game.getPlayers().stream()
+                    .filter(p -> !p.getId().equals(playerId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (opponent != null) {
+                gameStateDTO.setOpponentScore(opponent.getScore());
+            }
         }
 
-        List<GridSquareDTO> gridSquares = game.getBoard().getGridSquares().stream()
-                .map(this::convertEntityToGridSquareDTO)
-                .collect(Collectors.toList());
-        gameStateDTO.setGridSquares(gridSquares);
+        gameStateDTO.setGridSquares(game.getBoard().getGridSquares().stream().map(this::safeConvertEntityToGridSquareDTO).collect(Collectors.toList()));
 
         return gameStateDTO;
-    }
-
-    CardDTO convertEntityToCardDTO(Card card);
-
-    // Central method to handle both card and no card scenarios for GridSquares
-    default GridSquareDTO convertEntityToGridSquareDTO(GridSquare square) {
-        CardDTO cardDto = square.getCard() != null ? convertEntityToCardDTO(square.getCard()) : null;
-        return new GridSquareDTO(square.getId(), square.getColor(), square.isOccupied(), cardDto);
     }
 }
