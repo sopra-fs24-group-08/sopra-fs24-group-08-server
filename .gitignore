@@ -1,4 +1,6 @@
 *.class
+.env
+application-local.properties
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

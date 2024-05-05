@@ -5,30 +5,29 @@ on:
     branches:
       - main
 
-  # run the workflow manually from the Actions tab
-  workflow_dispatch:
+    # run the workflow manually from the Actions tab
+    workflow_dispatch:
 
-jobs:
-  test:
-    name: Test and Sonarqube
-    runs-on: ubuntu-latest
+  jobs:
+    test:
+      name: Test and Sonarqube
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout repository code
+          uses: actions/checkout@v4
 
-      - name: Install Java 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: "temurin"
-          java-version: "17"
+        - name: Install Java 17
+          uses: actions/setup-java@v3
+          with:
+            distribution: "temurin"
+            java-version: "17"
 
-      - name: Test and analyze
-        run: ./gradlew test jacocoTestReport sonar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+        - name: Test and analyze
+          run: ./gradlew test jacocoTestReport sonar
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   deploy:
     name: Deploying to Google Cloud
     runs-on: ubuntu-latest
@@ -37,18 +36,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
-      - name: Get the current date and time for version
-        id: date
-        run: echo "VERSION_ID=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
+          export_default_credentials: true
+
+      - name: Set API Key for Production
+        run: echo "TRANSLATE_API_KEY=${{ secrets.PROD_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
 
       - name: Deploy to App Engine
-        id: deploy
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
           deliverables: app.yaml
-          version: ${{ env.VERSION_ID }}
+          version: v1
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
 
-      - name: Test
-        run: curl "${{ steps.deploy.outputs.url }}"
+      - name: Test Deployment
+        run: |
+          response=$(curl "${{ steps.deploy.outputs.url }}")
+          echo $response
+          if [[ "$response" == *"Service Unavailable"* ]]; then exit 1; else echo "App is up and running"; fi
