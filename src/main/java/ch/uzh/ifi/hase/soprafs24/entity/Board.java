@@ -1,5 +1,8 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,31 +18,17 @@ public class Board {
     @OneToOne(mappedBy = "board")
     private Game game;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "board")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "board", fetch = FetchType.LAZY)
     private List<GridSquare> gridSquares = new ArrayList<>();
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "card_pile_square_id")  // Explicitly referencing the special grid square for the card pile
+    @OneToOne
+    @JoinColumn(name = "card_pile_square_id", referencedColumnName = "id")
     private GridSquare cardPileSquare;
-
-    // Represents the card pile directly
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<Card> cards = new ArrayList<>();
 
     public void initializeBoard() {
         initializeSquares();
         initializeCardPile();
     }
-
-    // Getters and setters for all fields including new cardPileSquare
-    public GridSquare getCardPileSquare() {
-        return cardPileSquare;
-    }
-
-    public void setCardPileSquare(GridSquare cardPileSquare) {
-        this.cardPileSquare = cardPileSquare;
-    }
-
 
     public Long getId() {
         return id;
@@ -65,7 +54,8 @@ public class Board {
         this.gridSquares = gridSquares;
     }
 
-    public void initializeSquares() {
+    private void initializeSquares() {
+        System.out.println("Initializing squares");
         String[] colors = {"Red", "Blue", "Green", "Yellow", "Black", "Orange"};
         int index = 0;
         boolean whiteUsed = false;
@@ -73,46 +63,51 @@ public class Board {
         for (int i = 0; i < 9; i++) {
             GridSquare square = new GridSquare();
             square.setBoard(this);
-
-            if (i == 4) {
-                this.cardPileSquare = square;
+            if (i == 4) { // Center square is the card pile
+                cardPileSquare = square;
                 square.setCardPile(true);
-                gridSquares.add(square);
-                continue;
-            }
-
-            if (!whiteUsed && i == 8) {  // Ensuring at least one white square, we can alter it depending on if we add special events or not
-                square.setColor("White");
-                whiteUsed = true;
+                System.out.println("Card Pile Initialized at Index: " + i);
             } else {
-                square.setColor(colors[index % colors.length]);
-                index++;
+                if (!whiteUsed && i == 8) {
+                    square.setColor("White");
+                    whiteUsed = true;
+                } else {
+                    square.setColor(colors[index % colors.length]);
+                    index++;
+                }
             }
             gridSquares.add(square);
         }
     }
 
-
     private void initializeCardPile() {
         Random random = new Random();
         String[] colors = {"Red", "Green", "Blue", "Yellow", "Black", "White"};
+        List<Card> pileCards = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
-            int points = 1 + random.nextInt(5);  // Points between 1 and 5
+            int points = 1 + random.nextInt(5);
             String color = colors[random.nextInt(colors.length)];
-            Card card = new Card(color, points);
-            this.cards.add(card);
+            pileCards.add(new Card(color, points));
         }
-        Collections.shuffle(this.cards);  // Shuffle the card pile
+        Collections.shuffle(pileCards);
+        if (cardPileSquare != null) {
+            cardPileSquare.setCards(pileCards);
+        }
     }
 
-
-    public Card drawCard(Player player) {
-        if (!this.cards.isEmpty()) {
-            Card card = this.cards.remove(0);
-            player.addCardToHand(card);
-            return card;
+    public Card drawCardFromPile() {
+        if (cardPileSquare != null && !cardPileSquare.getCards().isEmpty()) {
+            return cardPileSquare.getCards().remove(0);
         }
         return null;
+    }
+
+    public GridSquare getCardPileSquare() {
+        return cardPileSquare;
+    }
+
+    public void setCardPileSquare(GridSquare cardPileSquare) {
+        this.cardPileSquare = cardPileSquare;
     }
 }
 
