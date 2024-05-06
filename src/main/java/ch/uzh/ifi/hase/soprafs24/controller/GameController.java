@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.GameResultRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.TurnDecisionDTO;
@@ -7,16 +8,14 @@ import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
+import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.messaging.handler.annotation.*;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +28,17 @@ public class GameController {
 
     private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
 
 
     @Autowired
-    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate) {
+    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate,UserService userService) {
         this.gameService = gameService;
         this.messagingTemplate = messagingTemplate;
+        this.userService = userService;
     }
+
+
 
     @PostMapping("/game/create")
     @ResponseStatus(HttpStatus.CREATED)
@@ -45,15 +48,43 @@ public class GameController {
         return game.getGameId();
     }
 
+    @GetMapping("/game/{gameId}/{playerId}/start/test")
+    @ResponseStatus(HttpStatus.OK)
+    public GameStateDTO startTestGame(@PathVariable Long gameId, @PathVariable Long playerId) {
+        Game game = gameService.getGame(gameId);
+        GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
+
+        // Print the state for debugging purposes
+        System.out.println("You are about to receive this player-specific-state!! " + playerSpecificState);
+        // messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, playerSpecificState);
+
+        // Return the GameStateDTO for the REST call response
+        return playerSpecificState;
+    }
+
     @GetMapping("/game/{gameId}/{playerId}/start")
     @ResponseStatus(HttpStatus.OK)
     public void startGame(@PathVariable Long gameId, @PathVariable Long playerId) {
         Game game = gameService.getGame(gameId);
         GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
         // Send state update to all clients (or just the relevant client) via WebSocket
-        System.out.println("You are about to receive this playerspecificstate!!" + playerSpecificState);
+        System.out.println("You are about to receive this player-specific-state!!" + playerSpecificState);
         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, playerSpecificState);
     }
+
+    @GetMapping("/game/{gameId}/result/{playerName}")
+    public ResponseEntity<GameResultRequest> verifyResult(@RequestHeader("Authorization") String authorization,@RequestHeader("userId") String stringId,@PathVariable Long gameId, @PathVariable String playerName) {
+        Long userId = Long.parseLong(stringId);
+        userService.authenticateUser(authorization, userId);
+        GameResultRequest result = gameService.verifyResult(gameId, playerName,userId);
+        if (result != null) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
+
 
 
 //    @PutMapping("/game/{gameId}/testStart")

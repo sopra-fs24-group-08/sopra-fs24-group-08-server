@@ -2,6 +2,8 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
+import ch.uzh.ifi.hase.soprafs24.exceptions.GameNotFinishedException;
+import ch.uzh.ifi.hase.soprafs24.exceptions.PlayerNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
@@ -85,9 +87,17 @@ public class GameService {
     }
 
     private Game initializeNewGame(User user1, User user2) {
+        System.out.println("About to create new game");
         Game game = new Game();
+        game.setGameStatus(GameStatus.STARTING);
+
+
         Board board = initializeBoard();
+        boardRepository.save(board);
         game.setBoard(board);
+
+        // Saving game here to ensure it has an ID before linking Players
+        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database
 
         ChatRoom chatRoom = createAndLinkChatRoom(game);
         game.setChatRoom(chatRoom);
@@ -97,23 +107,27 @@ public class GameService {
 
         game.addPlayer(player1);
         game.addPlayer(player2);
-        game.setGameStatus(GameStatus.COINFLIP);
-
-        performCoinFlipAndInitializeGame(player1, player2, game);
 
         gameRepository.save(game);
+
+        game.setGameStatus(GameStatus.COINFLIP);
+        performCoinFlipAndInitializeGame(player1, player2, game);
+
+        game.setGameStatus(GameStatus.ONGOING);
+        gameRepository.save(game); // Final save to ensure all changes are committed
 
         return game;
     }
 
-    private Board initializeBoard() {
-        System.out.println("About to create board");
-        Board board = new Board();
-        board.initializeBoard();
-        return board;
-    }
 
-    private ChatRoom createAndLinkChatRoom(Game game) {
+   private Board initializeBoard() {
+       System.out.println("About to create board");
+       Board board = new Board();
+       board.initializeBoard();
+       return board;
+   }
+
+   private ChatRoom createAndLinkChatRoom(Game game) {
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setGame(game);
         chatRoomRepository.save(chatRoom);
@@ -143,16 +157,25 @@ public class GameService {
     }
 
     private void dealInitialCards(Player firstPlayer, Player secondPlayer, Game game) {
-        drawCardsForPlayer(firstPlayer, 2,game);
-        drawCardsForPlayer(secondPlayer, 3,game);
+        game.setCurrentTurnPlayerId(firstPlayer.getId());
+        drawCardsForPlayer(firstPlayer, 2, game);
+        drawCardsForPlayer(secondPlayer, 3, game);
     }
 
-    private void drawCardsForPlayer(Player player, int numberOfCards,Game game) {
+    private void drawCardsForPlayer(Player player, int numberOfCards, Game game) {
         for (int i = 0; i < numberOfCards; i++) {
-            game.getBoard().drawCard(player);
+            Card card = game.getBoard().drawCardFromPile();
+            if (card != null) {
+                player.addCardToHand(card);
+            } else {
+                //  handle the case where there are no more cards to draw
+                System.out.println("No more cards to draw from the pile.");
+                break;
+            }
         }
         playerRepository.save(player);
     }
+
     //If a player clicks on EXIT/SURR then we should have a proper way to apply the changes.
     public void handlePlayerSurrender(Long gameId, Long surrenderingPlayerId) {
         Game game = gameRepository.findById(gameId)
@@ -171,20 +194,31 @@ public class GameService {
                 .filter(p -> !p.getId().equals(surrenderingPlayerId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Automatically winning Player not found"));
-
+        Long winningPlayerId = winningPlayer.getId();
         // Update the game state
         game.setWinner(winningPlayer);
+        game.setLoser(surrenderingPlayer);
         game.setGameStatus(GameStatus.FINISHED);
         game.setCurrentTurnPlayerId(null); // No current turn necessary
-
+        // perhaps if we decide to store everything on external DB
+        // we could also start storing more data and not delete everything all the time unless necessary.
         revertPlayerToUser(surrenderingPlayer);
         revertPlayerToUser(winningPlayer);
-        playerRepository.delete(surrenderingPlayer);
-        playerRepository.deleteById(winningPlayer.getId());
         // Save changes
         gameRepository.save(game);
+        GameStateDTO stateForLoser = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, surrenderingPlayerId);
+        GameStateDTO stateForWinner = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, winningPlayerId);
 
-        notifyWinner(winningPlayer);
+        notifyGameEnd(stateForLoser,surrenderingPlayerId);
+        notifyGameEnd(stateForWinner, winningPlayerId);
+        playerRepository.delete(surrenderingPlayer);
+        playerRepository.deleteById(winningPlayer.getId());
+        //notifyWinner(winningPlayer);
+        //notifyLoser(surrenderingPlayer);
+    }
+
+    private void notifyGameEnd(GameStateDTO finalGameState,Long playerId) {
+        messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId()+"/"+playerId, finalGameState);
     }
     // If we delete
     private void revertPlayerToUser(Player player) {
@@ -192,149 +226,45 @@ public class GameService {
         userRepository.save(player.getUser());
 
     }
-    private void notifyWinner(Player winner) {
-        System.out.println("Notification sent to winner: " + winner.getUser().getUsername());
 
+    /*private void notifyWinner(Player winner) {
+        messagingTemplate.convertAndSend("/topic/game/" + winner.getGame().getId(),
+                new GameNotification("Game Finished", "You won!", GameStatus.FINISHED, winner.getId()));
     }
-
-
-/*//new
-public Game startGame(Long userId1, Long userId2) {
-    User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found"));
-    User user2 = userRepository.findById(userId2).orElseThrow(() -> new RuntimeException("User not found"));
-    System.out.println("about to create new game");
-    Game game = new Game();
-
-    System.out.println("about to create board");
-    Board board = new Board();
-    board.initializeBoard();
-    game.setBoard(board);
-
-    // Create the chat room here, after initializing the board and before adding players
-    ChatRoom chatRoom = new ChatRoom();
-    chatRoom.setGame(game);  // Link the chat room to the game
-    chatRoomRepository.save(chatRoom);  // Save the new chat room
-    game.setChatRoom(chatRoom);  // Set the chat room for the game
-
-    System.out.println("Converting User to player");
-    Player player1 = convertUserToPlayer(user1, game);
-    Player player2 = convertUserToPlayer(user2, game);
-
-    game.addPlayer(player1);
-    game.addPlayer(player2);
-    game.setGameStatus(GameStatus.COINFLIP);
-
-    performCoinFlipAndInitializeGame(player1, player2, game);
-    game.setGameStatus(GameStatus.ONGOING);
-    gameRepository.save(game);  // Save the game after all initial setups
-
-        System.out.println("Game and chat room initialized");
-        return game;
+    //Combine into one function alter notifyPlayers
+    private void notifyLoser(Player loser) {
+        messagingTemplate.convertAndSend("/topic/game/" + loser.getGame().getId(),
+                new GameNotification("Game Finished", "You lost.", GameStatus.FINISHED, loser.getId()));
     }*/
 
-    //new
-/*
-    private Player convertUserToPlayer(User user, Game game) {
-        user.setInGame(true);   //Player can only be player if user counterpart is actually ingame otherwise it shouldnt' be allowed.
-        Player player = new Player();
-        player.setUser(user);
-        player.setGame(game);
-        // No need to set player ID as it uses @MapsId with User ID
-        userRepository.save(user);
-        playerRepository.save(player);
-        return player;
-    }*/
 
-    //new
-    /*private void performCoinFlipAndInitializeGame(Player player1, Player player2, Game game) {
-        System.out.println("about to play coin flip" + player1.getId() + " " + player2.getId()+ player1);
-        boolean isFirstPlayerPlayer1 = Math.random() < 0.5;
-        Player firstPlayer = isFirstPlayerPlayer1 ? player1 : player2;
-        System.out.println("coinflipped this the winner id" + firstPlayer.getId() + " " + firstPlayer);
-
-        // Ensure you are setting the current turn player ID
-        game.setCurrentTurnPlayerId(firstPlayer.getId());
-
-        // Make sure you persist any changes to the game entity
-
-        gameRepository.save(game);
-
-        // Proceed to deal initial cards
-        dealInitialCards(firstPlayer, player1 == firstPlayer ? player2 : player1, game);
-    }*/
-    //new
-    /*private void dealInitialCards(Player firstPlayer, Player secondPlayer, Game game) {
-        game.getBoard().drawCard(firstPlayer);
-        game.getBoard().drawCard(firstPlayer);
-
-        game.getBoard().drawCard(secondPlayer);
-        game.getBoard().drawCard(secondPlayer);
-        game.getBoard().drawCard(secondPlayer);
-
-        // Save the players to persist card changes
-
-        playerRepository.save(firstPlayer);
-        playerRepository.save(secondPlayer);
-
-    }
-*/
-
-
-
-    private void initializeMatchedFriends(Game game, User user1, User user2) {
-        Player player1 = new Player();
-        player1.setUser(user1);
-        player1.setGame(game);
-
-        Player player2 = new Player();
-        player2.setUser(user2);
-        player2.setGame(game);
-        playerRepository.saveAll(Arrays.asList(player1, player2));
-        game.setPlayers(Arrays.asList(player1, player2));
-        gameRepository.save(game);
-    }
-
-
-    private Game initializeMatchedUsers(Game game, User user1, User user2) {
-        Player player1 = new Player();
-        player1.setUser(user1);
-        player1.setGame(game);
-
-        Player player2 = new Player();
-        player2.setUser(user2);
-        player2.setGame(game);
-        playerRepository.saveAll(Arrays.asList(player1, player2));
-        game.setPlayers(Arrays.asList(player1, player2));
-        game.setGameStatus(GameStatus.ONGOING);
-        gameRepository.save(game);
-        return game;
-
-    }
-
-    public boolean verifyTurnDecision(Long gameId,Long userId,Long user2Id) {
-        Game flipgame = gameRepository.findByGameId(gameId);
-        //check if they are ingame
-        return (Objects.equals(flipgame.getGameStatus().toString(), "COINFLIP"));
-    }
-
-    public Game startMatchedGame(Long gameId,Long userToStart, Long user2){
-        User userW = userRepository.findByid(userToStart);
-        User userL = userRepository.findByid(user2);
+    public GameResultRequest verifyResult(Long gameId,String playerName, Long userId){
         Game game = gameRepository.findByGameId(gameId);
-        return initializeMatchedUsers(game,userW, userL);
+        if (game == null) {
+            throw new EntityNotFoundException("Game not found with ID: " + gameId);
+        }
+
+        Player player = game.getPlayers().stream()
+                .filter(p -> p.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new PlayerNotFoundException("Player not found in the specified game"));
+
+        if (game.getGameStatus() != GameStatus.FINISHED) {
+            throw new GameNotFinishedException("The game has not finished yet");
+        }
+        boolean participated = true;
+        //Normally there shouldn't be a need to check if the given username is the actual username, once we have refined everything I will adjust this.
+        //Right now it's more for debugging purposes to prevent from errors
+        // that stem from user editing username and then sending old one to check.
+        System.out.println(player.getUser().getUsername().equals(playerName));
+        boolean isWinner = game.getWinner() != null && game.getWinner().getId().equals(player.getId());
+
+        return new GameResultRequest(participated,isWinner, player.getUser().getUsername());
+
+
+
     }
 
-    private void performCoinFlip(Game game) {
-        boolean firstPlayerStarts = new Random().nextBoolean();
-        Player startingPlayer = firstPlayerStarts ? game.getPlayers().get(0) : game.getPlayers().get(1);
-        Player secondPlayer = firstPlayerStarts ? game.getPlayers().get(1) : game.getPlayers().get(0);
-
-        // Decide who starts and send initial game state
-        game.setGameStatus(GameStatus.COINFLIP);
-        game.setCurrentTurnPlayerId(startingPlayer.getId());
-        gameRepository.save(game);
-        sendInitialGameState(game);
-    }
 
 
 
@@ -365,15 +295,21 @@ public Game startGame(Long userId1, Long userId2) {
     }*/
 
 
-    public Game processMove(Long gameId, MoveDTO move,Long playerId) {
+    public Game processMove(Long gameId, MoveDTO move, Long playerId) {
         System.out.println("Move is being processed");
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
         Player player = playerRepository.findById(playerId).orElseThrow(() -> new RuntimeException("Player not found"));
         Board board = game.getBoard();
+
         switch (move.getMoveType()) {
             case DRAW:
                 if (board != null) {
-                    board.drawCard(player);
+                    Card drawnCard = board.drawCardFromPile();  // Updated to use the new draw method
+                    if (drawnCard != null) {
+                        player.addCardToHand(drawnCard);
+                    } else {
+                        throw new RuntimeException("No more cards left to draw");
+                    }
                 }
                 break;
             case PLACE:
@@ -385,15 +321,17 @@ public Game startGame(Long userId1, Long userId2) {
                 GridSquare square = board.getGridSquares().get(move.getPosition());
                 if (square != null && !square.isOccupied()) {
                     player.placeCard(square, card);
-                }
-                else {
+                    player.removeCardFromHand(card);
+                } else {
                     throw new RuntimeException("Square is occupied or does not exist");
                 }
                 break;
             default:
                 throw new IllegalArgumentException("Invalid move type");
         }
-        gameRepository.save(game);
+
+        playerRepository.save(player);  // Ensure player changes are persisted
+        gameRepository.save(game);      // Save changes to the game
         return game;
     }
 
