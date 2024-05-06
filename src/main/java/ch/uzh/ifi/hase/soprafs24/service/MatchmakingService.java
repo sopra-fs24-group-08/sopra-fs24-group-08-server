@@ -60,7 +60,7 @@ public class MatchmakingService {
                 Long gameId = game.getGameId();
 
                 // Notify both players of the match result
-                notifyPlayers(playerOneId, playerTwoId, gameId, game);
+                notifyMatchedPlayers(playerOneId, playerTwoId, gameId, game);
 
                 // Remove players from the queue
                 playerQueue.remove(playerOneId);
@@ -68,8 +68,7 @@ public class MatchmakingService {
             }
         }
     }
-
-    private void notifyPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
+    private void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
         Long firstPlayerId = game.getCurrentTurnPlayerId();
         if (firstPlayerId == null) {
             System.err.println("Error: Current turn player ID is null.");

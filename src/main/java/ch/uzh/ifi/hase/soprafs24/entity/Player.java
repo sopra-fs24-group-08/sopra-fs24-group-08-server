@@ -20,22 +20,21 @@ import java.util.Optional;
  */
 //Add all the other variables mentioned on the diagrams.
 @Entity
-public class Player implements  Serializable{
+public class Player implements Serializable {
 
     @Id
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId  //same id as user
+    @MapsId  // Use the same ID as the associated User
     @JoinColumn(name = "id")
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "game_id")
+    @JoinColumn(name = "game_id", nullable = false)
     private Game game;
 
-
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "player_id")
     private List<Card> hand = new ArrayList<>();
 
@@ -44,7 +43,6 @@ public class Player implements  Serializable{
 
     public Player() {
     }
-
 
     public Long getId() {
         return id;
@@ -70,6 +68,24 @@ public class Player implements  Serializable{
         this.game = game;
     }
 
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public void setHand(List<Card> hand) {
+        this.hand = hand;
+    }
+
+    public void addCardToHand(Card card) {
+        if (card != null) {
+            this.hand.add(card);
+        }
+    }
+
+    public void removeCardFromHand(Card card) {
+        this.hand.remove(card);
+    }
+
     public int getScore() {
         return score;
     }
@@ -81,29 +97,26 @@ public class Player implements  Serializable{
     public void addScore(int additionalPoints) {
         this.score += additionalPoints;
     }
-    //Special events might make use of this.
-    public void subScore(int substractPoints) {
-        this.score -= substractPoints;
-    }
 
-    public List<Card> getHand() {
-        return hand;
-    }
-
-    public void setHand(List<Card> hand) {
-        this.hand = hand;
-    }
-
-    public void addCardToHand(Card card) {
-        hand.add(card);
+    public void subScore(int subtractPoints) {
+        this.score -= subtractPoints;
     }
 
     public void placeCard(GridSquare square, Card card) {
-        if (this.hand.contains(card)) {     // Check if the card is in the player's hand
-            this.hand.remove(card);
-            square.setCard(card);
-            this.score += card.getPoints();
+        if (square != null && card != null && this.hand.contains(card)) {
+            if (!square.isOccupied()) {
+                square.getCards().add(card); // Adds card to the square
+                this.hand.remove(card);      // Removes card from player's hand
+                if (card.getColor().equals(square.getColor())) {
+                    addScore(card.getPoints() * 2); // Double points for matching color
+                } else {
+                    addScore(card.getPoints());
+                }
+            } else {
+                throw new IllegalStateException("Square is already occupied.");
+            }
+        } else {
+            throw new IllegalArgumentException("Card not found in player's hand or invalid square/card.");
         }
     }
-
 }

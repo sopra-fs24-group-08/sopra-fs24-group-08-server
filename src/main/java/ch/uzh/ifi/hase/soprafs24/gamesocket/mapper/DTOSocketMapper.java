@@ -9,7 +9,6 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.CardDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.GridSquareDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -19,57 +18,60 @@ import java.util.stream.Collectors;
 public interface DTOSocketMapper {
     DTOSocketMapper INSTANCE = Mappers.getMapper(DTOSocketMapper.class);
 
-
-    // Updated DTO mappings to utilize direct list mapping
-    @Mapping(target = "card", source = "card", qualifiedByName = "safeCard")
-    GridSquareDTO convertEntityToGridSquareDTO(GridSquare square);
-
-    // Rename or clarify usage
-    @Named("defaultCard")
     CardDTO convertEntityToCardDTO(Card card);
 
-    @Named("safeCard")
-    default CardDTO safeConvertEntityToCardDTO(Card card) {
-        if (card == null) {
+    default List<CardDTO> mapCards(List<Card> cards) {
+        if (cards == null) {
             return null;
         }
-        return convertEntityToCardDTO(card);
+        return cards.stream().map(this::convertEntityToCardDTO).collect(Collectors.toList());
     }
 
-    default GridSquareDTO safeConvertEntityToGridSquareDTO(GridSquare square) {
-        if (square == null) {
+
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "color", source = "color")
+    @Mapping(target = "cards", expression = "java(mapCardsBasedOnType(square))")
+    @Mapping(target = "occupied", expression = "java(square.isOccupied())")
+    GridSquareDTO convertEntityToGridSquareDTO(GridSquare square);
+
+    default Object mapCardsBasedOnType(GridSquare square) {
+        if (square.isCardPile()) {
+            return mapCards(square.getCards());  // Return a list of CardDTO for the card pile
+        } else {
+            return square.getCards().isEmpty() ? null : convertEntityToCardDTO(square.getCards().get(0));  // Return a single CardDTO or null
+        }
+    }
+
+    default List<GridSquareDTO> mapGridSquares(List<GridSquare> squares) {
+        if (squares == null) {
             return null;
         }
-        return convertEntityToGridSquareDTO(square);
+        return squares.stream().map(this::convertEntityToGridSquareDTO).collect(Collectors.toList());
     }
 
-    @Mapping(target = "winnerId", expression = "java(game.getWinner() != null ? game.getWinner().getId() : null)")
+    @Mapping(target = "winnerId", source = "winner.id", defaultExpression = "java(null)")
+    @Mapping(target = "loserId", source = "loser.id", defaultExpression = "java(null)")
+    @Mapping(target = "gridSquares", source = "board.gridSquares")
+    @Mapping(target = "cardPileSize", expression = "java(game.getBoard().getCardPileSquare() != null ? game.getBoard().getCardPileSquare().getCards().size() : 0)")
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     default GameStateDTO convertEntityToGameStateDTOForPlayer(Game game, Long playerId) {
-        GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
-
         Player player = game.getPlayers().stream()
                 .filter(p -> p.getId().equals(playerId))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalStateException("Player not found"));
 
-        if (player != null) {
-            gameStateDTO.setPlayerHand(player.getHand().stream().map(this::safeConvertEntityToCardDTO).collect(Collectors.toList()));
-            gameStateDTO.setCurrentScore(player.getScore());
+        Player opponent = game.getPlayers().stream()
+                .filter(p -> !p.getId().equals(playerId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Opponent not found"));
 
-            Player opponent = game.getPlayers().stream()
-                    .filter(p -> !p.getId().equals(playerId))
-                    .findFirst()
-                    .orElse(null);
-
-            if (opponent != null) {
-                gameStateDTO.setOpponentScore(opponent.getScore());
-            }
-        }
-
-        gameStateDTO.setGridSquares(game.getBoard().getGridSquares().stream().map(this::safeConvertEntityToGridSquareDTO).collect(Collectors.toList()));
-
+        GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
+        gameStateDTO.setPlayerHand(mapCards(player.getHand()));
+        gameStateDTO.setCurrentScore(player.getScore());
+        gameStateDTO.setOpponentScore(opponent.getScore());
+        gameStateDTO.setGridSquares(mapGridSquares(game.getBoard().getGridSquares()));
         return gameStateDTO;
     }
 }

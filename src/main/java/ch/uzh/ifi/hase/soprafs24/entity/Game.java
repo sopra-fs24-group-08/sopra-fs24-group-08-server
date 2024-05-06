@@ -31,6 +31,9 @@ public class Game implements Serializable {
     private Player winner;
     //might need to add cascade if it starts causing trouble
 
+    @ManyToOne
+    @JoinColumn(name = "loser_id")
+    private Player loser;
 
     @OneToOne(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private ChatRoom chatRoom;
@@ -52,6 +55,14 @@ public class Game implements Serializable {
 
     public void setWinner(Player winner) {
         this.winner = winner;
+    }
+
+    public Player getLoser() {
+        return loser;
+    }
+
+    public void setLoser(Player loser) {
+        this.loser = loser;
     }
 
     public Board getBoard() {

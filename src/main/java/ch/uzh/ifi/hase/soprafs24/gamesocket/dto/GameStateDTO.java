@@ -13,10 +13,11 @@ public class GameStateDTO {
     private List<GridSquareDTO> gridSquares;
     private int currentScore;
     private int opponentScore;
-    private Long currentPlayerId;
     private GameStatus gameStatus;
     private Long currentTurnPlayerId;
     private int cardPileSize;
+    private Long winnerId;// ID of the winner, null if no winner yet
+    private Long loserId;
 
     public Long getWinnerId() {
         return winnerId;
@@ -25,9 +26,13 @@ public class GameStateDTO {
     public void setWinnerId(Long winnerId) {
         this.winnerId = winnerId;
     }
+    public Long getLoserId() {
+        return loserId;
+    }
 
-    private Long winnerId; // ID of the winner, null if no winner yet
-
+    public void setLoserId(Long loserId) {
+        this.loserId = loserId;
+    }
 
     @Override
     public String toString() {
@@ -37,10 +42,11 @@ public class GameStateDTO {
                 ", gridSquares=" + gridSquares +
                 ", currentScore=" + currentScore +
                 ", opponentScore=" + opponentScore +
-                ", currentPlayerId=" + currentPlayerId +
                 ", gameStatus=" + gameStatus +
                 ", currentTurnPlayerId=" + currentTurnPlayerId +
                 ", cardPileSize=" + cardPileSize +
+                ", winnerId=" + winnerId +
+                ", loserId=" +loserId+
                 '}';
     }
 
@@ -86,13 +92,6 @@ public class GameStateDTO {
         this.opponentScore = opponentScore;
     }
 
-    public Long getCurrentPlayerId() {
-        return currentPlayerId;
-    }
-
-    public void setCurrentPlayerId(Long currentPlayerId) {
-        this.currentPlayerId = currentPlayerId;
-    }
 
     public GameStatus getGameStatus() {
         return gameStatus;

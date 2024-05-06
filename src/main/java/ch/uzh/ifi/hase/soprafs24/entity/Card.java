@@ -11,12 +11,22 @@ public class Card {
     private String color;
     private int points;
 
+    @ManyToOne
+    @JoinColumn(name = "grid_square_id")
+    private GridSquare square;
+
+    @ManyToOne
+    @JoinColumn(name = "player_id", nullable = true)  // Nullable if the card is not in a player's hand
+    private Player player;
+
     public Card() {}
 
     public Card(String color, int points) {
         this.color = color;
         this.points = points;
     }
+
+    // Standard getters and setters
 
     public Long getId() {
         return id;
@@ -42,4 +52,19 @@ public class Card {
         this.points = points;
     }
 
+    public GridSquare getSquare() {
+        return square;
+    }
+
+    public void setSquare(GridSquare square) {
+        this.square = square;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
 }

@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
+import ch.uzh.ifi.hase.soprafs24.entity.SurrenderConfirmation;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
@@ -55,6 +56,12 @@ public class GameSocketController {
             messagingTemplate.convertAndSendToUser(playerId.toString(), "/queue/game", gameStateDTO);
         }
 
+    }
+
+    @MessageMapping("/game/{gameId}/surrender")
+    public void handlePlayerSurrender(@DestinationVariable Long gameId, @Payload SurrenderConfirmation surrenderConfirmation) {
+        Long surrenderingPlayerId = surrenderConfirmation.getPlayerId();
+        gameService.handlePlayerSurrender(gameId, surrenderingPlayerId);
     }
 
 }

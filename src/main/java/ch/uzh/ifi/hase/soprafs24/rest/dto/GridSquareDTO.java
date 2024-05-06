@@ -1,24 +1,22 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
-import ch.uzh.ifi.hase.soprafs24.entity.Card;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.CardDTO;
+import java.util.List;
 
 public class GridSquareDTO {
     private Long id;
     private String color;
     private boolean occupied;
-    private CardDTO card; // Add a CardDTO object to represent the card on the square
+    private Object cards;  // This can be a List<CardDTO> or CardDTO or null
 
-    public GridSquareDTO() {}
+    public GridSquareDTO() {
+    }
 
-    public GridSquareDTO(Long id, String color, boolean occupied, CardDTO card) {
+    public GridSquareDTO(Long id, String color, boolean occupied, Object cards) {
         this.id = id;
         this.color = color;
         this.occupied = occupied;
-        this.card = card;
+        this.cards = cards;
     }
-
-
 
     @Override
     public String toString() {
@@ -26,11 +24,10 @@ public class GridSquareDTO {
                 "id=" + id +
                 ", color='" + color + '\'' +
                 ", occupied=" + occupied +
-                ", card=" + (card != null ? card.toString() : "null") +
+                ", cards=" + cards +
                 '}';
     }
 
-    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -55,11 +52,15 @@ public class GridSquareDTO {
         this.occupied = occupied;
     }
 
-    public CardDTO getCard() {
-        return card;
+    public Object getCards() {
+        return cards;
     }
 
-    public void setCard(CardDTO card) {
-        this.card = card;
+    public void setCards(Object cards) {
+        this.cards = cards;
+    }
+
+    public void setCards(List<CardDTO> cards) {
+        this.cards = cards;
     }
 }
