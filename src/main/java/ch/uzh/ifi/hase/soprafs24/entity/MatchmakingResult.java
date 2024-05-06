@@ -5,12 +5,18 @@ public class MatchmakingResult {
     private final Long gameId;
     private final boolean isFirst;
     private final Long opponentId;
+    private final String opponentName;
 
-    public MatchmakingResult(boolean matchFound, Long gameId, boolean isFirst, Long opponentId) {
+    public MatchmakingResult(boolean matchFound, Long gameId, boolean isFirst, Long opponentId,String opponentName) {
         this.matchFound = matchFound;
         this.gameId = gameId;
         this.isFirst = isFirst;
         this.opponentId = opponentId;
+        this.opponentName = opponentName;
+    }
+
+    public String getOpponentName() {
+        return opponentName;
     }
 
     public boolean isMatchFound() {

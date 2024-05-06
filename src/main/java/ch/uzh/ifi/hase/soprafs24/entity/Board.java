@@ -56,7 +56,7 @@ public class Board {
 
     private void initializeSquares() {
         System.out.println("Initializing squares");
-        String[] colors = {"Red", "Blue", "Green", "Yellow", "Black", "Orange"};
+        String[] colors = {"Red", "Blue", "Green", "White","Black", "Orange"};
         int index = 0;
         boolean whiteUsed = false;
 
@@ -82,7 +82,7 @@ public class Board {
 
     private void initializeCardPile() {
         Random random = new Random();
-        String[] colors = {"Red", "Green", "Blue", "Yellow", "Black", "White"};
+        String[] colors = {"Red", "Green", "Blue", "Orange", "Black", "White"};
         List<Card> pileCards = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             int points = 1 + random.nextInt(5);

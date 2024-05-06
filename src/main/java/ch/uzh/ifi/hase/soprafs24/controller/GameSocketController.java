@@ -47,14 +47,15 @@ public class GameSocketController {
     public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
         System.out.println("Checking"+ headerAccessor);
         String userId = (String) headerAccessor.getSessionAttributes().get("userId");
-        Game updatedGame = gameService.processMove(gameId, move, Long.parseLong(userId));
-        List<Player> players = gameService.getPlayersbygameId(gameId);
+        gameService.processMove(gameId, move, Long.parseLong(userId));
+        System.out.println("Move has been Processed and broadcast to all players");
+       /* List<Player> players = gameService.getPlayersbygameId(gameId);
         for (Player player : players) {
             Long playerId =   player.getId();
             GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(updatedGame,playerId);
 
-            messagingTemplate.convertAndSendToUser(playerId.toString(), "/queue/game", gameStateDTO);
-        }
+            messagingTemplate.convertAndSend(playerId.toString(), "//game", gameStateDTO);
+        }*/
 
     }
 

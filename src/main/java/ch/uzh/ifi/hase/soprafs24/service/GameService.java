@@ -28,15 +28,18 @@ public class GameService {
     private final SimpMessagingTemplate messagingTemplate;
     private final BoardRepository boardRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final GridSquareRepository gridSquareRepository;
 
     @Autowired
-    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate, BoardRepository boardRepository, ChatRoomRepository chatRoomRepository) {
+    public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
+                       BoardRepository boardRepository, ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
         this.messagingTemplate = messagingTemplate;
         this.boardRepository = boardRepository;
         this.chatRoomRepository = chatRoomRepository;
+        this.gridSquareRepository = gridSquareRepository;
     }
 
     public Game getGame(Long gameId) {
@@ -119,20 +122,20 @@ public class GameService {
         return game;
     }
 
-
-   private Board initializeBoard() {
+    private Board initializeBoard() {
        System.out.println("About to create board");
        Board board = new Board();
        board.initializeBoard();
        return board;
    }
-
-   private ChatRoom createAndLinkChatRoom(Game game) {
+    private ChatRoom createAndLinkChatRoom(Game game) {
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setGame(game);
         chatRoomRepository.save(chatRoom);
         return chatRoom;
     }
+
+
 
     private Player convertUserToPlayer(User user, Game game) {
         System.out.println("Converting User to player");
@@ -295,7 +298,7 @@ public class GameService {
     }*/
 
 
-    public Game processMove(Long gameId, MoveDTO move, Long playerId) {
+    public void processMove(Long gameId, MoveDTO move, Long playerId) {
         System.out.println("Move is being processed");
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
         Player player = playerRepository.findById(playerId).orElseThrow(() -> new RuntimeException("Player not found"));
@@ -321,7 +324,7 @@ public class GameService {
                 GridSquare square = board.getGridSquares().get(move.getPosition());
                 if (square != null && !square.isOccupied()) {
                     player.placeCard(square, card);
-                    player.removeCardFromHand(card);
+                    //player.removeCardFromHand(card);
                 } else {
                     throw new RuntimeException("Square is occupied or does not exist");
                 }
@@ -329,42 +332,27 @@ public class GameService {
             default:
                 throw new IllegalArgumentException("Invalid move type");
         }
-
+        switchTurns(game,playerId);
         playerRepository.save(player);  // Ensure player changes are persisted
-        gameRepository.save(game);      // Save changes to the game
-        return game;
+        gameRepository.save(game);//// Save changes to the game
+        if (gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId())==0) {
+            checkGameOverConditions(game);
+        }else{
+        broadcastGameState(game);
+        }
     }
 
+    private void broadcastGameState(Game game) {
+        game.getPlayers().forEach(player -> {
+            GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game,player.getId());
+            messagingTemplate.convertAndSend("/topic/game/"+game.getGameId()+"/"+player.getUser().getId().toString(),gameState);
+        }); //`/topic/game/${gameId}/${currUser.id}`
+    }
 
-
-    /*public void placeCard(Long gameId, MoveDTO move) {
-        System.out.println(move+ "trying to placeCard");
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        Player player = playerRepository.findById(move.getPlayerId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
-        Card card = player.getCardFromHand(move.getCardId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Card not found"));
-        Board board = game.getBoard();
-        int position = move.getPosition();
-        String squareColor = board.getSquareColor(position);
-
-        if (!board.getGridSquares().isOccupied(position)) {
-            int points = attemptToPlaceCardOnBoard(card, squareColor, board, position);
-            if (points > 0) {
-                player.addScore(points);
-                player.removeCardFromHand(card);
-                playerRepository.save(player);
-                gameRepository.save(game);
-                switchTurns(game, player);
-            } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot place card on the chosen square");
-            }
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Square already occupied");
-        }
-  }*/
-
-    private void switchTurns(Game game, Player currentPlayer) {
+    //Give it the id of the currentPlayer(do validation before)
+    private void switchTurns(Game game, Long currentPlayerId) {
         game.getPlayers().forEach(p -> {
-            if (!p.getId().equals(currentPlayer.getId())) {
+            if (!p.getId().equals(currentPlayerId)){
                 game.setCurrentTurnPlayerId(p.getId());
             }
         });
@@ -383,19 +371,11 @@ public class GameService {
     }
 
 
-
     private boolean validateMove(MoveDTO move) {
         // Your validation logic here
         return true; // Simplified for example purposes
     }
 
-
-    private void broadcastGameState(Game game) {
-        game.getPlayers().forEach(player -> {
-            GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game,player.getId());
-            messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game", gameState);
-        });
-    }
 
 
    // @Transactional(rollbackFor = {RuntimeException.class, DataIntegrityViolationException.class})

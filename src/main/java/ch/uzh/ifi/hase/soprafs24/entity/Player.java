@@ -105,7 +105,7 @@ public class Player implements Serializable {
     public void placeCard(GridSquare square, Card card) {
         if (square != null && card != null && this.hand.contains(card)) {
             if (!square.isOccupied()) {
-                square.getCards().add(card); // Adds card to the square
+                square.getCards().add(card); // Adds card to the square, checking again after service
                 this.hand.remove(card);      // Removes card from player's hand
                 if (card.getColor().equals(square.getColor())) {
                     addScore(card.getPoints() * 2); // Double points for matching color

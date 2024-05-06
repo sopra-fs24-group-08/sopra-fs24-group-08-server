@@ -62,7 +62,7 @@ public class GameController {
         return playerSpecificState;
     }
 
-    @GetMapping("/game/{gameId}/{playerId}/start")
+    @PostMapping("/game/{gameId}/{playerId}/start")
     @ResponseStatus(HttpStatus.OK)
     public void startGame(@PathVariable Long gameId, @PathVariable Long playerId) {
         Game game = gameService.getGame(gameId);
@@ -71,6 +71,26 @@ public class GameController {
         System.out.println("You are about to receive this player-specific-state!!" + playerSpecificState);
         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + playerId, playerSpecificState);
     }
+
+
+    @PostMapping("/game/{gameId}/{userId}/move/test")
+    @ResponseStatus(HttpStatus.OK)
+    public GameStateDTO handleMove(@PathVariable Long gameId, @RequestBody MoveDTO move, @PathVariable Long userId) {
+        System.out.println("Received move from userId: " + userId + " for gameId: " + gameId);
+
+        // Process the move in the game service
+        gameService.processMove(gameId, move, userId);
+
+        // Retrieve the updated game state for all players
+        Game game = gameService.getGame(gameId);
+        GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTO(game);
+
+        System.out.println("Move has been processed and the updated game state is being returned.");
+        return gameStateDTO;
+    }
+
+
+
 
     @GetMapping("/game/{gameId}/result/{playerName}")
     public ResponseEntity<GameResultRequest> verifyResult(@RequestHeader("Authorization") String authorization,@RequestHeader("userId") String stringId,@PathVariable Long gameId, @PathVariable String playerName) {
