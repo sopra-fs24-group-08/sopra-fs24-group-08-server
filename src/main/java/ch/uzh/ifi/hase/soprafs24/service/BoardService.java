@@ -3,6 +3,8 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.entity.Board;
 import ch.uzh.ifi.hase.soprafs24.entity.Card;
 import ch.uzh.ifi.hase.soprafs24.entity.GridSquare;
+import ch.uzh.ifi.hase.soprafs24.exceptions.NoCardsLeftException;
+import ch.uzh.ifi.hase.soprafs24.exceptions.SquareOccupiedException;
 import ch.uzh.ifi.hase.soprafs24.repository.BoardRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.CardRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.GridSquareRepository;
@@ -31,55 +33,50 @@ public class BoardService {
         Board board = new Board();
         board.initializeBoard();
         return board;
-    }}
-
-    /*private List<GridSquare> initializeSquares(Board board) {
-        String[] colors = {"Red", "Blue", "Green", "White", "Black", "Orange"};
-        int index = 0;
-        boolean whiteUsed = false;
-        List<GridSquare> squares = new ArrayList<>();
-
-        for (int i = 0; i < 9; i++) {
-            GridSquare square = new GridSquare();
-            square.setBoard(board); // Set the reference to the saved board
-
-            if (i == 4) {
-                square.setCardPile(true);
-                board.setCardPileSquare(square); // Set the card pile square in the board
-            } else {
-                if (!whiteUsed && i == 8) {
-                    square.setColor("White");
-                    whiteUsed = true;
-                } else {
-                    square.setColor(colors[index % colors.length]);
-                    index++;
-                }
-            }
-            squares.add(square);
-        }
-        return squares;
     }
 
-    private void setupCardPile(Board board) {
-        GridSquare cardPileSquare = board.getCardPileSquare();
-        if (cardPileSquare == null) {
-            throw new IllegalStateException("Card pile square not initialized correctly.");
+    public Card drawCardFromPile(Board board) throws NoCardsLeftException {
+        if (board != null && !board.getCardPileSquare().getCards().isEmpty()) {
+            return board.getCardPileSquare().getCards().remove(0);
         }
-        cardPileSquare.setCards(createPileCards(cardPileSquare));  // Properly create and set the pile cards
-        cardRepository.saveAll(cardPileSquare.getCards());
+        else {
+            throw new NoCardsLeftException("Card pile is empty");
+        }
     }
 
-    private List<Card> createPileCards(GridSquare cardPileSquare) {
-        Random random = new Random();
-        String[] colors = {"Red", "Green", "Blue", "Orange", "Black", "White"};
-        List<Card> pileCards = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            int points = 1 + random.nextInt(5);
-            String color = colors[random.nextInt(colors.length)];
-            Card card = new Card(color, points);
-            card.setSquare(cardPileSquare);
-            pileCards.add(card);
+    public void placeCardOnSquare(Card card, GridSquare square) throws SquareOccupiedException {
+        if (square != null && !square.isOccupied()) {
+            square.addCard(card);
+            card.setSquare(square);  // Proper linking
+        } else {
+            throw new SquareOccupiedException("Square is occupied or does not exist at position: " + square.getId());
         }
-        return pileCards;
     }
-}*/
+
+    public boolean isAllSquaresOccupied(Board board) {
+        return gridSquareRepository.countByBoardIdAndIsOccupiedFalse(board.getId()) == 0;
+    }
+
+    /**
+     * Retrieves a GridSquare from a Board based on its index.
+     * This method assumes that the position corresponds directly to the index in the list of grid squares.
+     *
+     * @param board The board containing the grid squares.
+     * @param index The index of the grid square in the board's list.
+     * @return The GridSquare at the specified index.
+     * @throws IllegalArgumentException if the index is out of range or the board is null.
+     */
+
+    public GridSquare getGridSquareById(Board board, int index) {
+        if (board == null) {
+            throw new IllegalArgumentException("Board cannot be null.");
+        }
+
+        List<GridSquare> squares = board.getGridSquares();
+        if (index < 0 || index >= squares.size()) {
+            throw new IllegalArgumentException("Grid square index " + index + " is out of bounds.");
+        }
+        return squares.get(index);
+    }
+}
+

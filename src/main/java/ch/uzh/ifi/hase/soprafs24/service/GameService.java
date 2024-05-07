@@ -2,12 +2,13 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
-import ch.uzh.ifi.hase.soprafs24.exceptions.GameNotFinishedException;
-import ch.uzh.ifi.hase.soprafs24.exceptions.PlayerNotFoundException;
+import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,10 @@ import java.util.*;
 @Service
 @Transactional
 public class GameService {
+
+    private final Logger logger = LoggerFactory.getLogger(GameService.class);
+
+
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
@@ -44,12 +49,12 @@ public class GameService {
 
 
     public Game getGame(Long gameId) {
-        return gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
+        return gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game not found"));
     }
 
     public void updateGame(Game game) {
         gameRepository.save(game);
-    }
+    }//Leaving this in for existing functions of others, should be removed eventually
     //for gameId
     public Game createGame() {
         Game game = new Game();
@@ -140,10 +145,12 @@ public class GameService {
     private void drawCardsForPlayer(Player player, int numberOfCards, Game game) {
         for (int i = 0; i < numberOfCards; i++) {
             System.out.println("Drawing Card " + i + " of " + numberOfCards);
-            Card card = game.getBoard().drawCardFromPile();
+            Card card = boardService.drawCardFromPile(game.getBoard());
             System.out.println(card);
             if (card != null) {
                 player.addCardToHand(card);
+                card.setPlayer(player);  // Set the player as the owner of the card
+                card.setSquare(null);
             } else {
                 //  handle the case where there are no more cards to draw
                 System.out.println("No more cards to draw from the pile.");
@@ -204,17 +211,6 @@ public class GameService {
 
     }
 
-    /*private void notifyWinner(Player winner) {
-        messagingTemplate.convertAndSend("/topic/game/" + winner.getGame().getId(),
-                new GameNotification("Game Finished", "You won!", GameStatus.FINISHED, winner.getId()));
-    }
-    //Combine into one function alter notifyPlayers
-    private void notifyLoser(Player loser) {
-        messagingTemplate.convertAndSend("/topic/game/" + loser.getGame().getId(),
-                new GameNotification("Game Finished", "You lost.", GameStatus.FINISHED, loser.getId()));
-    }*/
-
-
     public GameResultRequest verifyResult(Long gameId,String playerName, Long userId){
         Game game = gameRepository.findByGameId(gameId);
         if (game == null) {
@@ -237,86 +233,84 @@ public class GameService {
         boolean isWinner = game.getWinner() != null && game.getWinner().getId().equals(player.getId());
 
         return new GameResultRequest(participated,isWinner, player.getUser().getUsername());
-
-
-
     }
 
 
+    /**
+     * Validates that the move is being made by the correct player and that it is indeed this player's turn.
+     *
+     * @param gameId the ID of the game
+     * @param playerId the ID of the player who should currently be making a move
+     * @param moveDTOUserId the ID of the user attempting to make a move
+     * @throws NotYourTurnException if it is not the player's turn
+     * @throws RuntimeException if the move request is invalid or if the game or player does not exist
+     */
+    private void validateTurn(Long gameId, Long playerId, Long moveDTOUserId) {
+        if (moveDTOUserId == null || !moveDTOUserId.equals(playerId)) {
+            throw new RuntimeException("Invalid move request: User ID does not match Player ID");
+        }
 
+        Game game = gameRepository.findByGameId(gameId);
+        if (game == null) {
+            throw new RuntimeException("Game not found for ID: " + gameId);
+        }
 
-    private void sendInitialGameState(Game game) {
-        GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, game.getCurrentTurnPlayerId());
-        game.getPlayers().forEach(player -> {
-            GameStateDTO playerSpecificState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, player.getUser().getId());
-            messagingTemplate.convertAndSendToUser(player.getUser().getId().toString(), "/queue/game-state", playerSpecificState);
-        });
+        if (!game.getCurrentTurnPlayerId().equals(playerId)) {
+            throw new NotYourTurnException("Not your turn, current turn is for player ID: " + game.getCurrentTurnPlayerId());
+        }
     }
-
-
-
-    public List<Player> getPlayersbygameId(Long gameId) {
-        return gameRepository.findPlayersByGameId(gameId);
-
-    }
-  /*  public GameState getGameStateForPlayer(Long gameId, String username) {
-        GameState fullGameState = gameRepository.findGameStateByGameId(gameId);
-        // Clone or modify the GameState to create a player-specific view
-        GameState playerGameState = new GameState();
-        playerGameState.setCommonElements(fullGameState.getCommonElements());  // e.g., board state, scores
-
-        // Filter out only the cards that belong to the player
-        playerGameState.setPlayerHand(fullGameState.getHands().get(username));
-
-        return playerGameState;
-    }*/
 
 
     public void processMove(Long gameId, MoveDTO move, Long playerId) {
-        System.out.println("Move is being processed");
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
-        Player player = playerRepository.findById(playerId).orElseThrow(() -> new RuntimeException("Player not found"));
-        Board board = game.getBoard();
+        logger.info("Move is being processed for game: {}, player: {}", gameId, playerId);
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game not found for ID: " + gameId));
+        Player player = playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found for ID: " + playerId));
+        validateTurn(gameId, playerId,move.getPlayerId());
 
-        switch (move.getMoveType()) {
-            case DRAW:
-                if (board != null) {
-                    System.out.println(gridSquareRepository.countCardsInCardPileGridSquare(game.getBoard().getId()));
-                    Card drawnCard = board.drawCardFromPile();
-                    if (drawnCard != null) {
-                        player.addCardToHand(drawnCard);
-                        playerRepository.save(player);
-                    } else {
-                        throw new RuntimeException("No more cards left to draw");
-                    }
-                }
-                break;
-            case PLACE:
-                Card card = player.getHand().stream()
-                        .filter(c -> c.getId().equals(move.getCardId()))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Card not found in player's hand"));
-
-                GridSquare square = board.getGridSquares().get(move.getPosition());
-                if (square != null && !square.isOccupied()) {
-                    placeCard(player.getId(), card.getId(), square.getId());
-                } else {
-                    throw new RuntimeException("Square is occupied or does not exist");
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid move type");
+        try {
+            switch (move.getMoveType()) {
+                case DRAW:
+                    handleDrawMove(game, player);
+                    break;
+                case PLACE:
+                    handlePlaceMove(game, player, move);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid move type: " + move.getMoveType());
+            }
+        } catch (Exception ex) {
+            logger.error("Error processing move: {}", ex.getMessage(), ex);
+            throw ex;  // Re-throwing to maintain the transactional rollback
         }
-        // Since transactions are managed at the service level, saving should handle any unsaved changes at the end of the transaction.
-        switchTurns(game, playerId);
-        gameRepository.save(game);  // Save changes to the game
-        System.out.println(gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId()));
-        if (gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId()) == 0) {
-            checkGameOverConditions(game);
+        switchTurns(game,playerId);
+        updateGameState(game);
+    }
+
+    private void handleDrawMove(Game game, Player player) {
+        Card card = boardService.drawCardFromPile(game.getBoard());
+        if (card != null) {
+            player.addCardToHand(card);
+            card.setPlayer(player);  // Ensure linking
+            playerRepository.save(player);
         } else {
-            broadcastGameState(game);
+            throw new NoCardsLeftException("No more cards left to draw in game: " + game.getGameId());
         }
     }
+
+    private void handlePlaceMove(Game game, Player player, MoveDTO move) {
+        Card card = findCardInPlayerHand(player, move.getCardId());
+        GridSquare square = boardService.getGridSquareById(game.getBoard(), move.getPosition());
+        boardService.placeCardOnSquare(card, square);
+    }
+
+    private Card findCardInPlayerHand(Player player, Long cardId) throws CardNotFoundException {
+        return player.getHand().stream()
+                .filter(c -> c.getId().equals(cardId))
+                .findFirst()
+                .orElseThrow(() -> new CardNotFoundException("Card not found in player's hand: " + cardId));
+    }
+
+
 
     public void placeCard(Long playerId, Long cardId, Long gridSquareId) {
         Player player = playerRepository.findById(playerId)
@@ -355,12 +349,16 @@ public class GameService {
         playerRepository.save(player);
         gridSquareRepository.save(gridSquare);
     }
-    @Transactional(readOnly = true)
-    public Card findCardInPlayerHand(Player player, Long cardId) {
-        return player.getHand().stream()
-                .filter(c -> c.getId().equals(cardId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Card not found in player's hand"));
+
+    private void updateGameState(Game game) {
+        logger.debug("Updating game state for game: {}", game.getGameId());
+
+        gameRepository.save(game);
+        if (boardService.isAllSquaresOccupied(game.getBoard())) {
+            checkGameOverConditions(game);
+        } else {
+            broadcastGameState(game);
+        }
     }
 
 
@@ -394,21 +392,13 @@ public class GameService {
     }
 
 
-    private boolean validateMove(MoveDTO move) {
-        // Your validation logic here
-        return true; // Simplified for example purposes
-    }
-
 
 
    // @Transactional(rollbackFor = {RuntimeException.class, DataIntegrityViolationException.class})
 
-    private void updateStateAfterPlay(Game game, Player player, Card card, GridSquare square) {
-
-    }
 
     private void checkGameOverConditions(Game game) {
-        // Logic to check if the game should end
+
     }
 
     public Player getWinningPlayer(Long gameId){

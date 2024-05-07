@@ -19,6 +19,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class GameSocketController {
@@ -46,7 +47,7 @@ public class GameSocketController {
     @MessageMapping("/game/{gameId}/move")
     public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
         System.out.println("Checking"+ headerAccessor);
-        String userId = (String) headerAccessor.getSessionAttributes().get("userId");
+        String userId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
         gameService.processMove(gameId, move, Long.parseLong(userId));
         System.out.println("Move has been Processed and broadcast to all players");
        /* List<Player> players = gameService.getPlayersbygameId(gameId);

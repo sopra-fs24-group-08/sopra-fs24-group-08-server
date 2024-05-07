@@ -34,7 +34,7 @@ public class Player implements Serializable {
     @JoinColumn(name = "game_id", nullable = false)
     private Game game;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id")
     private List<Card> hand = new ArrayList<>();
 

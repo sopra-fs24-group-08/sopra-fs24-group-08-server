@@ -15,15 +15,11 @@ public class Board {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /*@OneToOne(mappedBy = "board")
-    private Game game;*/
-
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Card> centralCardPile = new ArrayList<Card>();
+    @OneToOne(mappedBy = "board")
+    private Game game;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "board", fetch = FetchType.LAZY)
     private List<GridSquare> gridSquares = new ArrayList<>();
-
 
     @OneToOne
     @JoinColumn(name = "card_pile_square_id", referencedColumnName = "id")
@@ -61,7 +57,7 @@ public class Board {
 
     private void initializeSquares() {
         System.out.println("Initializing squares");
-        String[] colors = {"Red", "Blue", "Green", "White","Black", "Orange"};
+        String[] colors = {"red", "blue", "green", "white"};
         int index = 0;
         boolean whiteUsed = false;
 
@@ -71,10 +67,11 @@ public class Board {
             if (i == 4) { // Center square is the card pile
                 cardPileSquare = square;
                 square.setCardPile(true);
+                square.setColor(null);
                 System.out.println("Card Pile Initialized at Index: " + i);
             } else {
                 if (!whiteUsed && i == 8) {
-                    square.setColor("White");
+                    square.setColor("white");
                     whiteUsed = true;
                 } else {
                     square.setColor(colors[index % colors.length]);
@@ -85,26 +82,28 @@ public class Board {
         }
     }
 
-    private void initializeCardPile() {
-        Random random = new Random();
-        String[] colors = {"Red", "Green", "Blue", "Orange", "Black", "White"};
-        List<Card> pileCards = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            int points = 1 + random.nextInt(5);
-            String color = colors[random.nextInt(colors.length)];
-            pileCards.add(new Card(color, points));
-        }
-        Collections.shuffle(pileCards);
-        if (cardPileSquare != null) {
-            cardPileSquare.setCards(pileCards);
-        }
-    }
 
-    public Card drawCardFromPile() {
-        if (cardPileSquare != null && !cardPileSquare.getCards().isEmpty()) {
-            return cardPileSquare.getCards().remove(0);
+    private void initializeCardPile() {
+        Logger logger = LoggerFactory.getLogger(Board.class);
+        Random random = new Random();
+        String[] colors = {"red", "blue", "green"};
+        List<Card> pileCards = new ArrayList<>();
+
+        for (int i = 0; i < 30; i++) {
+            int points = 1 + random.nextInt(5); // Points between 1 and 5
+            String color = colors[random.nextInt(colors.length)];
+            Card newCard = new Card(color, points);
+            pileCards.add(newCard);
         }
-        return null;
+
+        Collections.shuffle(pileCards); // Shuffle the list of cards to randomize the order
+
+        if (cardPileSquare != null) {
+            cardPileSquare.setCards(pileCards); // Assign the shuffled cards to the card pile square
+            logger.info("Card pile initialized with 30 cards.");
+        } else {
+            logger.error("Card pile square not initialized.");
+        }
     }
 
     public GridSquare getCardPileSquare() {
