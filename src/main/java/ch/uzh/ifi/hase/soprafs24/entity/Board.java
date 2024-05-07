@@ -15,11 +15,15 @@ public class Board {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(mappedBy = "board")
-    private Game game;
+    /*@OneToOne(mappedBy = "board")
+    private Game game;*/
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Card> centralCardPile = new ArrayList<Card>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "board", fetch = FetchType.LAZY)
     private List<GridSquare> gridSquares = new ArrayList<>();
+
 
     @OneToOne
     @JoinColumn(name = "card_pile_square_id", referencedColumnName = "id")
