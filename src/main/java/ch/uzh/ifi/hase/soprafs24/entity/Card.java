@@ -12,7 +12,7 @@ public class Card {
     private int points;
 
     @ManyToOne
-    @JoinColumn(name = "grid_square_id")
+    @JoinColumn(name = "grid_square_id",nullable = true)//default
     private GridSquare square;
 
     @ManyToOne
@@ -25,8 +25,6 @@ public class Card {
         this.color = color;
         this.points = points;
     }
-
-    // Standard getters and setters
 
     public Long getId() {
         return id;

@@ -50,10 +50,14 @@ public interface DTOSocketMapper {
         return squares.stream().map(this::convertEntityToGridSquareDTO).collect(Collectors.toList());
     }
 
+    default int getCardPileSize(Game game) {
+        GridSquare cardPileSquare = game.getBoard().getCardPileSquare();
+        return (cardPileSquare != null && cardPileSquare.getCards() != null) ? cardPileSquare.getCards().size() : 0;
+    }
+
     @Mapping(target = "winnerId", source = "winner.id", defaultExpression = "java(null)")
     @Mapping(target = "loserId", source = "loser.id", defaultExpression = "java(null)")
     @Mapping(target = "gridSquares", source = "board.gridSquares")
-    @Mapping(target = "cardPileSize", expression = "java(game.getBoard().getCardPileSquare() != null ? game.getBoard().getCardPileSquare().getCards().size() : 0)")
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     default GameStateDTO convertEntityToGameStateDTOForPlayer(Game game, Long playerId) {
@@ -69,6 +73,8 @@ public interface DTOSocketMapper {
 
         GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
         gameStateDTO.setPlayerHand(mapCards(player.getHand()));
+        System.out.println("See the CardPile:"+getCardPileSize(game));
+        gameStateDTO.setCardPileSize(getCardPileSize(game));
         gameStateDTO.setCurrentScore(player.getScore());
         gameStateDTO.setOpponentScore(opponent.getScore());
         gameStateDTO.setGridSquares(mapGridSquares(game.getBoard().getGridSquares()));

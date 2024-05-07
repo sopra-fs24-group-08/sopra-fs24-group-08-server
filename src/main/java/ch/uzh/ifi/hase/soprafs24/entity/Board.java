@@ -30,6 +30,7 @@ public class Board {
         initializeCardPile();
     }
 
+
     public Long getId() {
         return id;
     }

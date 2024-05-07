@@ -10,4 +10,7 @@ import org.springframework.stereotype.Repository;
 public interface GridSquareRepository extends JpaRepository<GridSquare, Long> {
     @Query("SELECT COUNT(gs) FROM GridSquare gs WHERE gs.board.id = :boardId AND gs.cards IS EMPTY")
     long countByBoardIdAndIsOccupiedFalse(@Param("boardId") Long boardId);
+
+    @Query("SELECT SIZE(gs.cards) FROM GridSquare gs WHERE gs.isCardPile = true AND gs.board.id = :boardId")
+    int countCardsInCardPileGridSquare(@Param("boardId") Long boardId);
 }

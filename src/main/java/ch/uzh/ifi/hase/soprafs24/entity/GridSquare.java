@@ -17,8 +17,8 @@ public class GridSquare {
     @JoinColumn(name = "board_id", nullable = false)
     private Board board;
 
-    @OneToMany(mappedBy = "square", cascade = CascadeType.ALL)
-    private List<Card> cards;  // Cards mapping corrected
+    @OneToMany(mappedBy = "square", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Card> cards = new ArrayList<>();  // Initialize the list here
 
     @Column(nullable = false)
     private boolean isCardPile = false;
@@ -35,7 +35,6 @@ public class GridSquare {
         cards.add(card);
         card.setSquare(this);
     }
-
 
 
     public Long getId() {

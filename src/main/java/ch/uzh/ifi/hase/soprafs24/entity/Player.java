@@ -101,22 +101,4 @@ public class Player implements Serializable {
     public void subScore(int subtractPoints) {
         this.score -= subtractPoints;
     }
-
-    public void placeCard(GridSquare square, Card card) {
-        if (square != null && card != null && this.hand.contains(card)) {
-            if (!square.isOccupied()) {
-                square.getCards().add(card); // Adds card to the square, checking again after service
-                this.hand.remove(card);      // Removes card from player's hand
-                if (card.getColor().equals(square.getColor())) {
-                    addScore(card.getPoints() * 2); // Double points for matching color
-                } else {
-                    addScore(card.getPoints());
-                }
-            } else {
-                throw new IllegalStateException("Square is already occupied.");
-            }
-        } else {
-            throw new IllegalArgumentException("Card not found in player's hand or invalid square/card.");
-        }
-    }
 }

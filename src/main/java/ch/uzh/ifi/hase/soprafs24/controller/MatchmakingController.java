@@ -41,8 +41,9 @@ public class MatchmakingController {
         System.out.println("Session: " + sessionToken);
         if (sessionToken != null && userService.validateUserIdToken(userId, sessionToken)) {
 
-            matchmakingService.addToQueue(userId);
+
             System.out.println("User " + userId + " has joined the matchmaking queue.");
+            matchmakingService.addToQueue(userId);
         } else {
             System.out.println("Invalid session token for user: " + userId);
             // Optionally, handle the error, like informing the client

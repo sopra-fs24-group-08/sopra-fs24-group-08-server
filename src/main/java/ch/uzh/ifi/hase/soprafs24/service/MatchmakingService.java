@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -14,35 +15,49 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class MatchmakingService {
-
-    private final Map<Long, String> playerQueue = new ConcurrentHashMap<>();
     private final SimpMessagingTemplate messagingTemplate;
     private final GameService gameService;
-    private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
+    private final PlayerQueueService playerQueueService;
 
     @Autowired
-    public MatchmakingService(SimpMessagingTemplate messagingTemplate, GameService gameService, UserRepository userRepository, PlayerRepository playerRepository) {
+    public MatchmakingService(SimpMessagingTemplate messagingTemplate, GameService gameService, PlayerRepository playerRepository,PlayerQueueService playerQueueService) {
         this.messagingTemplate = messagingTemplate;
         this.gameService = gameService;
-        this.userRepository = userRepository;
         this.playerRepository = playerRepository;
+        this.playerQueueService = new PlayerQueueService();
     }
 
     public void addToQueue(Long playerId) {
         if (playerId == null) {
             System.out.println("Attempted to add null playerId to queue");
-            return; // Handle or log the error as needed
+            return;
         }
-        System.out.println("User with id " + playerId + " added to queue");
-        playerQueue.put(playerId, ""); // Use an empty string or a specific placeholder if the value must not be null
+        playerQueueService.addToQueue(playerId);
         checkForMatches();
+    }
+
+    private void checkForMatches() {
+        if (playerQueueService.isEligibleForMatch()) {
+            Iterator<Long> iterator = playerQueueService.getQueue().keySet().iterator();
+            Long playerOneId = iterator.next();
+            Long playerTwoId = iterator.next();
+
+            // Create a game
+            Game game = gameService.startGame(playerOneId, playerTwoId);
+            Long gameId = game.getGameId();
+
+            // Notify matched players
+            notifyMatchedPlayers(playerOneId, playerTwoId, gameId, game);
+            playerQueueService.removeFromQueue(playerOneId);
+            playerQueueService.removeFromQueue(playerTwoId);
+        }
     }
 
 
     public void removeFromQueue(Long playerId) {
         System.out.println("User with id " + playerId + " removed to queue");
-        playerQueue.remove(playerId);
+        playerQueueService.removeFromQueue(playerId);
     }
 
     private void broadcastMatchmakingUpdate(Long playerId, String action) {
@@ -50,25 +65,6 @@ public class MatchmakingService {
         messagingTemplate.convertAndSend("/topic/matchmaking/"+playerId, message);
     }
 
-    private void checkForMatches() {
-        Iterator<Long> iterator = playerQueue.keySet().iterator();
-        if (iterator.hasNext()) {
-            Long playerOneId = iterator.next();
-            if (iterator.hasNext()) {
-                Long playerTwoId = iterator.next();
-
-                // Start a new game for the two players
-                Game game = gameService.startGame(playerOneId, playerTwoId);
-                Long gameId = game.getGameId();
-
-                // Notify both players of the match result
-                playerQueue.remove(playerOneId);
-                playerQueue.remove(playerTwoId);
-                notifyMatchedPlayers(playerOneId, playerTwoId, gameId, game);
-
-            }
-        }
-    }
     private void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
         Long firstPlayerId = game.getCurrentTurnPlayerId();
         if (firstPlayerId == null) {

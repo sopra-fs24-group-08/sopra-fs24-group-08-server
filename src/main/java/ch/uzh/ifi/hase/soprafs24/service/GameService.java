@@ -26,21 +26,22 @@ public class GameService {
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final BoardRepository boardRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final GridSquareRepository gridSquareRepository;
+    private final BoardService boardService;
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       BoardRepository boardRepository, ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository) {
+                        ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository,BoardService boardService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
         this.messagingTemplate = messagingTemplate;
-        this.boardRepository = boardRepository;
         this.chatRoomRepository = chatRoomRepository;
         this.gridSquareRepository = gridSquareRepository;
+        this.boardService = boardService;
     }
+
 
     public Game getGame(Long gameId) {
         return gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game not found"));
@@ -59,25 +60,6 @@ public class GameService {
         return game;
     }
 
-    //Leaving in encase it's used for Polling or if we want to add different beh. to friendly games
-
-    public Long coinFlip(Long playerId1,Long playerId2 ){
-        boolean firstPlayerStarts = new Random().nextBoolean();
-        return firstPlayerStarts ? playerId1 : playerId2;
-    }
-
-    /*public Game startGame(Long userId1, Long userId2) {
-        User user1 = userRepository.findByid(userId1);
-        User user2 = userRepository.findByid(userId2);
-        Game game = createGame();
-
-        //Game game = gameRepository.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-        initializeMatchedFriends(game,user1,user2);
-        performCoinFlip(game);
-
-        gameRepository.save(game);
-        return game;
-    }*/
     public Game startGame(Long userId1, Long userId2) {
         User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found"));
         User user2 = userRepository.findById(userId2).orElseThrow(() -> new RuntimeException("User not found"));
@@ -94,13 +76,11 @@ public class GameService {
         Game game = new Game();
         game.setGameStatus(GameStatus.STARTING);
 
-
-        Board board = initializeBoard();
-        boardRepository.save(board);
+        Board board = boardService.initializeAndSaveBoard();
+        //Not needed boardRepository.save(board);
         game.setBoard(board);
-
         // Saving game here to ensure it has an ID before linking Players
-        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database
+        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database for ChatRoom
 
         ChatRoom chatRoom = createAndLinkChatRoom(game);
         game.setChatRoom(chatRoom);
@@ -110,10 +90,8 @@ public class GameService {
 
         game.addPlayer(player1);
         game.addPlayer(player2);
-
         gameRepository.save(game);
-
-        game.setGameStatus(GameStatus.COINFLIP);
+        //Not needed gameRepository.save(game);
         performCoinFlipAndInitializeGame(player1, player2, game);
 
         game.setGameStatus(GameStatus.ONGOING);
@@ -122,16 +100,10 @@ public class GameService {
         return game;
     }
 
-    private Board initializeBoard() {
-       System.out.println("About to create board");
-       Board board = new Board();
-       board.initializeBoard();
-       return board;
-   }
     private ChatRoom createAndLinkChatRoom(Game game) {
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setGame(game);
-        chatRoomRepository.save(chatRoom);
+        chatRoomRepository.save(chatRoom); //If we stick with only chat ingame , use cascading and remove this save
         return chatRoom;
     }
 
@@ -167,7 +139,9 @@ public class GameService {
 
     private void drawCardsForPlayer(Player player, int numberOfCards, Game game) {
         for (int i = 0; i < numberOfCards; i++) {
+            System.out.println("Drawing Card " + i + " of " + numberOfCards);
             Card card = game.getBoard().drawCardFromPile();
+            System.out.println(card);
             if (card != null) {
                 player.addCardToHand(card);
             } else {
@@ -307,9 +281,11 @@ public class GameService {
         switch (move.getMoveType()) {
             case DRAW:
                 if (board != null) {
-                    Card drawnCard = board.drawCardFromPile();  // Updated to use the new draw method
+                    System.out.println(gridSquareRepository.countCardsInCardPileGridSquare(game.getBoard().getId()));
+                    Card drawnCard = board.drawCardFromPile();
                     if (drawnCard != null) {
                         player.addCardToHand(drawnCard);
+                        playerRepository.save(player);
                     } else {
                         throw new RuntimeException("No more cards left to draw");
                     }
@@ -323,8 +299,7 @@ public class GameService {
 
                 GridSquare square = board.getGridSquares().get(move.getPosition());
                 if (square != null && !square.isOccupied()) {
-                    player.placeCard(square, card);
-                    //player.removeCardFromHand(card);
+                    placeCard(player.getId(), card.getId(), square.getId());
                 } else {
                     throw new RuntimeException("Square is occupied or does not exist");
                 }
@@ -332,20 +307,68 @@ public class GameService {
             default:
                 throw new IllegalArgumentException("Invalid move type");
         }
-        switchTurns(game,playerId);
-        playerRepository.save(player);  // Ensure player changes are persisted
-        gameRepository.save(game);//// Save changes to the game
-        if (gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId())==0) {
+        // Since transactions are managed at the service level, saving should handle any unsaved changes at the end of the transaction.
+        switchTurns(game, playerId);
+        gameRepository.save(game);  // Save changes to the game
+        System.out.println(gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId()));
+        if (gridSquareRepository.countByBoardIdAndIsOccupiedFalse(game.getBoard().getId()) == 0) {
             checkGameOverConditions(game);
-        }else{
-        broadcastGameState(game);
+        } else {
+            broadcastGameState(game);
         }
     }
+
+    public void placeCard(Long playerId, Long cardId, Long gridSquareId) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new RuntimeException("Player not found"));
+        Card card = findCardInPlayerHand(player, cardId);
+        GridSquare gridSquare = gridSquareRepository.findById(gridSquareId)
+                .orElseThrow(() -> new RuntimeException("GridSquare not found"));
+
+        if (!player.getHand().contains(card)) {
+            throw new IllegalStateException("Card is not in the player's hand");
+        }
+
+        if (gridSquare.isCardPile()) {
+            throw new IllegalStateException("Cards cannot be placed on the card pile");
+        }
+        if (gridSquare.isOccupied()) {
+            throw new IllegalStateException("GridSquare is already occupied");
+        }
+
+        // Remove the card from the player's hand
+        player.getHand().remove(card);
+
+        // Add the card to the grid square
+        gridSquare.getCards().add(card);
+        card.setSquare(gridSquare);
+
+        if (gridSquare.getColor().equalsIgnoreCase("White")) {
+            // No points added if the square is white
+            System.out.println("Placing a card on a white square results in zero points.");
+        } else if (card.getColor().equalsIgnoreCase(gridSquare.getColor())) {
+            player.addScore(card.getPoints() * 2); // Double points for matching color
+        } else {
+            player.addScore(card.getPoints()); // Regular points for non-matching color
+        }
+
+        playerRepository.save(player);
+        gridSquareRepository.save(gridSquare);
+    }
+    @Transactional(readOnly = true)
+    public Card findCardInPlayerHand(Player player, Long cardId) {
+        return player.getHand().stream()
+                .filter(c -> c.getId().equals(cardId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Card not found in player's hand"));
+    }
+
 
     private void broadcastGameState(Game game) {
         game.getPlayers().forEach(player -> {
             GameStateDTO gameState = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game,player.getId());
             messagingTemplate.convertAndSend("/topic/game/"+game.getGameId()+"/"+player.getUser().getId().toString(),gameState);
+
         }); //`/topic/game/${gameId}/${currUser.id}`
     }
 

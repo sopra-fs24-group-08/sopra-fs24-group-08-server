@@ -34,12 +34,22 @@ public class Game implements Serializable {
     @ManyToOne
     @JoinColumn(name = "loser_id")
     private Player loser;
-
+    //Not sure if there's a better option to handle game <-> chatRoom
     @OneToOne(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private ChatRoom chatRoom;
 
     @Column(name = "current_turn_player_id")
-    private Long currentTurnPlayerId;  // Track whose turn it is
+    private Long currentTurnPlayerId;
+    // Track whose turn it is
+    private int cardPileSize;
+
+    public int getCardPileSize() {
+        return cardPileSize;
+    }
+
+    public void setCardPileSize(int cardPileSize) {
+        this.cardPileSize = cardPileSize;
+    }
 
     public Long getCurrentTurnPlayerId() {
         return currentTurnPlayerId;
