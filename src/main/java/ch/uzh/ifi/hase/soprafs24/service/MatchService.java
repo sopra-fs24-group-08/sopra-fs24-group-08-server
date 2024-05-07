@@ -54,6 +54,7 @@ public class MatchService {
     Player player = playerRepository.findByUser(user);
     if (player != null){
       throw new ResponseStatusException(HttpStatus.CONFLICT, "You can't get in queue while playing a game!");
+
     }
     if (presenceMap.putIfAbsent(userId, deferredResult) == null){
       queue.offer(userId);

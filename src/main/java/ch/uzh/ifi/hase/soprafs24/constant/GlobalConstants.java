@@ -12,6 +12,6 @@ public class GlobalConstants {
 
   public static final int TOTAL_CARD = 8;
 
-  public static final Long SSE_TIMEOUT = 60000L;
+  public static final Long SSE_TIMEOUT = 300000L;
     
 }
