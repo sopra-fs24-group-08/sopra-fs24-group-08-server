@@ -44,21 +44,33 @@ public class GameSocketController {
         return game;
     }
 
-    @MessageMapping("/game/{gameId}/move")
-    public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
-        System.out.println("Checking"+ headerAccessor);
-        String userId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
-        gameService.processMove(gameId, move, Long.parseLong(userId));
-        System.out.println("Move has been Processed and broadcast to all players");
-       /* List<Player> players = gameService.getPlayersbygameId(gameId);
-        for (Player player : players) {
-            Long playerId =   player.getId();
-            GameStateDTO gameStateDTO = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(updatedGame,playerId);
+    /**Place MoveDTO= {
+     "playerId": "X", -> Has to match up with game.getCurrentTurnPlayerId()
+     "cardId": "X",
+     "position": "X",0-8,boardService converts into actual GridSquareId
+     "moveType": "PLACE"
+     }
+     * */
 
-            messagingTemplate.convertAndSend(playerId.toString(), "//game", gameStateDTO);
-        }*/
+    /**Place MoveDTO= {
+     "playerId": "X", -> Has to match up with game.getCurrentTurnPlayerId()
+     "cardId": "",
+     "position": "X"0-8, ->Has to match up with  board.getCardPileSquare().getId()
+     "moveType": "Draw"
+     }
+     * */
+    @MessageMapping("/game/{gameId}/move")
+    public void handleMove(@DestinationVariable String gameId, @Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionToken = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("sessionId");
+        System.out.println("Player with token: " + sessionToken + "is making a move");
+        gameService.processMove(Long.parseLong(gameId), move);
+        System.out.println("Move has been Processed and broadcast to all players");
 
     }
+    /** SurrenderConfirmation:
+     *  private Long playerId;
+     *  private Boolean surrender;
+     * */
 
     @MessageMapping("/game/{gameId}/surrender")
     public void handlePlayerSurrender(@DestinationVariable Long gameId, @Payload SurrenderConfirmation surrenderConfirmation) {

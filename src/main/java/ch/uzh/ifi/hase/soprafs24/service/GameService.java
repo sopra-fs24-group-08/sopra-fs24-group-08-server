@@ -180,10 +180,7 @@ public class GameService {
                 .orElseThrow(() -> new RuntimeException("Automatically winning Player not found"));
         Long winningPlayerId = winningPlayer.getId();
         // Update the game state
-        game.setWinner(winningPlayer);
-        game.setLoser(surrenderingPlayer);
-        game.setGameStatus(GameStatus.FINISHED);
-        game.setCurrentTurnPlayerId(null); // No current turn necessary
+        endGame(game,winningPlayer,surrenderingPlayer);
         // perhaps if we decide to store everything on external DB
         // we could also start storing more data and not delete everything all the time unless necessary.
         revertPlayerToUser(surrenderingPlayer);
@@ -200,6 +197,7 @@ public class GameService {
         //notifyWinner(winningPlayer);
         //notifyLoser(surrenderingPlayer);
     }
+
 
     private void notifyGameEnd(GameStateDTO finalGameState,Long playerId) {
         messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId()+"/"+playerId, finalGameState);
@@ -261,9 +259,10 @@ public class GameService {
     }
 
 
-    public void processMove(Long gameId, MoveDTO move, Long playerId) {
-        logger.info("Move is being processed for game: {}, player: {}", gameId, playerId);
+    public void processMove(Long gameId, MoveDTO move) {
+        logger.info("Move is being processed for game: {}, player: {}", gameId, move.getPlayerId());
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game not found for ID: " + gameId));
+        Long playerId = move.getPlayerId();
         Player player = playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found for ID: " + playerId));
         validateTurn(gameId, playerId,move.getPlayerId());
 
@@ -301,6 +300,10 @@ public class GameService {
         Card card = findCardInPlayerHand(player, move.getCardId());
         GridSquare square = boardService.getGridSquareById(game.getBoard(), move.getPosition());
         boardService.placeCardOnSquare(card, square);
+        player.removeCardFromHand(card);
+        int points = calculatePoints(square, card);
+        player.setScore(player.getScore() + points);
+        playerRepository.save(player);
     }
 
     private Card findCardInPlayerHand(Player player, Long cardId) throws CardNotFoundException {
@@ -310,45 +313,19 @@ public class GameService {
                 .orElseThrow(() -> new CardNotFoundException("Card not found in player's hand: " + cardId));
     }
 
-
-
-    public void placeCard(Long playerId, Long cardId, Long gridSquareId) {
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found"));
-        Card card = findCardInPlayerHand(player, cardId);
-        GridSquare gridSquare = gridSquareRepository.findById(gridSquareId)
-                .orElseThrow(() -> new RuntimeException("GridSquare not found"));
-
-        if (!player.getHand().contains(card)) {
-            throw new IllegalStateException("Card is not in the player's hand");
-        }
-
-        if (gridSquare.isCardPile()) {
-            throw new IllegalStateException("Cards cannot be placed on the card pile");
-        }
-        if (gridSquare.isOccupied()) {
-            throw new IllegalStateException("GridSquare is already occupied");
-        }
-
-        // Remove the card from the player's hand
-        player.getHand().remove(card);
-
-        // Add the card to the grid square
-        gridSquare.getCards().add(card);
-        card.setSquare(gridSquare);
-
-        if (gridSquare.getColor().equalsIgnoreCase("White")) {
-            // No points added if the square is white
-            System.out.println("Placing a card on a white square results in zero points.");
-        } else if (card.getColor().equalsIgnoreCase(gridSquare.getColor())) {
-            player.addScore(card.getPoints() * 2); // Double points for matching color
+    private int calculatePoints(GridSquare square, Card card) {
+        if (square.getColor().equalsIgnoreCase(card.getColor())) {
+            // Colors match, points are doubled
+            return card.getPoints() * 2;
+        } else if (square.getColor().equalsIgnoreCase("white")) {
+            // White square, 1 point regardless of card color
+            return 1;
         } else {
-            player.addScore(card.getPoints()); // Regular points for non-matching color
+            // Colors do not match and square is not white, 0 points
+            return 0;
         }
-
-        playerRepository.save(player);
-        gridSquareRepository.save(gridSquare);
     }
+
 
     private void updateGameState(Game game) {
         logger.debug("Updating game state for game: {}", game.getGameId());
@@ -392,45 +369,68 @@ public class GameService {
     }
 
 
-
-
-   // @Transactional(rollbackFor = {RuntimeException.class, DataIntegrityViolationException.class})
+    public void endGame(Game endingGame,Player winningPlayer,Player losingPlayer) {
+        endingGame.setWinner(winningPlayer);
+        endingGame.setLoser(losingPlayer); //surrendering -> auto Lose
+        endingGame.setGameStatus(GameStatus.FINISHED);
+        endingGame.setCurrentTurnPlayerId(null); // No current turn necessary
+    }
 
 
     private void checkGameOverConditions(Game game) {
+        List<Player> players = game.getPlayers();
 
-    }
-
-    public Player getWinningPlayer(Long gameId){
-        Game game = retrieveGameState(gameId);
-
-        if (game.getPlayers().isEmpty()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"No players inside of this game");
+        boolean allSquaresOccupied = game.getBoard().getGridSquares().stream().allMatch(GridSquare::isOccupied);
+        if (allSquaresOccupied) {
+            Player winner = players.stream().max(Comparator.comparingInt(Player::getScore)).orElse(null);
+            if (winner != null) {
+                game.setWinner(winner);
+                notifyPlayers(game.getGameId(), "Game over: Player " + winner.getId() + " wins with the highest score.");
+            }
+            return;
         }
-        return Collections.max(game.getPlayers(),new Comparator<Player>(){
-            public int compare(Player player1,Player player2){
-                return player1.getScore() - player2.getScore();
+        // Check if one player has 10 cards in hand
+        players.forEach(player -> {
+            if (player.getHand().size() >= 10) {
+                game.setLoser(player);
+                notifyPlayers(game.getGameId(), "Game over: Player " + player.getId() + " loses with 10 or more cards.");
             }
         });
 
-    }
-
-    public Player getWinner(Long gameId){
-        Game game = retrieveGameState(gameId);
-        if (game.getGameStatus() == GameStatus.FINISHED){
-            return getWinningPlayer(gameId);
+        // Check if the card pile and players' hands are empty
+        if (game.getBoard().getCardPileSquare().getCards().isEmpty() &&
+                players.stream().allMatch(p -> p.getHand().isEmpty())) {
+            Player winner = players.stream().max(Comparator.comparingInt(p -> p.getHand().size())).orElse(null);
+            if (winner != null) {
+                game.setWinner(winner);
+                notifyPlayers(game.getGameId(), "Game over: Player " + winner.getId() + " wins with the most cards.");
+            }
         }
-        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,"Game isn't finished yet");
     }
 
-    public void endGame(Long gameId, Long winnerPlayerId) {
-        Game game = gameRepository.findById(gameId).orElseThrow();
-        Player winner = playerRepository.findById(winnerPlayerId).orElseThrow();
-
-        game.setGameStatus(GameStatus.FINISHED);
-        game.setWinner(winner);
-
-        gameRepository.save(game);
+    private void notifyPlayers(Long gameId, String message) {
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game was not found"));
+        game.getPlayers().forEach(player ->
+                messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + player.getId(), message));
     }
 
+
+    public Player getWinner(Long gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+
+        if (game.getGameStatus() != GameStatus.FINISHED) {
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Game isn't finished yet");
+        }
+
+        Player winner = game.getWinner();
+        if (winner == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No winner recorded for this game.");
+        }
+
+        return winner;
+    }
+    public long getWinCountByPlayer(Long playerId) {
+        return gameRepository.countByWinnerId(playerId);
+    }
 }

@@ -57,7 +57,6 @@ public class Card {
         this.points = points;
     }
 
-    // Getter and Setter for GridSquare
     public GridSquare getSquare() {
         return square;
     }
@@ -67,7 +66,6 @@ public class Card {
         this.player = null; // Ensure that setting a square unlinks the player
     }
 
-    // Getter and Setter for Player
     public Player getPlayer() {
         return player;
     }

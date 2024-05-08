@@ -11,6 +11,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,24 +36,25 @@ public interface DTOSocketMapper {
     @Mapping(target = "occupied", expression = "java(square.isOccupied())")
     GridSquareDTO convertEntityToGridSquareDTO(GridSquare square);
 
-    default Object mapCardsBasedOnType(GridSquare square) {
+
+    default int getCardPileSize(Game game) {
+        GridSquare cardPileSquare = game.getBoard().getCardPileSquare();
+        return (cardPileSquare != null && cardPileSquare.getCards() != null) ? cardPileSquare.getCards().size() : 0;
+    }
+
+    default List<CardDTO> mapCardsBasedOnType(GridSquare square) {
         if (square.isCardPile()) {
-            return mapCards(square.getCards());  // Return a list of CardDTO for the card pile
+            return new ArrayList<>();  // Always return an empty array for the card pile
         } else {
-            return square.getCards().isEmpty() ? null : convertEntityToCardDTO(square.getCards().get(0));  // Return a single CardDTO or null
+            return mapCards(square.getCards());  // Return the list of CardDTO or an empty list
         }
     }
 
     default List<GridSquareDTO> mapGridSquares(List<GridSquare> squares) {
         if (squares == null) {
-            return null;
+            return new ArrayList<>();
         }
         return squares.stream().map(this::convertEntityToGridSquareDTO).collect(Collectors.toList());
-    }
-
-    default int getCardPileSize(Game game) {
-        GridSquare cardPileSquare = game.getBoard().getCardPileSquare();
-        return (cardPileSquare != null && cardPileSquare.getCards() != null) ? cardPileSquare.getCards().size() : 0;
     }
 
     @Mapping(target = "winnerId", source = "winner.id", defaultExpression = "java(null)")
@@ -61,6 +63,7 @@ public interface DTOSocketMapper {
     GameStateDTO convertEntityToGameStateDTO(Game game);
 
     default GameStateDTO convertEntityToGameStateDTOForPlayer(Game game, Long playerId) {
+        // This method customizes the game state to be specific to the player, ensuring they do not see card details they shouldn't
         Player player = game.getPlayers().stream()
                 .filter(p -> p.getId().equals(playerId))
                 .findFirst()
@@ -73,7 +76,6 @@ public interface DTOSocketMapper {
 
         GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
         gameStateDTO.setPlayerHand(mapCards(player.getHand()));
-        System.out.println("See the CardPile:"+getCardPileSize(game));
         gameStateDTO.setCardPileSize(getCardPileSize(game));
         gameStateDTO.setCurrentScore(player.getScore());
         gameStateDTO.setOpponentScore(opponent.getScore());

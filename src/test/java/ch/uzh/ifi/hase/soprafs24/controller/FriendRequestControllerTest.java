@@ -144,7 +144,7 @@ public class FriendRequestControllerTest {
     gameMatchResultDTO.setGameId(1L);
     Long userId = 2L;
     String token = "Bearer someAuthToken";
-    given(friendService.handleGameInvitation(eq(userId), Mockito.any(FriendRequest.class))).willReturn(gameMatchResultDTO);
+//    given(friendService.handleGameInvitation(eq(userId), Mockito.any(FriendRequest.class))).willReturn(gameMatchResultDTO);
 
 
     mockMvc.perform(post("/game/{userId}/invitationresponse", userId)

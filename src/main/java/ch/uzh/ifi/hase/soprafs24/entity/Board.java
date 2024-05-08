@@ -90,16 +90,19 @@ public class Board {
         List<Card> pileCards = new ArrayList<>();
 
         for (int i = 0; i < 30; i++) {
-            int points = 1 + random.nextInt(5); // Points between 1 and 5
+            int points = 1 + random.nextInt(5);  // Points between 1 and 5
             String color = colors[random.nextInt(colors.length)];
             Card newCard = new Card(color, points);
+
+            // Assign each new card to the cardPileSquare
+            newCard.setSquare(cardPileSquare);  // Ensure each card is associated with the cardPileSquare
             pileCards.add(newCard);
         }
 
-        Collections.shuffle(pileCards); // Shuffle the list of cards to randomize the order
+        Collections.shuffle(pileCards);  // Shuffle the list of cards to randomize the order
 
         if (cardPileSquare != null) {
-            cardPileSquare.setCards(pileCards); // Assign the shuffled cards to the card pile square
+            cardPileSquare.setCards(pileCards);  // Assign the shuffled cards to the card pile square
             logger.info("Card pile initialized with 30 cards.");
         } else {
             logger.error("Card pile square not initialized.");

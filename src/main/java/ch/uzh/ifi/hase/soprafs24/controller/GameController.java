@@ -79,7 +79,7 @@ public class GameController {
         System.out.println("Received move from userId: " + userId + " for gameId: " + gameId);
 
         // Process the move in the game service
-        gameService.processMove(gameId, move, userId);
+        gameService.processMove(gameId, move);
 
         // Retrieve the updated game state for all players
         Game game = gameService.getGame(gameId);
