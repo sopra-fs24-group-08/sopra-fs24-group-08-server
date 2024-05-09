@@ -25,8 +25,8 @@ public class Player implements Serializable {
     @Id
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId  // Use the same ID as the associated User
+    @OneToOne(fetch = FetchType.EAGER)
+    @MapsId
     @JoinColumn(name = "id")
     private User user;
 
@@ -58,6 +58,11 @@ public class Player implements Serializable {
 
     public void setUser(User user) {
         this.user = user;
+        if (user == null) {
+            System.out.println("Setting null user for player");
+        } else {
+            System.out.println(user.getId());
+        }
     }
 
     public Game getGame() {

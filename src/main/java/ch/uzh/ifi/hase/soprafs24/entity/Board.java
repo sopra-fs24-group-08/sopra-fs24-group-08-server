@@ -57,6 +57,7 @@ public class Board {
 
     private void initializeSquares() {
         System.out.println("Initializing squares");
+        Random random = new Random();
         String[] colors = {"red", "blue", "green", "white"};
         int index = 0;
         boolean whiteUsed = false;
@@ -74,7 +75,7 @@ public class Board {
                     square.setColor("white");
                     whiteUsed = true;
                 } else {
-                    square.setColor(colors[index % colors.length]);
+                    square.setColor(colors[random.nextInt(colors.length)]);
                     index++;
                 }
             }

@@ -2,37 +2,49 @@ package ch.uzh.ifi.hase.soprafs24.entity;
 
 public class GameResultRequest {
 
-    private boolean participated;
-    private boolean won;
-    private String playerName;
+    private Long gameId;
+    private Long winnerId;
+    private String winnerUsername;
+    private Long loserId;
+    private String loserUsername;
 
-    public GameResultRequest(boolean participated, boolean won, String playerName) {
-        this.participated = participated;
-        this.won = won;
-        this.playerName = "";
+    public Long getGameId() {
+        return gameId;
     }
 
-    public boolean isParticipated() {
-        return participated;
+    public void setGameId(Long gameId) {
+        this.gameId = gameId;
     }
 
-    public String getPlayerName() {
-        return playerName;
+    public String getWinnerUsername() {
+        return winnerUsername;
     }
 
-    public void setPlayerName(String playerName) {
-        this.playerName = playerName;
+    public void setWinnerUsername(String winnerUsername) {
+        this.winnerUsername = winnerUsername;
     }
 
-    public void setParticipated(boolean participated) {
-        this.participated = participated;
+    public Long getWinnerId() {
+        return winnerId;
     }
 
-    public boolean isWon() {
-        return won;
+    public void setWinnerId(Long winnerId) {
+        this.winnerId = winnerId;
     }
 
-    public void setWon(boolean won) {
-        this.won = won;
+    public Long getLoserId() {
+        return loserId;
+    }
+
+    public void setLoserId(Long loserId) {
+        this.loserId = loserId;
+    }
+
+    public String getLoserUsername() {
+        return loserUsername;
+    }
+
+    public void setLoserUsername(String loserUsername) {
+        this.loserUsername = loserUsername;
     }
 }

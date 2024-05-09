@@ -91,68 +91,19 @@ public class GameController {
 
 
 
-
-    @GetMapping("/game/{gameId}/result/{playerName}")
-    public ResponseEntity<GameResultRequest> verifyResult(@RequestHeader("Authorization") String authorization,@RequestHeader("userId") String stringId,@PathVariable Long gameId, @PathVariable String playerName) {
-        Long userId = Long.parseLong(stringId);
-        userService.authenticateUser(authorization, userId);
-        GameResultRequest result = gameService.verifyResult(gameId, playerName,userId);
+    //Use for Winner/Page directly after game but also for players to perhaps get some game result view of other people's game's
+    @GetMapping("/game/{gameId}/result")
+    public ResponseEntity<GameResultRequest> requestGameResult(@PathVariable Long gameId){
+        //userService.authorizeUser(authorization);
+        System.out.println("Received verify result for game id: "+gameId);
+        GameResultRequest result = gameService.getGameMatchResult(gameId);
+        System.out.println("Game result has been returned1: "+result);
         if (result != null) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
-
-
-
-
-//    @PutMapping("/game/{gameId}/testStart")
-//    @ResponseBody
-//    public GameStateDTO startTestGame(@PathVariable("gameId") Long gameId, @RequestBody GameStartRequestDTO request) {
-//        Long userId1 = request.getUserId1();
-//        Long userId2 = request.getUserId2();
-//        System.out.println("TestStartIDsrequestworked");
-//        Game game = gameService.startGame(gameId,userId1, userId2);
-//        // The GameStateDTO should include all the necessary information to start the game on the client side
-//        // GameStateDTO gameStateDTO  = DTOMapper.INSTANCE.convertEntityToGameStateDTO(game);
-//        GameStateDTO gameStateDTO = DTOMapper.INSTANCE.convertEntityToGameStateDTO(game);
-//        return gameStateDTO;
-//    }
-
-
-//    @MessageMapping("/game/{gameId}/start")
-//    public void startGame(@DestinationVariable Long gameId, @Payload Long userId1, @Payload Long userId2) {
-//        Game game = gameService.startGame(gameId,userId1, userId2);
-//        // The GameStateDTO should include all the necessary information to start the game on the client side
-//       // GameStateDTO gameStateDTO  = DTOMapper.INSTANCE.convertEntityToGameStateDTO(game);
-//        GameStateDTO gameStateDTO = DTOMapper.INSTANCE.convertEntityToGameStateDTO(game);
-//        // Broadcast the initial game state to all players in the game
-//        messagingTemplate.convertAndSend("/topic/game/gameState/" + game.getGameId(), gameStateDTO);
-//    }
-        //"/topic/game/{gameId}/gameState,gameStateDTO)
-    /*@MessageMapping("/game/start")
-    public void startGame(@Payload GameStartRequestDTO request, SimpMessageHeaderAccessor headerAccessor) {
-        String userId = (String) headerAccessor.getSessionAttributes().get("userId");
-        Game game = gameService.startGame(request.getGameId(), Long.parseLong(userId));
-        GameStateDTO gameState = new GameStateDTO(game);  // Assuming a method to create DTOs
-        messagingTemplate.convertAndSendToUser(userId, "/queue/game-state", gameState);
-    }*/
-
-    /*@MessageMapping("/game/{gameId}/move")
-    public void handleMove(@DestinationVariable Long gameId, @Payload MoveDTO move) {
-
-        // should be secured to ensure that only players from the specific game can make moves
-        gameService.processMove(gameId,move);
-        Game updatedGame = gameService.retrieveGameState(gameId);
-        //Game game = gameService.playCard(gameId, move.getPlayerId(), move.getCardId(), move.getPosition());
-
-        GameStateDTO gameStateDTO  = DTOMapper.INSTANCE.convertEntityToGameStateDTO(updatedGame);
-        // Update all clients with the new game state after a move has been made
-        messagingTemplate.convertAndSend("/topic/game/gameUpdate/" + gameId, gameStateDTO);
-    }
-*/
-
 
     // /app/game/{gameId}/accept
    /* @MessageMapping("/game/{gameId}/accept")
@@ -177,17 +128,4 @@ public class GameController {
         messagingTemplate.convertAndSend(destination, data);
     }
 
-
-    /*@MessageMapping("/game/{gameId}/move")
-    public void handleMove(@DestinationVariable Long gameId,@Payload MoveDTO move, SimpMessageHeaderAccessor headerAccessor) {
-        String userId = (String) headerAccessor.getSessionAttributes().get("userId");
-        gameService.processMove(gameId, move, Long.parseLong(userId));
-        Game updatedGame = gameService.retrieveGameState(gameId);
-        GameStateDTO gameState = new GameStateDTO(updatedGame); // Assuming a method to create DTOs
-        messagingTemplate.convertAndSendToUser(userId, "/queue/game-update", gameState);
-    }*/
-
-    // Additional methods like endGame, surrender, etc. can be added here.
-
-    // Helper methods
 }

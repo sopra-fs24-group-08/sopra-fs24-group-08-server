@@ -5,11 +5,13 @@ import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.persistence.EntityNotFoundException;
+import java.sql.Timestamp;
 import java.util.*;
 
 @Service
@@ -34,10 +37,13 @@ public class GameService {
     private final ChatRoomRepository chatRoomRepository;
     private final GridSquareRepository gridSquareRepository;
     private final BoardService boardService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final ChatService chatService;
+    private final BoardRepository boardRepository;
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                        ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository,BoardService boardService) {
+                       ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -45,6 +51,9 @@ public class GameService {
         this.chatRoomRepository = chatRoomRepository;
         this.gridSquareRepository = gridSquareRepository;
         this.boardService = boardService;
+        this.eventPublisher = eventPublisher;
+        this.chatService = chatService;
+        this.boardRepository = boardRepository;
     }
 
 
@@ -178,37 +187,118 @@ public class GameService {
                 .filter(p -> !p.getId().equals(surrenderingPlayerId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Automatically winning Player not found"));
-        Long winningPlayerId = winningPlayer.getId();
-        // Update the game state
-        endGame(game,winningPlayer,surrenderingPlayer);
-        // perhaps if we decide to store everything on external DB
-        // we could also start storing more data and not delete everything all the time unless necessary.
-        revertPlayerToUser(surrenderingPlayer);
-        revertPlayerToUser(winningPlayer);
-        // Save changes
+        finishGame(game,winningPlayer,surrenderingPlayer);
+    }
+
+
+
+
+    public void finishGame(Game game, Player winner,Player loser) {
+        game.setGameStatus(GameStatus.FINISHED);
+        System.out.println("Game is finished");
+        if (winner != null) {
+            game.setWinner(winner);
+        }
+        if (loser != null) {
+            game.setLoser(loser);
+        }
+        System.out.println("winner is " + winner);
+        System.out.println("loser is "+ loser);
+        game.setCurrentTurnPlayerId(null);
+        // No current turn necessary
         gameRepository.save(game);
-        GameStateDTO stateForLoser = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, surrenderingPlayerId);
-        GameStateDTO stateForWinner = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, winningPlayerId);
 
-        notifyGameEnd(stateForLoser,surrenderingPlayerId);
-        notifyGameEnd(stateForWinner, winningPlayerId);
-        playerRepository.delete(surrenderingPlayer);
-        playerRepository.deleteById(winningPlayer.getId());
-        //notifyWinner(winningPlayer);
-        //notifyLoser(surrenderingPlayer);
+        if (winner != null && loser != null) {//game.getLoser().getId() can be changed later, helpful now to spot earlier if something not saving
+            GameStateDTO stateForWinner = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, winner.getUser().getId());
+            GameStateDTO stateForLoser = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, loser.getUser().getId());
+
+            notifyGameEnd(stateForWinner, winner.getId());
+            notifyGameEnd(stateForLoser, loser.getId());
+            cleanupGameData(game);
+
+        }
+    }
+
+    public void cleanupGameData(Game game) {
+        if (game.getGameStatus() == GameStatus.FINISHED) {
+            System.out.println("Game Status is set to Finished");
+            // Clean chat room first to ensure messages are handled before game deletion
+            chatService.cleanupChatRoom(game.getChatRoom());
+
+            // Clean up players next, ensuring that any cards they hold are also cleared
+            cleanupPlayers(game.getPlayers());
+
+            // Clean up the board, which includes the card pile as part of its grid squares
+            cleanupBoard(game.getBoard());
+
+            System.out.println("Game and all related entities successfully cleaned up");
+        }else{
+        System.out.println("Something went wrong while cleaning up Game Data"+game.getGameStatus());
+        }
+    }
+
+    private void cleanupBoard(Board board) {
+        boardService.cleanup(board);
+    }
+
+    private void cleanupPlayers(List<Player> players) {
+        for (Player player : players) {
+            cleanupPlayerData(player);
+            System.out.println("Player " + player.getId() + " has been cleaned up and removed from the game");
+            System.out.println("//////////");
+        }
+    }
+
+    private void cleanupPlayerData(Player player) {
+        revertPlayerToUser(player);  // Reset user state to not in-game
+        //playerRepository.delete(player);  // Delete player
+        System.out.println("Player data and user state reverted");
     }
 
 
-    private void notifyGameEnd(GameStateDTO finalGameState,Long playerId) {
-        messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId()+"/"+playerId, finalGameState);
-    }
-    // If we delete
+
+
     private void revertPlayerToUser(Player player) {
         player.getUser().setInGame(false);
         userRepository.save(player.getUser());
-
     }
 
+    public GameResultRequest getGameMatchResult(Long gameId) {
+        // Fetch the finished game based on gameId
+        Game finishedGame = gameRepository.findByGameId(gameId);
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        System.out.println("Request was done at this moment "+timestamp);
+        // Fetch the winner details
+        Player winner = finishedGame.getWinner();
+        System.out.println(winner+"getWinner");
+        User user1 = userRepository.findByid(winner.getId());
+        String winnerUsername = user1.getUsername();
+
+
+        // Fetch the loser details
+        Player loser = finishedGame.getLoser();
+        User user2 = userRepository.findByid(loser.getId());
+
+        String loserUsername = user2.getUsername();
+
+        // Create a new GameResultRequest object
+        GameResultRequest gameResultRequest = new GameResultRequest();
+
+        // Set all the details in gameResultRequest
+        gameResultRequest.setGameId(gameId);
+        System.out.println("//////");
+        gameResultRequest.setWinnerId(winner.getId());
+        System.out.println("//////RESULT WANTED/////");
+
+        gameResultRequest.setWinnerUsername(winnerUsername);
+        gameResultRequest.setLoserId(loser.getId());
+        gameResultRequest.setLoserUsername(loserUsername);
+        System.out.println(gameResultRequest.getGameId()+"||"+gameResultRequest.getWinnerId()+"||"+gameResultRequest.getLoserId());
+
+        // Return the filled gameResultRequest
+        return gameResultRequest;
+    }
+/*
     public GameResultRequest verifyResult(Long gameId,String playerName, Long userId){
         Game game = gameRepository.findByGameId(gameId);
         if (game == null) {
@@ -231,7 +321,7 @@ public class GameService {
         boolean isWinner = game.getWinner() != null && game.getWinner().getId().equals(player.getId());
 
         return new GameResultRequest(participated,isWinner, player.getUser().getUsername());
-    }
+    }*/
 
 
     /**
@@ -331,9 +421,12 @@ public class GameService {
         logger.debug("Updating game state for game: {}", game.getGameId());
 
         gameRepository.save(game);
+        boardRepository.save(game.getBoard());
         if (boardService.isAllSquaresOccupied(game.getBoard())) {
+            System.out.println(game.getBoard());
             checkGameOverConditions(game);
         } else {
+            System.out.println(game.getBoard()+"broadcasting PlayerspecificDTO for this board");
             broadcastGameState(game);
         }
     }
@@ -369,51 +462,60 @@ public class GameService {
     }
 
 
-    public void endGame(Game endingGame,Player winningPlayer,Player losingPlayer) {
-        endingGame.setWinner(winningPlayer);
-        endingGame.setLoser(losingPlayer); //surrendering -> auto Lose
-        endingGame.setGameStatus(GameStatus.FINISHED);
-        endingGame.setCurrentTurnPlayerId(null); // No current turn necessary
-    }
-
 
     private void checkGameOverConditions(Game game) {
         List<Player> players = game.getPlayers();
 
+        // Condition 1: All squares occupied
         boolean allSquaresOccupied = game.getBoard().getGridSquares().stream().allMatch(GridSquare::isOccupied);
         if (allSquaresOccupied) {
-            Player winner = players.stream().max(Comparator.comparingInt(Player::getScore)).orElse(null);
-            if (winner != null) {
-                game.setWinner(winner);
-                notifyPlayers(game.getGameId(), "Game over: Player " + winner.getId() + " wins with the highest score.");
-            }
-            return;
+            players.stream().max(Comparator.comparingInt(Player::getScore))
+                    .ifPresent(winner -> {
+                        Player loser = players.stream().filter(p -> !p.equals(winner)).findFirst().orElse(null);
+                        finishGame(game, winner, loser);
+                    });
+            return;  // Exit after handling this condition to avoid overlapping conditions.
         }
-        // Check if one player has 10 cards in hand
+
+        // Condition 2: Any player with 10 or more cards
         players.forEach(player -> {
             if (player.getHand().size() >= 10) {
-                game.setLoser(player);
-                notifyPlayers(game.getGameId(), "Game over: Player " + player.getId() + " loses with 10 or more cards.");
+                Player loser = player;
+                Player winner = players.stream().filter(p -> !p.equals(loser)).findFirst().orElse(null);
+                finishGame(game, winner, loser);
+                return;
             }
         });
 
-        // Check if the card pile and players' hands are empty
-        if (game.getBoard().getCardPileSquare().getCards().isEmpty() &&
-                players.stream().allMatch(p -> p.getHand().isEmpty())) {
-            Player winner = players.stream().max(Comparator.comparingInt(p -> p.getHand().size())).orElse(null);
+        // Condition 3: Card pile empty and all hands empty(adapting cardpilesize to not start with 30)
+        if (game.getBoard().getCardPileSquare().getCards().isEmpty() && players.stream().allMatch(p -> p.getHand().isEmpty())) {
+            Player winner = findTopPlayerByGameId(game.getGameId());  // Ensure this method handles the need correctly.
             if (winner != null) {
-                game.setWinner(winner);
-                notifyPlayers(game.getGameId(), "Game over: Player " + winner.getId() + " wins with the most cards.");
+                Player loser = players.stream().filter(p -> !p.equals(winner)).findFirst().orElse(null);
+                finishGame(game, winner, loser);
             }
         }
     }
-
-    private void notifyPlayers(Long gameId, String message) {
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game was not found"));
-        game.getPlayers().forEach(player ->
-                messagingTemplate.convertAndSend("/topic/game/" + gameId + "/" + player.getId(), message));
+    //refactor later, combine this with broadcastgamestate
+    private void notifyGameEnd(GameStateDTO finalGameState, Long playerId) {
+        messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId() + "/" + playerId, finalGameState);
     }
 
+    /*public void setGameStatus(Game game, GameStatus newStatus) {
+        if (game.getGameStatus() != newStatus) {
+            game.setGameStatus(newStatus);
+            gameRepository.save(game);
+            if (newStatus == GameStatus.FINISHED) {
+                eventPublisher.publishEvent(new GameFinishedEvent(this, game));
+            }
+        }
+    }*/
+
+
+    public Player findTopPlayerByGameId(Long gameId) {
+        List<Player> players = playerRepository.findPlayersByGameIdOrderedByScore(gameId);
+        return players.isEmpty() ? null : players.get(0);
+    }
 
     public Player getWinner(Long gameId) {
         Game game = gameRepository.findById(gameId)

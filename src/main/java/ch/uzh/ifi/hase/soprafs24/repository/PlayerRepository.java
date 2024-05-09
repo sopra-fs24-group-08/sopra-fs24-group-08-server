@@ -15,7 +15,7 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     Player findByUser(User user);
     @Query("SELECT p.user.username FROM Player p WHERE p.id = :playerId")
     String findUsernameByPlayerId(@Param("playerId") Long playerId);
-    @Query("SELECT p FROM Player p WHERE p.game.gameId = :gameId ORDER BY p.score DESC")
-    List<Player> findTopPlayerByGameId(@Param("gameId") Long gameId);
+    @Query("SELECT p FROM Player p WHERE p.game.id = :gameId ORDER BY p.score DESC")
+    List<Player> findPlayersByGameIdOrderedByScore(@Param("gameId") Long gameId);
 }
 

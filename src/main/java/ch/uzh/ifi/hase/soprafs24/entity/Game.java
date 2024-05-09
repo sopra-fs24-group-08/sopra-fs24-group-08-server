@@ -34,6 +34,7 @@ public class Game implements Serializable {
     @ManyToOne
     @JoinColumn(name = "loser_id")
     private Player loser;
+
     //Not sure if there's a better option to handle game <-> chatRoom
     @OneToOne(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private ChatRoom chatRoom;

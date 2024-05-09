@@ -60,4 +60,10 @@ public class ChatService {
         ));
         return chatRoomRepository.save(newChatRoom);
     }
+
+    public void cleanupChatRoom(ChatRoom chatRoom) {
+        chatMessageRepository.deleteAll(chatRoom.getMessages()); // Clear all messages explicitly
+        chatRoomRepository.delete(chatRoom);  // Delete the chat room
+        System.out.println("Chat room and all messages cleared");
+    }
 }
