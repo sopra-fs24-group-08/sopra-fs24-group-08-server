@@ -1,12 +1,9 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.repository.CardRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 
@@ -15,18 +12,19 @@ import java.util.List;
 @Service
 public class GameCleanupService {
 
+
+    private final BoardService boardService;
+    private final UserRepository userRepository;
+    private final ChatService chatService;
+    private final CardRepository cardRepository;
+
     @Autowired
-    private GameRepository gameRepository;
-    @Autowired
-    private BoardService boardService;
-    @Autowired
-    private PlayerRepository playerRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private ChatService chatService;
-    @Autowired
-    private CardRepository cardRepository;
+    public GameCleanupService(BoardService boardService,UserRepository userRepository, CardRepository cardRepository, ChatService chatService) {
+        this.boardService = boardService;
+        this.userRepository = userRepository;
+        this.chatService = chatService;
+        this.cardRepository = cardRepository;
+    }
 
     public void cleanupGameData(Game game) {
         if (game.getChatRoom() != null) {
@@ -45,7 +43,8 @@ public class GameCleanupService {
 
     private void cleanupPlayerData(Player player) {
         if(!player.getHand().isEmpty()) {
-            boardService.cleanupCards(player.getHand());
+            cardRepository.deleteAll(player.getHand());
+            player.getHand().clear();
         }
         revertPlayerToUser(player);
     }

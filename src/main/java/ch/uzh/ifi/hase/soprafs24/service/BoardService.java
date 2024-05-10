@@ -81,10 +81,6 @@ public class BoardService {
         cardPileSquare.getCards().clear();
     }
 
-    @Transactional
-    public void cleanupCards(List<Card> cards) {
-        cardRepository.deleteAll(cards);
-    }
 
     public boolean isAllSquaresOccupied(Board board) {
         return gridSquareRepository.countByBoardIdAndIsOccupiedFalse(board.getId()) == 0;
