@@ -24,18 +24,14 @@ import java.util.Map;
 @RestController
 public class GameController {
 
-    private final Logger log = LoggerFactory.getLogger(GameService.class);
-
     private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final UserService userService;
 
 
     @Autowired
-    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate,UserService userService) {
+    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate) {
         this.gameService = gameService;
         this.messagingTemplate = messagingTemplate;
-        this.userService = userService;
     }
 
 
@@ -93,17 +89,16 @@ public class GameController {
 
     //Use for Winner/Page directly after game but also for players to perhaps get some game result view of other people's game's
     @GetMapping("/game/{gameId}/result")
-    public ResponseEntity<GameResultRequest> requestGameResult(@PathVariable Long gameId){
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public GameResultRequest requestGameResult(@PathVariable Long gameId,@RequestHeader("Authorization") String authorization) {
         //userService.authorizeUser(authorization);
-        System.out.println("Received verify result for game id: "+gameId);
+        System.out.println("Received verify result for game id: " + gameId+"by user with bearer token: " + authorization);
         GameResultRequest result = gameService.getGameMatchResult(gameId);
-        System.out.println("Game result has been returned1: "+result);
-        if (result != null) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+        System.out.println("Game result has been returned1: " + result);
+        return result;
     }
+
 
     // /app/game/{gameId}/accept
    /* @MessageMapping("/game/{gameId}/accept")

@@ -3,9 +3,11 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.SurrenderConfirmation;
+import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
+import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +52,9 @@ public class GameSocketController {
      "position": "X",0-8,boardService converts into actual GridSquareId
      "moveType": "PLACE"
      }
-     * */
 
-    /**Place MoveDTO= {
+
+    Place MoveDTO= {
      "playerId": "X", -> Has to match up with game.getCurrentTurnPlayerId()
      "cardId": "",
      "position": "X"0-8, ->Has to match up with  board.getCardPileSquare().getId()
@@ -64,7 +66,6 @@ public class GameSocketController {
         String sessionToken = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("sessionId");
         System.out.println("Player with token: " + sessionToken + "is making a move");
         gameService.processMove(Long.parseLong(gameId), move);
-        System.out.println("Move has been Processed and broadcast to all players");
 
     }
     /** SurrenderConfirmation:
@@ -75,7 +76,12 @@ public class GameSocketController {
     @MessageMapping("/game/{gameId}/surrender")
     public void handlePlayerSurrender(@DestinationVariable Long gameId, @Payload SurrenderConfirmation surrenderConfirmation) {
         Long surrenderingPlayerId = surrenderConfirmation.getPlayerId();
-        gameService.handlePlayerSurrender(gameId, surrenderingPlayerId);
+        Boolean isSurrender = surrenderConfirmation.getSurrender();
+
+        if (isSurrender != null && isSurrender) {
+            System.out.println("Player ID: " + surrenderingPlayerId + " is surrendering in game " + gameId);
+            gameService.handlePlayerSurrender(gameId, surrenderingPlayerId);
+        }
     }
 
 }

@@ -96,3 +96,5 @@ public interface DTOMapper {
     // convert to other user
     OtherUserGetDTO convertEntityToOtherUserGetDTO(User user);
 }
+
+

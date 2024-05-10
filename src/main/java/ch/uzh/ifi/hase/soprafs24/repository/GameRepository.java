@@ -11,7 +11,6 @@ import java.util.List;
 
 @Repository("gameRepository")
 public interface GameRepository extends JpaRepository<Game, Long> {
-    Game findByGameId(Long gameId);
     List<Game> findByWinnerId(Long winnerId);
 
     // Find games by loser
@@ -24,4 +23,5 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     long countByWinnerId(Long winnerId);
 
 
+    Game findByGameId(Long gameId);
 }

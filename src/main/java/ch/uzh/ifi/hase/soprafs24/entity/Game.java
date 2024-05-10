@@ -29,7 +29,7 @@ public class Game implements Serializable {
     @ManyToOne
     @JoinColumn(name = "winner_id")
     private Player winner;
-    //might need to add cascade if it starts causing trouble
+    //might need to adjust cascadeType if it starts causing trouble
 
     @ManyToOne
     @JoinColumn(name = "loser_id")
