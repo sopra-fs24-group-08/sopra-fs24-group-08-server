@@ -1,3 +1,5 @@
+package ch.uzh.ifi.hase.soprafs24.EventListener;
+
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import org.springframework.context.ApplicationEvent;
 
