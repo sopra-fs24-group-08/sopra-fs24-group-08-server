@@ -13,17 +13,13 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.web.server.ResponseStatusException;
+import java.util.Collections;
+import java.util.List;
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+
 
 public class UserServiceTest {
 
@@ -150,7 +146,6 @@ public class UserServiceTest {
 
         when(userRepository.findByid(testUser.getId())).thenReturn(testUser);
         when(userRepository.findByUsername("existingUsername")).thenReturn(anotherUser);
-
         testUser.setUsername("existingUsername");
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -159,16 +154,15 @@ public class UserServiceTest {
     }
 
     @Test
-    public void logoutUserbyUserID_ValidId_ChangeStatus() {
-        when(userRepository.findByid(1L)).thenReturn(testUser);
-        doNothing().when(userRepository).save(any(User.class));
+    public void logoutUserbyUserID_success() {
 
-        userService.logoutUserbyUserID(1L);
+        when(userRepository.findByid(testUser.getId())).thenReturn(testUser);
 
-        assertEquals(UserStatus.OFFLINE, testUser.getStatus());
-        verify(userRepository, times(1)).save(testUser);
+        userService.logoutUserbyUserID(testUser.getId());
+
+        verify(userRepository).findByid(testUser.getId());
+        assertEquals(UserStatus.OFFLINE, testUser.getStatus(), "User status should be set to OFFLINE");
     }
-
     @Test
     public void authorizeUser_ValidToken_Success() {
         String token = "Bearer validToken123";
@@ -213,12 +207,12 @@ public class UserServiceTest {
         assertEquals(HttpStatus.UNAUTHORIZED, ((ResponseStatusException) exception).getStatus());
     }
 
-    /*@Test
+    @Test
     public void getSpecificFriend_Found_Success() {
         Long userId = 1L, friendId = 2L;
         User friend = new User();
         friend.setId(friendId);
-        List<User> friends = Arrays.asList(friend);
+        List<User> friends = List.of(friend);
 
         when(userRepository.findFriendsByUserId(userId)).thenReturn(friends);
 
@@ -236,6 +230,6 @@ public class UserServiceTest {
         User result = userService.getSpecificFriend(userId, friendId);
 
         assertNull(result);
-    }*/
+    }
 
 }
