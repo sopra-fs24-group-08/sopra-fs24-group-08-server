@@ -24,6 +24,7 @@ public class Game implements Serializable {
     private Board board;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private GameStatus gameStatus = GameStatus.STARTING;
 
     @ManyToOne
@@ -43,6 +44,31 @@ public class Game implements Serializable {
     private Long currentTurnPlayerId;
     // Track whose turn it is
     private int cardPileSize;
+
+    @ManyToOne
+    @JoinColumn(name = "winner_user_id")
+    private User winnerUser;
+
+    @ManyToOne
+    @JoinColumn(name = "loser_user_id")
+    private User loserUser;
+
+    public User getWinnerUser() {
+        return winnerUser;
+    }
+
+    public void setWinnerUser(User winnerUser) {
+        System.out.println("SETTING WINNERUSER:" + winnerUser);
+        this.winnerUser = winnerUser;
+    }
+
+    public User getLoserUser() {
+        return loserUser;
+    }
+
+    public void setLoserUser(User loserUser) {
+        this.loserUser = loserUser;
+    }
 
     public int getCardPileSize() {
         return cardPileSize;

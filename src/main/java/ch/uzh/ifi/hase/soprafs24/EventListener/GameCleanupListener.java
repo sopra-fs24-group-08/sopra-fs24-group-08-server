@@ -14,6 +14,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class GameCleanupListener {
     private final GameCleanupService gameCleanupService;
@@ -29,9 +31,16 @@ public class GameCleanupListener {
     public void onGameCleanup(GameCleanupEvent event) {
         Game game = event.getGame();
         if (game != null) {
+            System.out.println("Preparing game end data");
+            // Prepare game end data before cleanup
+            Map<Long, GameStateDTO> gameStateDTOs = gameCleanupService.prepareGameEndData(game);
+
+            System.out.println("About to begin cleaning");
             gameCleanupService.cleanupGameData(game);
-            // After cleanup,only now safe to notify clients
-            gameEventService.handleGameEnd(new GameEndEvent(this, game, game.getWinner(), game.getLoser()));
+
+            System.out.println("Notifying players about game end");
+            // Pass the pre-prepared DTOs for notification
+            gameEventService.handleGameEnd(new GameEndEvent(this, game, game.getWinner(), game.getLoser(), gameStateDTOs));
         } else {
             logger.error("Received cleanup event for a null game.");
         }

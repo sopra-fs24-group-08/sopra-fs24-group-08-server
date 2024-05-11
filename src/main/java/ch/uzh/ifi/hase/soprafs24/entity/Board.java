@@ -18,7 +18,7 @@ public class Board {
     @OneToOne(mappedBy = "board")
     private Game game;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "board", fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "board")
     private List<GridSquare> gridSquares = new ArrayList<>();
 
     @OneToOne

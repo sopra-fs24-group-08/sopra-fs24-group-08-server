@@ -35,7 +35,7 @@ public class BoardService {
         boardRepository.save(board);
         return board;
     }
-
+    @Transactional
     public Card drawCardFromPile(Board board) throws NoCardsLeftException {
         if (board != null && !board.getCardPileSquare().getCards().isEmpty()) {
             Card card = board.getCardPileSquare().getCards().remove(0);
@@ -45,11 +45,10 @@ public class BoardService {
             throw new NoCardsLeftException("Card pile is empty");
         }
     }
-
+    @Transactional
     public void placeCardOnSquare(Card card, GridSquare square) throws SquareOccupiedException {
         if (square != null && !square.isOccupied()) {
             square.addCard(card);
-            card.setSquare(square);
             cardRepository.save(card);
             gridSquareRepository.save(square);
         } else {
@@ -59,33 +58,33 @@ public class BoardService {
 
     @Transactional
     public void cleanup(Board board) {
-        if (board.getCardPileSquare() != null) {
-            cleanupCardPileFromGridSquare(board.getCardPileSquare().getId());
-        }
-        for (GridSquare square : (board.getGridSquares())) {
-            if(square != board.getCardPileSquare()) {
-                List<Card> cards = square.getCards();
-                if (cards != null) {
-                    cardRepository.deleteAll(cards);
-                }
-                gridSquareRepository.delete(square);
-
+        // Directly cleanup all GridSquares including cardPileSquare if cascades are properly set
+        for (GridSquare square : board.getGridSquares()) {
+            if(square.isCardPile()){
+                cleanupCardPileFromGridSquare(square.getId());
+                continue;
             }
+            cardRepository.deleteAll(square.getCards()); // Ensure all cards are deleted
+            square.getCards().clear(); // Clear in-memory references immediately
         }
-        boardRepository.delete(board);
+
     }
 
+
+    @Transactional
     public void cleanupCardPileFromGridSquare(Long gridSquareId) {
         GridSquare cardPileSquare = gridSquareRepository.findById(gridSquareId).orElseThrow(() -> new IllegalArgumentException("GridSquare not found for ID: " + gridSquareId));
-        cardRepository.deleteAll(cardPileSquare.getCards());
-        cardPileSquare.getCards().clear();
+        cardRepository.deleteAll(cardPileSquare.getCards());  // Deleting cards
+        cardPileSquare.getCards().clear();  // Clearing in-memory references
+        gridSquareRepository.save(cardPileSquare);  // Saving the updated state
     }
 
-
+    @Transactional(readOnly = true)
     public boolean isAllSquaresOccupied(Board board) {
         return gridSquareRepository.countByBoardIdAndIsOccupiedFalse(board.getId()) == 0;
     }
 
+    @Transactional(readOnly = true)
     public GridSquare getGridSquareById(Board board, int index) {
         if (board == null) {
             throw new IllegalArgumentException("Board cannot be null.");

@@ -8,29 +8,30 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 public class GameEventService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    // Constructor injection is recommended because it allows for immutable field declarations and
-    // enforces that dependencies are specified clearly
     public GameEventService(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
     public void handleGameEnd(GameEndEvent event) {
-        // Ensure that this method only processes fully updated and consistent game states
         Game game = event.getGame();
-        if (game.getWinner() == null || game.getLoser() == null) {
+        Map<Long, GameStateDTO> gameStateDTOs = event.getGameStateDTOs();
+
+        if (game.getWinnerUser() == null || game.getLoserUser() == null) {
             throw new IllegalStateException("Game data is incomplete when handling game end.");
         }
 
-        GameStateDTO stateForWinner = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, game.getWinner().getId());
-        GameStateDTO stateForLoser = DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, game.getLoser().getId());
+        GameStateDTO stateForWinner = gameStateDTOs.get(game.getWinnerUser().getId());
+        GameStateDTO stateForLoser = gameStateDTOs.get(game.getLoserUser().getId());
 
-        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/" + game.getWinner().getId(), stateForWinner);
-        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/" + game.getLoser().getId(), stateForLoser);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/" + game.getWinnerUser().getId(), stateForWinner);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/" + game.getLoserUser().getId(), stateForLoser);
     }
 }

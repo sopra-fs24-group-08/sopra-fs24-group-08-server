@@ -74,6 +74,7 @@ public interface DTOSocketMapper {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Opponent not found"));
 
+        System.out.println("Converting game with playerID" +game + "////"+ playerId);
         GameStateDTO gameStateDTO = convertEntityToGameStateDTO(game);
         gameStateDTO.setPlayerHand(mapCards(player.getHand()));
         gameStateDTO.setCardPileSize(getCardPileSize(game));

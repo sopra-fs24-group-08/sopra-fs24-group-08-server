@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.GameResultRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
+import ch.uzh.ifi.hase.soprafs24.exceptions.GameNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.TurnDecisionDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
@@ -91,12 +92,25 @@ public class GameController {
     @GetMapping("/game/{gameId}/result")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public GameResultRequest requestGameResult(@PathVariable Long gameId,@RequestHeader("Authorization") String authorization) {
-        //userService.authorizeUser(authorization);
-        System.out.println("Received verify result for game id: " + gameId+"by user with bearer token: " + authorization);
-        GameResultRequest result = gameService.getGameMatchResult(gameId);
-        System.out.println("Game result has been returned1: " + result);
-        return result;
+    public ResponseEntity<GameResultRequest> requestGameResult(@PathVariable Long gameId, @RequestHeader("Authorization") String authorization) {
+        try {
+            // userService.authorizeUser(authorization); // Uncomment later and ensure it throws an appropriate exception if unauthorized
+            System.out.println("Received verify result for game id: " + gameId + " by user with bearer token: " + authorization);
+            GameResultRequest result = gameService.getGameMatchResult(gameId);
+            System.out.println("Game result has been returned1: " + result);
+            return ResponseEntity.ok(result);
+        } catch (GameNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (IllegalStateException ex) {
+            if (ex.getMessage().contains("not in an ongoing state")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+            } else if (ex.getMessage().contains("incomplete")) {
+                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(null);
+            }
+            return ResponseEntity.internalServerError().build();
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build(); // General catch-all for other unhandled errors
+        }
     }
 
 

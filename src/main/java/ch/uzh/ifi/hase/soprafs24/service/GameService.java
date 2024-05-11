@@ -18,14 +18,15 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import javax.persistence.EntityManager;
 
-import javax.persistence.EntityNotFoundException;
+
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 @Service
 @Transactional
@@ -33,11 +34,7 @@ public class GameService {
 
     private final Logger logger = LoggerFactory.getLogger(GameService.class);
     private final Object gameLock = new Object();  // A lock for game finishing operations
-
-
-
-
-
+    private final EntityManager entityManager;
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
@@ -50,7 +47,7 @@ public class GameService {
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository) {
+                       ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository,EntityManager entityManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -60,6 +57,7 @@ public class GameService {
         this.eventPublisher = eventPublisher;
         this.chatService = chatService;
         this.boardRepository = boardRepository;
+        this.entityManager = entityManager;
     }
 
 
@@ -178,9 +176,9 @@ public class GameService {
 
     //If a player clicks on EXIT/SURR then we should have a proper way to apply the changes.
     public void handlePlayerSurrender(Long gameId, Long surrenderingPlayerId) {
-        Game game = gameRepository.findById(gameId).orElseThrow(() -> new IllegalStateException("Game not found with ID: " + gameId));
-
         synchronized (gameLock) {
+            Game game = gameRepository.findById(gameId).orElseThrow(() -> new IllegalStateException("Game not found with ID: " + gameId));
+
             if (game.getGameStatus() != GameStatus.ONGOING) {
                 throw new IllegalStateException("Game is not in an ongoing state.");
             }
@@ -218,14 +216,28 @@ public class GameService {
             logger.info("Game (ID: {}) finished. Winner: {}, Loser: {}", game.getGameId(), winner.getId(), loser.getId());
 
             // Asynchronously publish game cleanup event first to handle all cleanup tasks
+
             eventPublisher.publishEvent(new GameCleanupEvent(this, game));
+
             // The game end event will now be published after cleanup in the GameCleanupListener
         }
+    }
+
+    public void concludeGame(Game game) {
+        // Logic to determine winner and loser Players
+
+
+        // Set User references for historical tracking
+
+
+        // Additional cleanup and save operations
+        gameRepository.save(game);
     }
 
     private void notifyGameEnd(GameStateDTO finalGameState, Long playerId) {
         messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId() + "/" + playerId, finalGameState);
     }
+
 
 
 
@@ -235,51 +247,42 @@ public class GameService {
     }
 
 
-    public GameResultRequest getGameMatchResult(Long gameId) {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        System.out.println("Request was done at this moment " + timestamp);
+
+    @Transactional(readOnly = true)
+    public Game retrieveOnlyCommittedGame(Long gameId) throws GameNotFoundException {
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game with ID: " + gameId + " not found"));
+        entityManager.refresh(game);
+        return game;
+    }
+
+    public GameResultRequest getGameMatchResult(Long gameId) throws GameNotFinishedException, IncompleteGameDataException {
+        System.out.println("Request was done at this moment " + new Timestamp(System.currentTimeMillis()));
 
         // Fetch the finished game based on gameId
-        Game finishedGame = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalStateException("Game not found with ID: " + gameId));
+        Game finishedGame = retrieveOnlyCommittedGame(gameId);
 
-        // Ensure the game has winners and losers set
-        if (finishedGame.getWinner() == null || finishedGame.getLoser() == null) {
-            throw new IllegalStateException("Game data is incomplete. Winner or loser is not set.");
+        if(finishedGame.getGameStatus() != GameStatus.FINISHED) {
+            throw new GameNotFinishedException("Game is not in a FINISHED state.");
         }
 
-        // Fetch the winner details
-        Player winner = finishedGame.getWinner();
-        User user1 = userRepository.findById(winner.getId())
-                .orElseThrow(() -> new IllegalStateException("User not found for winner with ID: " + winner.getId()));
-        String winnerUsername = user1.getUsername();
-
-        // Fetch the loser details
-        Player loser = finishedGame.getLoser();
-        User user2 = userRepository.findById(loser.getId())
-                .orElseThrow(() -> new IllegalStateException("User not found for loser with ID: " + loser.getId()));
-        String loserUsername = user2.getUsername();
-
-        // Logging for debugging
-        System.out.println("Winner: " + winnerUsername + "getWinner");
-        System.out.println("Loser: " + loserUsername + "getLoser");
-        System.out.println("//////");
+        // Ensure the game has winners and losers set
+        if (finishedGame.getWinnerUser() == null || finishedGame.getLoserUser() == null) {
+            throw new IncompleteGameDataException("Game data is incomplete. Winner or loser is not set.");
+        }
 
         // Create and fill the GameResultRequest object
         GameResultRequest gameResultRequest = new GameResultRequest();
         gameResultRequest.setGameId(finishedGame.getGameId());
-        gameResultRequest.setWinnerId(winner.getId());
-        gameResultRequest.setWinnerUsername(winnerUsername);
-        gameResultRequest.setLoserId(loser.getId());
-        gameResultRequest.setLoserUsername(loserUsername);
+        gameResultRequest.setWinnerId(finishedGame.getWinnerUser().getId());
+        gameResultRequest.setWinnerUsername(finishedGame.getWinnerUser().getUsername());
+        gameResultRequest.setLoserId(finishedGame.getLoserUser().getId());
+        gameResultRequest.setLoserUsername(finishedGame.getLoserUser().getUsername());
 
-        // Log the desired output format
-        System.out.println(gameResultRequest.getGameId() + "||" + gameResultRequest.getWinnerId() + "||" + gameResultRequest.getLoserId());
-        System.out.println("Game result has been returned1: " + gameResultRequest);
-
-        // Return the filled gameResultRequest
+        System.out.println("Game result has been returned: " + gameResultRequest);
         return gameResultRequest;
     }
+
+
 
     /**
      * Validates that the move is being made by the correct player and that it is indeed this player's turn.
@@ -470,7 +473,7 @@ public class GameService {
 
         // Determine winner when the card pile is empty and all hands are empty
         if (game.getBoard().getCardPileSquare().getCards().isEmpty() && players.stream().allMatch(p -> p.getHand().isEmpty())) {
-            return findTopPlayerByGameId(game.getGameId());
+            return findTopPlayerByGameId(game);
         }
 
         return null;
@@ -487,7 +490,12 @@ public class GameService {
     }
 
 
-    public Player findTopPlayerByGameId(Long gameId) {
+    public Player findTopPlayerByGameId(Game game) {
+        if (game.getGameStatus() != GameStatus.ONGOING) {
+            throw new IllegalStateException("Cannot find top player as the game is not in an ONGOING state.");
+        }
+
+        Long gameId = game.getGameId();
         List<Player> players = playerRepository.findPlayersByGameIdOrderedByScore(gameId);
         return players.isEmpty() ? null : players.get(0);
     }
