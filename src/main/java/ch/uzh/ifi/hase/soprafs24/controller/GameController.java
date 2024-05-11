@@ -97,8 +97,10 @@ public class GameController {
             // userService.authorizeUser(authorization); // Uncomment later and ensure it throws an appropriate exception if unauthorized
             System.out.println("Received verify result for game id: " + gameId + " by user with bearer token: " + authorization);
             GameResultRequest result = gameService.getGameMatchResult(gameId);
-            System.out.println("Game result has been returned1: " + result);
+            System.out.println("Game result will be returned to the player: " + result);
+
             return ResponseEntity.ok(result);
+
         } catch (GameNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (IllegalStateException ex) {
@@ -135,6 +137,12 @@ public class GameController {
         data.put("toastId", gameId.toString());
 
         messagingTemplate.convertAndSend(destination, data);
+    }
+
+    @GetMapping("/winCount/{userId}")
+    public Long getWinCount(@PathVariable Long userId) {
+        System.out.println("Retrieving the amount of wins for user with ID: "+userId );
+        return gameService.getWinCountForUser(userId);
     }
 
 }

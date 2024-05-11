@@ -122,17 +122,7 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
-    /*@GetMapping(value = "/users/other/{userId}")
-    @ResponseBody
-    public OtherUserGetDTO getOtherUserbyID(@RequestHeader("Authorization") String authorization, @PathVariable Long userId) {
-        userService.authorizeUser(authorization);
-        User userData = userService.getUserbyUserID(userId);
-        return DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(userData);
-    }*/
 
-    /*
-      Edit: put
-       */
     @PutMapping(value = "/users/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT) //请求成功后不返回信息 只有204代码
     @ResponseBody

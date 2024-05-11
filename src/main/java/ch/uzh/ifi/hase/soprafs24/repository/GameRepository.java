@@ -20,7 +20,8 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @Query("SELECT g FROM Game g WHERE g.winner.id = :playerId OR g.loser.id = :playerId")
     List<Game> findByPlayerAsWinnerOrLoser(@Param("playerId") Long playerId);
 
-    long countByWinnerId(Long winnerId);
+    @Query("SELECT COUNT(g) FROM Game g WHERE g.winnerUser.id = :userId")
+    Long countByWinnerUserId(Long userId);
 
 
     Game findByGameId(Long gameId);

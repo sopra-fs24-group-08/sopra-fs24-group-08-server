@@ -42,12 +42,11 @@ public class GameService {
     private final ChatRoomRepository chatRoomRepository;
     private final BoardService boardService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ChatService chatService;
     private final BoardRepository boardRepository;
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, GridSquareRepository gridSquareRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository,EntityManager entityManager) {
+                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository,EntityManager entityManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -55,7 +54,6 @@ public class GameService {
         this.chatRoomRepository = chatRoomRepository;
         this.boardService = boardService;
         this.eventPublisher = eventPublisher;
-        this.chatService = chatService;
         this.boardRepository = boardRepository;
         this.entityManager = entityManager;
     }
@@ -223,24 +221,9 @@ public class GameService {
         }
     }
 
-    public void concludeGame(Game game) {
-        // Logic to determine winner and loser Players
 
 
-        // Set User references for historical tracking
-
-
-        // Additional cleanup and save operations
-        gameRepository.save(game);
-    }
-
-    private void notifyGameEnd(GameStateDTO finalGameState, Long playerId) {
-        messagingTemplate.convertAndSend("/topic/game/" + finalGameState.getGameId() + "/" + playerId, finalGameState);
-    }
-
-
-
-
+    //Keep and expand, might need it for killing a game process when somebody major happens with a connection a client.
     private void revertPlayerToUser(Player player) {
         player.getUser().setInGame(false);
         userRepository.save(player.getUser());
@@ -278,7 +261,7 @@ public class GameService {
         gameResultRequest.setLoserId(finishedGame.getLoserUser().getId());
         gameResultRequest.setLoserUsername(finishedGame.getLoserUser().getUsername());
 
-        System.out.println("Game result has been returned: " + gameResultRequest);
+        System.out.println("Game result has been returned to the controller: " + gameResultRequest);
         return gameResultRequest;
     }
 
@@ -500,7 +483,7 @@ public class GameService {
         return players.isEmpty() ? null : players.get(0);
     }
 
-    public Player getWinner(Long gameId) {
+    public  User getWinner(Long gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
 
@@ -508,14 +491,14 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Game isn't finished yet");
         }
 
-        Player winner = game.getWinner();
+        User winner = game.getWinnerUser();
         if (winner == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No winner recorded for this game.");
         }
 
         return winner;
     }
-    public long getWinCountByPlayer(Long playerId) {
-        return gameRepository.countByWinnerId(playerId);
+    public Long getWinCountForUser(Long userId) {
+        return gameRepository.countByWinnerUserId(userId);
     }
 }
