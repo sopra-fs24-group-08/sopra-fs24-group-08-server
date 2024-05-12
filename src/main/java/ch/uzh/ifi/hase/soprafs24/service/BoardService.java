@@ -32,7 +32,7 @@ public class BoardService {
     public Board initializeAndSaveBoard() {
         Board board = new Board();
         board.initializeBoard();
-        boardRepository.save(board);
+        board = boardRepository.save(board);
         return board;
     }
     @Transactional
@@ -47,11 +47,13 @@ public class BoardService {
     }
     @Transactional
     public void placeCardOnSquare(Card card, GridSquare square) throws SquareOccupiedException {
-        if (square != null && !square.isOccupied()) {
+        if (card != null && square != null && !square.isOccupied()) {
             square.addCard(card);
             cardRepository.save(card);
             gridSquareRepository.save(square);
-        } else {
+        } else if(card ==  null) {
+            throw new IllegalArgumentException("Card cannot be null.");
+        } else{
             throw new SquareOccupiedException("Square is occupied or does not exist at position: " + square.getId());
         }
     }
