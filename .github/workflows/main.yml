@@ -42,7 +42,7 @@ jobs:
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
           deliverables: app.yaml
-          version: 'auto'
+          version: v1
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
       - name: Test Deployment
         run: |
