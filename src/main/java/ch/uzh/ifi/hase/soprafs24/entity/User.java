@@ -1,6 +1,9 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -84,10 +87,14 @@ public class User implements Serializable {
     )
     private Set<Icon> icons = new HashSet<>();
 
+    @Column(nullable = true)
+    private String avatarUrl;
+
     //Icons will be pretty rare so no need for .Lazy optim.
     @ManyToOne
     @JoinColumn(name = "curr_icon_id")
     private Icon currIcon;
+
 
 
     public Set<Icon> getIcons() {
@@ -102,8 +109,13 @@ public class User implements Serializable {
         this.icons.add(icon);
     }
 
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
 
-
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;  // 确保可以设置头像URL
+    }
     public Set<Achievement> getAchievements() {
         return achievements;
     }
@@ -209,5 +221,7 @@ public class User implements Serializable {
     public void setCreation_date(LocalDate creation_date) {
         this.creation_date = creation_date;
     }
+
+
 
 }

@@ -19,3 +19,4 @@ network:
 env_variables:
   SPRING_PROFILES_ACTIVE: 'prod'
   TRANSLATE_API_KEY: TRANSLATE_API_KEY
+

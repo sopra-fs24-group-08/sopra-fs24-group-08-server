@@ -48,6 +48,12 @@ public class UserService {
 
     }
 
+    public void updateUserAvatar(Long userId, String avatarUrl) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAvatarUrl(avatarUrl); // Setting a new avatar URL
+        userRepository.save(user); // Save Updates
+    }
+
     public Icon getDefaultIcon(String defaultIconName) {
         return iconRepository.findByName(defaultIconName);
     }
