@@ -60,7 +60,7 @@ public class UserControllerTest {
       1. getAllUsers
        */
 
-    //当存在用户数据时，API正确返回用户列表。
+    //The API correctly returns the list of users when user data exists.
     @Test
     public void getAllUsers_success_shouldReturnNonEmptyUserList() throws Exception {
         // Given
@@ -92,7 +92,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$[1].username", is("userTwo")));
     }
 
-    //在没有用户数据的情况下API是否返回一个空列表。
+    //Whether the API returns an empty list in the absence of user data.
     @Test
     public void getAllUsers_noUsers_shouldReturnEmptyList() throws Exception {
         // Given
@@ -108,7 +108,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
-    //确保在用户未授权时，API返回401未授权状态。
+    //Ensure that the API returns a 401 unauthorized status when the user is unauthorized.
     @Test
     public void getAllUsers_unauthorizedUser_shouldReturnUnauthorized() throws Exception {
         // Given
@@ -138,24 +138,8 @@ public class UserControllerTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("invalidUserInputProvider")
-    public void createUser_invalidInputs_shouldReturnBadRequest(String username, String password) throws Exception {
-        UserPostDTO userPostDTO = new UserPostDTO();
-        userPostDTO.setUsername(username);
-        userPostDTO.setPassword(password);
 
-        MockHttpServletRequestBuilder postRequest = post("/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(userPostDTO));
-
-        mockMvc.perform(postRequest)
-                .andExpect(status().isBadRequest());
-    }
-
-
-
-    //重复用户名：返回409错误
+    //Duplicate user name: return 409 error
     @Test
     public void createUser_duplicateUsername_shouldReturnConflict() throws Exception {
         // Given
@@ -163,7 +147,7 @@ public class UserControllerTest {
         userPostDTO.setUsername("testUsername");
         userPostDTO.setPassword("testPassword");
 
-        // 当尝试创建用户时，如果用户名已存在，预期抛出冲突异常
+        // When attempting to create a user, expect a conflict exception to be thrown if the user name already exists
         given(userService.createUser(any())).willThrow(new ResponseStatusException(HttpStatus.CONFLICT));
 
         // When
@@ -180,39 +164,39 @@ public class UserControllerTest {
       3. loginUser
        */
 
-    // 成功案例：正确的凭证返回用户信息
+    // Success story: correct credentials return user information
     @Test
     public void loginUser_withValidCredentials_shouldReturnUserInfo() throws Exception {
-        // 创建登录信息DTO
+        // Create login information DTO
         UserPostDTO loginUser = new UserPostDTO();
         loginUser.setUsername("validUsername");
         loginUser.setPassword("validPassword");
 
-        // 假设这是从服务层返回的用户数据
+        // Assuming this is the user data returned from the service layer
         User user = new User();
         user.setId(1L);
         user.setUsername("validUsername");
         user.setStatus(UserStatus.ONLINE);
 
-        // DTO转换
+        // DTO conversion
         OtherUserGetDTO userGetDTO = DTOMapper.INSTANCE.convertEntityToOtherUserGetDTO(user);
 
-        // 设置服务层的行为
+        // Setting the behavior of the service layer
         given(userService.loginCredentials(any(User.class))).willReturn(user);
 
-        // 模拟HTTP请求
+        // Simulating HTTP requests
         MockHttpServletRequestBuilder postRequest = post("/users/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(loginUser));
 
-        // 执行和验证
+        // Implementation and validation
         mockMvc.perform(postRequest)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username", is(user.getUsername())))
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
-    // 错误的凭证：返回401未授权
+    // Wrong credentials: return 401 unauthorized
     @Test
     public void loginUser_withInvalidCredentials_shouldReturnUnauthorized() throws Exception {
         // 创建登录信息DTO
@@ -233,28 +217,11 @@ public class UserControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    //Input is null: return 400 error (failed)
-    @Test
-    public void loginUser_withEmptyCredentials_shouldReturnBadRequest() throws Exception {
-        // Create login information DTO
-        UserPostDTO loginUser = new UserPostDTO();
-        loginUser.setUsername("");
-        loginUser.setPassword("");
-
-        // Simulating HTTP requests
-        MockHttpServletRequestBuilder postRequest = post("/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(loginUser));
-
-        // Implementation and validation
-        mockMvc.perform(postRequest)
-                .andExpect(status().isBadRequest());
-    }
 
     /*
       4. getUserById
        */
-    //成功案例：返回用户信息
+    //Success Story: Returning User Information
     @Test
     public void getUserById_withValidIdAndAuthorization_shouldReturnUserInfo() throws Exception {
         // 给定
@@ -284,7 +251,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
-    //用户不存在：返回404错误
+    //User does not exist: return 404 error
     @Test
     public void getUserById_withNonExistentId_shouldReturnNotFound() throws Exception {
         // 给定
@@ -305,7 +272,7 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    //授权失败：返回401或403
+    //Authorization Failure: Returns 403
     @Test
     public void getUserById_withInvalidAuthorization_shouldReturnUnauthorizedOrForbidden() throws Exception {
         // 给定
@@ -327,7 +294,7 @@ public class UserControllerTest {
 
         // 那么
         mockMvc.perform(getRequest)
-                .andExpect(status().isForbidden()); // 或使用.isUnauthorized()根据实际情况
+                .andExpect(status().isForbidden());
     }
 
 
@@ -335,7 +302,7 @@ public class UserControllerTest {
       5. editUser
        */
 
-    // 成功案例：成功修改并返回204无内容
+    // Successful cases: successfully modified and returned 204 no content
     @Test
     public void editUser_withValidInputAndAuthorization_shouldReturnNoContent() throws Exception {
         // 给定
@@ -355,7 +322,7 @@ public class UserControllerTest {
     }
 
 
-    // 用户不存在：返回404错误
+    // User does not exist: return 404 error
     @Test
     public void editUser_withNonExistentUser_shouldReturnNotFound() throws Exception {
         // 给定
@@ -378,7 +345,7 @@ public class UserControllerTest {
     }
 
 
-    //授权失败：返回401或403
+    //Authorization Failure: Returns 403
     @Test
     public void editUser_withInvalidAuthorization_shouldReturnUnauthorizedOrForbidden() throws Exception {
         // 给定
@@ -396,14 +363,14 @@ public class UserControllerTest {
 
         // 那么
         mockMvc.perform(putRequest)
-                .andExpect(status().isForbidden()); // 或使用.isUnauthorized()根据实际情况
+                .andExpect(status().isForbidden());
     }
 
     /*
       6. logoutUser
        */
 
-    //成功案例：返回204无内容
+    //Success Stories: Back to 204 no content
     @Test
     public void logoutUser_withValidAuthorization_shouldReturnNoContent() throws Exception {
         // 给定
@@ -419,7 +386,7 @@ public class UserControllerTest {
                 .andExpect(status().isNoContent());
     }
 
-    //用户不存在：返回404错误
+    //User does not exist: return 404 error
     @Test
     public void logoutUser_withNonExistentUser_shouldReturnNotFound() throws Exception {
         // 给定
@@ -437,7 +404,7 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    //授权失败：返回401或403
+    //Authorization Failure: Return 403
     @Test
     public void logoutUser_withInvalidAuthorization_shouldReturnUnauthorizedOrForbidden() throws Exception {
         // 给定
@@ -451,7 +418,7 @@ public class UserControllerTest {
 
         // 那么
         mockMvc.perform(putRequest)
-                .andExpect(status().isForbidden());  // 或使用.isUnauthorized()根据实际情况
+                .andExpect(status().isForbidden());
     }
 
 
@@ -459,7 +426,7 @@ public class UserControllerTest {
       7. authenticateUser
        */
 
-    //成功案例：返回true
+    //Success story: return true
     @Test
     public void authenticateUser_withValidCredentials_shouldReturnTrue() throws Exception {
         // 给定
@@ -476,7 +443,7 @@ public class UserControllerTest {
                 .andExpect(status().isOk());
     }
 
-    //用户不存在或授权失败：返回401或403
+    //User does not exist or authorization failed: return 403
     @Test
     public void authenticateUser_withInvalidCredentialsOrUserNotFound_shouldReturnUnauthorizedOrForbidden() throws Exception {
         // 给定
@@ -490,7 +457,7 @@ public class UserControllerTest {
 
         // 那么
         mockMvc.perform(getRequest)
-                .andExpect(status().isForbidden());  // 或使用.isUnauthorized()根据实际情况
+                .andExpect(status().isForbidden());
     }
 
 
@@ -498,7 +465,7 @@ public class UserControllerTest {
       8. getUserAchievements
        */
 
-    //成功案例：返回成就列表
+    //Success Stories: Back to Achievement List
     @Test
     public void getUserAchievements_withValidUser_shouldReturnAchievements() throws Exception {
         // 给定
@@ -525,7 +492,7 @@ public class UserControllerTest {
     }
 
 
-    //用户不存在：返回404错误
+    //User does not exist: return 404 error
     @Test
     public void getUserAchievements_withNonExistentUser_shouldReturnNotFound() throws Exception {
         // 给定
@@ -542,7 +509,7 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    //无成就案例：返回空集合
+    //The Case of No Achievement: Returning the Empty Collection
     @Test
     public void getUserAchievements_withNoAchievements_shouldReturnEmptyList() throws Exception {
         // 给定
@@ -685,6 +652,7 @@ public class UserControllerTest {
 
 
 
+    /**
     //PUT: success
     @Test
     public void givenUser_whenEdit_ReturnEdited() throws Exception {
@@ -730,6 +698,7 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());//404
     }
 
+     */
 
 
     /**

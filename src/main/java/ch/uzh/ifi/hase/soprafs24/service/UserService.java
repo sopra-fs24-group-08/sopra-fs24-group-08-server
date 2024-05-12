@@ -146,7 +146,7 @@ public class UserService {
     public User editUserbyUser(User editedUser) {
         Long id = editedUser.getId();
         User newUser = userRepository.findByid(id); //Check Logic still applies despite DTOs
-        if(userRepository.findByUsername(editedUser.getUsername())!=null & (!Objects.equals(newUser.getUsername(), editedUser.getUsername()))){
+        if(userRepository.findByUsername(editedUser.getUsername())!=null && (Objects.equals(newUser.getUsername(), editedUser.getUsername()))){
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "The username you desired is already in use, try a different one.");
         }
