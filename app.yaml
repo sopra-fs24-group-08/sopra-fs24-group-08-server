@@ -1,23 +1,15 @@
-# app.yaml
 runtime: java
 env: flex
 
 automatic_scaling:
-  min_num_instances: 1
-  max_num_instances: 2
-
-resources:
-  cpu: 1
-  memory_gb: 2
-  disk_size_gb: 10
+  max_num_instances: 1
 
 network:
   session_affinity: true
 
 env_variables:
   SPRING_PROFILES_ACTIVE: 'prod'
-  TRANSLATE_KEY: '${TRANSLATE_KEY}'
   DB_URL: '${DB_URL}'
   DB_USERNAME: '${DB_USERNAME}'
   DB_PASSWORD: '${DB_PASSWORD}'
-#
+  TRANSLATE_KEY: '${PROD_TRANSLATE_API_KEY}'

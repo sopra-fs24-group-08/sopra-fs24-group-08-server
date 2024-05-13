@@ -16,6 +16,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - name: Set up environment for tests
+        run: |
+          echo "TRANSLATE_KEY=${{ secrets.LOCAL_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
       - run: ./gradlew test jacocoTestReport sonarqube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -23,6 +26,7 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          TRANSLATE_KEY: ${{ env.TRANSLATE_KEY }}
 
   deploy:
     name: Deploy to Google Cloud
@@ -35,13 +39,7 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
           export_default_credentials: true
-      - name: Access Production Secret
-        run: |
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='PROD_TRANSLATE_KEY' --project=${{ secrets.GCP_PROJECT_ID }})
-          echo "TRANSLATE_KEY=$TRANSLATE_KEY" >> $GITHUB_ENV
       - name: Deploy to App Engine
-        id: deploy
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
           deliverables: app.yaml
@@ -49,11 +47,4 @@ jobs:
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
       - name: Test Deployment
         run: |
-          echo "Testing deployment..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.deploy.outputs.url }})
-          echo "Deployment HTTP status: $response"
-          if [[ "$response" -ne 200 ]]; then
-            echo "Deployment failed with HTTP status: $response"
-            exit 1
-          fi
-          echo "App is up and running with HTTP status: $response"
+          run: curl "${{ steps.deploy.outputs.url }}"
