@@ -8,7 +8,6 @@ network:
   session_affinity: true
 
 env_variables:
-  SPRING_PROFILES_ACTIVE: 'prod'
   DB_URL: '${DB_URL}'
   DB_USERNAME: '${DB_USERNAME}'
   DB_PASSWORD: '${DB_PASSWORD}'

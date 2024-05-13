@@ -39,6 +39,9 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
           export_default_credentials: true
+      - name: Set PROD_TRANSLATE_API_KEY for deployment
+        run: |
+          echo "TRANSLATE_KEY=${{ secrets.PROD_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
       - name: Deploy to App Engine
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
@@ -46,5 +49,4 @@ jobs:
           version: v1
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
       - name: Test Deployment
-        run: |
-          run: curl "${{ steps.deploy.outputs.url }}"
+        run: curl "${{ steps.deploy.outputs.url }}"
