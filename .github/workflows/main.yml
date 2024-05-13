@@ -16,10 +16,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: |
-        echo "DB_URL length is ${#DB_URL}"
-        env:
-          DB_URL: ${{ secrets.DB_URL }}
       - run: ./gradlew test jacocoTestReport sonarqube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -27,6 +23,7 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          google_api_key: ${{ secrets.LOCAL_TRANSLATE_API_KEY}}
 
   deploy:
     name: Deploy to Google Cloud
