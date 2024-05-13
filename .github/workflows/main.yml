@@ -33,10 +33,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare app.yaml
         run: |
-          echo "env_variables:" >> app.yaml
-          echo "  DB_URL: '${{ secrets.DB_URL }}'" >> app.yaml
-          echo "  DB_USERNAME: '${{ secrets.DB_USERNAME }}'" >> app.yaml
-          echo "  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'" >> app.yaml
+          if grep -q 'env_variables:' app.yaml; then
+            echo "Updating existing env_variables..."
+            # Assume env_variables exists and only append values
+            echo "  DB_URL: '${{ secrets.DB_URL }}'" >> app.yaml
+            echo "  DB_USERNAME: '${{ secrets.DB_USERNAME }}'" >> app.yaml
+            echo "  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'" >> app.yaml
+          else
+            echo "env_variables:" >> app.yaml
+            echo "  DB_URL: '${{ secrets.DB_URL }}'" >> app.yaml
+            echo "  DB_USERNAME: '${{ secrets.DB_USERNAME }}'" >> app.yaml
+            echo "  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'" >> app.yaml
+          fi
       - uses: google-github-actions/setup-gcloud@v0.2.0
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
