@@ -8,9 +8,11 @@ runtime_config:
   operating_system: "ubuntu22"
   runtime_version: "17"
 
-env_variables:
-  DB_URL: ${DB_URL}
-  DB_USERNAME: ${DB_USERNAME}
-  DB_PASSWORD: ${DB_PASSWORD}
-  TRANSLATE_KEY: ${TRANSLATE_KEY}
+network:
+  session_affinity: true
 
+env_variables:
+  DB_URL: "$DB_URL"
+  DB_USERNAME: "$DB_USERNAME"
+  DB_PASSWORD: "$DB_PASSWORD"
+  TRANSLATE_KEY: "$TRANSLATE_KEY"
