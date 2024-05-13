@@ -12,7 +12,7 @@ import java.util.List;
 @Service
 public class TranslateService {
 
-    @Value("${TRANSLATE_KEY}")
+    @Value("${translate.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;

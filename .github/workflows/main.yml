@@ -54,13 +54,6 @@ jobs:
           echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
 
-      - name: Print environment variables for debugging
-        run: |
-          echo "TRANSLATE_KEY=${{ env.TRANSLATE_KEY }}"
-          echo "DB_URL=${{ env.DB_URL }}"
-          echo "DB_USERNAME=${{ env.DB_USERNAME }}"
-          echo "DB_PASSWORD=${{ env.DB_PASSWORD }}"
-
       - name: Build Project
         run: ./gradlew clean build
         env:
