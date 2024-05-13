@@ -16,7 +16,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: echo "DB_URL is set to $DB_URL"
+      - run: |
+        echo "DB_URL length is ${#DB_URL}"
         env:
           DB_URL: ${{ secrets.DB_URL }}
       - run: ./gradlew test jacocoTestReport sonarqube
