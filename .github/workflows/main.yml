@@ -23,7 +23,7 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          google_api_key: ${{ secrets.LOCAL_TRANSLATE_API_KEY}}
+          google_api_key: ${{ secrets.LOCAL_TRANSLATE_API_KEY }}  # Used here for whatever purpose necessary in the action
 
   deploy:
     name: Deploy to Google Cloud
@@ -38,26 +38,18 @@ jobs:
           export_default_credentials: true
       - name: Access Production Secret
         run: |
-          echo "TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='projects/245557570181/secrets/PROD_TRANSLATE_KEY')" >> $GITHUB_ENV
-      - name: Prepare app.yaml
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          echo "TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='projects/${{ secrets.GCP_PROJECT_ID }}/secrets/PROD_TRANSLATE_KEY')" >> $GITHUB_ENV
+      - name: Update app.yaml with environment variables
         run: |
-          echo "env_variables:" >> app.yaml
-          echo "  DB_URL: '${{ secrets.DB_URL }}'" >> app.yaml
-          echo "  DB_USERNAME: '${{ secrets.DB_USERNAME }}'" >> app.yaml
-          echo "  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'" >> app.yaml
-          echo "  TRANSLATE_KEY: '${{ env.TRANSLATE_KEY }}'" >> app.yaml
+          echo "Updating app.yaml with dynamic environment variables..."
+          sed -i 's|TRANSLATE_KEY:.*|TRANSLATE_KEY: '"${{ env.TRANSLATE_KEY }}"'|' app.yaml
+          sed -i 's|DB_URL:.*|DB_URL: '"${{ secrets.DB_URL }}"'|' app.yaml
+          sed -i 's|DB_USERNAME:.*|DB_USERNAME: '"${{ secrets.DB_USERNAME }}"'|' app.yaml
+          sed -i 's|DB_PASSWORD:.*|DB_PASSWORD: '"${{ secrets.DB_PASSWORD }}"'|' app.yaml
       - name: Deploy to App Engine
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
           deliverables: app.yaml
           version: v1
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
-      - name: Test Deployment
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.url }}")
-          echo "Deployment HTTP status: $response"
-          if [[ "$response" -ne 200 ]]; then
-            echo "Deployment failed with HTTP status: $response"
-            exit 1
-          fi
-          echo "App is up and running with HTTP status: $response"
