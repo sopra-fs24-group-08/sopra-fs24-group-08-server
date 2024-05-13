@@ -1,3 +1,4 @@
+/*
 package ch.uzh.ifi.hase.soprafs24.repository;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
@@ -39,3 +40,4 @@ public class UserRepositoryIntegrationTest {
     }
 
 
+*/

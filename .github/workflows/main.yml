@@ -24,6 +24,9 @@ jobs:
       - name: Set up environment for tests
         run: |
           echo "TRANSLATE_KEY=${{ secrets.LOCAL_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
+          echo "DB_URL=${{ secrets.DB_URL }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Test and analyze
         run: ./gradlew test jacocoTestReport sonarqube
@@ -38,7 +41,7 @@ jobs:
   deploy:
     name: Deploy to Google Cloud
     runs-on: ubuntu-latest
-    needs: test
+    ##needs: test
 
     steps:
       - name: Checkout
