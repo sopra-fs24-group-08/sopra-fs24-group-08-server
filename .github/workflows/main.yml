@@ -23,7 +23,6 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          google_api_key: ${{ secrets.LOCAL_TRANSLATE_API_KEY }}  # Used here for whatever purpose necessary in the action
 
   deploy:
     name: Deploy to Google Cloud
@@ -39,17 +38,22 @@ jobs:
       - name: Access Production Secret
         run: |
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          echo "TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='projects/${{ secrets.GCP_PROJECT_ID }}/secrets/PROD_TRANSLATE_KEY')" >> $GITHUB_ENV
-      - name: Update app.yaml with environment variables
-        run: |
-          echo "Updating app.yaml with dynamic environment variables..."
-          sed -i 's|TRANSLATE_KEY:.*|TRANSLATE_KEY: '"${{ env.TRANSLATE_KEY }}"'|' app.yaml
-          sed -i 's|DB_URL:.*|DB_URL: '"${{ secrets.DB_URL }}"'|' app.yaml
-          sed -i 's|DB_USERNAME:.*|DB_USERNAME: '"${{ secrets.DB_USERNAME }}"'|' app.yaml
-          sed -i 's|DB_PASSWORD:.*|DB_PASSWORD: '"${{ secrets.DB_PASSWORD }}"'|' app.yaml
+          TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='PROD_TRANSLATE_KEY' --project=${{ secrets.GCP_PROJECT_ID }})
+          echo "TRANSLATE_KEY=$TRANSLATE_KEY" >> $GITHUB_ENV
       - name: Deploy to App Engine
+        id: deploy
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
           deliverables: app.yaml
           version: v1
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
+      - name: Test Deployment
+        run: |
+          echo "Testing deployment..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.deploy.outputs.url }})
+          echo "Deployment HTTP status: $response"
+          if [[ "$response" -ne 200 ]]; then
+            echo "Deployment failed with HTTP status: $response"
+            exit 1
+          fi
+          echo "App is up and running with HTTP status: $response"

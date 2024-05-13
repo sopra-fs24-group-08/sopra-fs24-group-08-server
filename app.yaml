@@ -1,12 +1,6 @@
-# https://cloud.google.com/appengine/docs/the-appengine-environments#comparing_high-level_features
-# https://cloud.google.com/appengine/docs/standard
-
+# app.yaml
 runtime: java
 env: flex
-
-runtime_config:
-  operating_system: "ubuntu22"
-  runtime_version: "17"
 
 automatic_scaling:
   min_num_instances: 1
@@ -26,3 +20,4 @@ env_variables:
   DB_URL: '${DB_URL}'
   DB_USERNAME: '${DB_USERNAME}'
   DB_PASSWORD: '${DB_PASSWORD}'
+#
