@@ -41,7 +41,7 @@ jobs:
   deploy:
     name: Deploy to Google Cloud
     runs-on: ubuntu-latest
-    ##needs: test
+    needs: test
 
     steps:
       - name: Checkout
@@ -50,9 +50,24 @@ jobs:
       - name: Set PROD_TRANSLATE_API_KEY for deployment
         run: |
           echo "TRANSLATE_KEY=${{ secrets.PROD_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
+          echo "DB_URL=${{ secrets.DB_URL }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+
+      - name: Print environment variables for debugging
+        run: |
+          echo "TRANSLATE_KEY=${{ env.TRANSLATE_KEY }}"
+          echo "DB_URL=${{ env.DB_URL }}"
+          echo "DB_USERNAME=${{ env.DB_USERNAME }}"
+          echo "DB_PASSWORD=${{ env.DB_PASSWORD }}"
 
       - name: Build Project
         run: ./gradlew clean build
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          TRANSLATE_KEY: ${{ secrets.PROD_TRANSLATE_API_KEY }}
 
       - name: Deploy to App Engine
         id: deploy
@@ -61,6 +76,11 @@ jobs:
           deliverables: build/libs/soprafs24.jar
           version: v2
           credentials: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          TRANSLATE_KEY: ${{ secrets.PROD_TRANSLATE_API_KEY }}
 
       - name: Test Deployment
         run: curl "${{ steps.deploy.outputs.url }}"
