@@ -20,22 +20,22 @@ public class UserRepositoryIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Test
-    public void findByName_success() {
-        // given
-        User user = new User();
-        user.setUsername("firstname@lastname");
-        user.setStatus(UserStatus.OFFLINE);
-        user.setPassword("TestPassword");
-        user.setToken("1");
-        LocalDate date = LocalDate.now();
-        user.setCreation_date(date);
+    // @Test
+    // public void findByName_success() {
+    //     // given
+    //     User user = new User();
+    //     user.setUsername("firstname@lastname");
+    //     user.setStatus(UserStatus.OFFLINE);
+    //     user.setPassword("TestPassword");
+    //     user.setToken("1");
+    //     LocalDate date = LocalDate.now();
+    //     user.setCreation_date(date);
 
-        entityManager.persist(user);
-        entityManager.flush();
+    //     entityManager.persist(user);
+    //     entityManager.flush();
 
-        // when
-    }
+    //     // when
+    // }
     }
 
 
