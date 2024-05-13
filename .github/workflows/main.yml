@@ -20,6 +20,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          google_api_key: ${{ secrets.LOCAL_TRANSLATE_API_KEY}}
 
   deploy:
     name: Deploy to Google Cloud
@@ -27,17 +31,21 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
+          export_default_credentials: true
+      - name: Access Production Secret
+        run: |
+          echo "TRANSLATE_KEY=$(gcloud secrets versions access latest --secret='projects/245557570181/secrets/PROD_TRANSLATE_KEY')" >> $GITHUB_ENV
       - name: Prepare app.yaml
         run: |
           echo "env_variables:" >> app.yaml
           echo "  DB_URL: '${{ secrets.DB_URL }}'" >> app.yaml
           echo "  DB_USERNAME: '${{ secrets.DB_USERNAME }}'" >> app.yaml
           echo "  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'" >> app.yaml
-      - uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
-          export_default_credentials: true
+          echo "  TRANSLATE_KEY: '${{ env.TRANSLATE_KEY }}'" >> app.yaml
       - name: Deploy to App Engine
         uses: google-github-actions/deploy-appengine@v0.2.0
         with:
