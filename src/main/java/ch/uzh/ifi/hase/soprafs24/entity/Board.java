@@ -11,6 +11,8 @@ import java.util.Random;
 
 @Entity
 public class Board {
+    private Random random = new Random();  // Compliant
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,10 +28,10 @@ public class Board {
     private GridSquare cardPileSquare;
 
     public void initializeBoard() {
+
         initializeSquares();
         initializeCardPile();
     }
-
 
     public Long getId() {
         return id;
@@ -57,7 +59,6 @@ public class Board {
 
     private void initializeSquares() {
         System.out.println("Initializing squares");
-        Random random = new Random();
         String[] colors = {"red", "blue", "green", "white"};
         int index = 0;
         boolean whiteUsed = false;
@@ -75,7 +76,7 @@ public class Board {
                     square.setColor("white");
                     whiteUsed = true;
                 } else {
-                    square.setColor(colors[random.nextInt(colors.length)]);
+                    square.setColor(colors[this.random.nextInt(colors.length)]);
                     index++;
                 }
             }
@@ -92,7 +93,7 @@ public class Board {
 
         for (int i = 0; i < 30; i++) {
             int points = 1 + random.nextInt(5);  // Points between 1 and 5
-            String color = colors[random.nextInt(colors.length)];
+            String color = colors[this.random.nextInt(colors.length)];
             Card newCard = new Card(color, points);
 
             // Assign each new card to the cardPileSquare

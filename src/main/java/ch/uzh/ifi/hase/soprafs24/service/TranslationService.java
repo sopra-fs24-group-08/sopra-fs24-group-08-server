@@ -9,7 +9,6 @@ import org.springframework.http.*;
 @Service
 public class TranslationService {
 
-    @Value("AIzaSyBa6V3OcgeYaX-r1w8ilrrN3HqZ6JKXZZY")
     private String apiKey;
 
     public String translateText(String text, String sourceLang, String targetLang) {

@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Objects;
+
 
 @RestController
 public class AvatarController {
@@ -25,7 +27,7 @@ public class AvatarController {
         String url = "https://cat-avatars.vercel.app/api/cat?name=" + name;
         ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(response.getHeaders().getContentType().toString()))
+                .contentType(MediaType.parseMediaType(Objects.requireNonNull(response.getHeaders().getContentType()).toString()))
                 .body(response.getBody());
     }
 
