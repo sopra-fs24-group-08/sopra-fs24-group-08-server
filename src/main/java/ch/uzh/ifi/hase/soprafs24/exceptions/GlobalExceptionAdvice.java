@@ -19,25 +19,40 @@ import javax.servlet.http.HttpServletRequest;
 @ControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
 
-  private final Logger log = LoggerFactory.getLogger(GlobalExceptionAdvice.class);
+    private final Logger log = LoggerFactory.getLogger(GlobalExceptionAdvice.class);
 
-  @ExceptionHandler(value = { IllegalArgumentException.class, IllegalStateException.class })
-  protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
-    String bodyOfResponse = "This should be application specific";
-    return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.CONFLICT, request);
-  }
+    @ExceptionHandler(IllegalArgumentException.class)
+    protected ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>("Illegal argument: " + ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST);
+    }
 
-  @ExceptionHandler(TransactionSystemException.class)
-  public ResponseStatusException handleTransactionSystemException(Exception ex, HttpServletRequest request) {
-    log.error("Request: {} raised {}", request.getRequestURL(), ex);
-    return new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
-  }
+    @ExceptionHandler(IllegalStateException.class)
+    protected ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
+        return new ResponseEntity<>("Illegal state: " + ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT);
+    }
 
-  // Keep this one disable for all testing purposes -> it shows more detail with
-  // this one disabled
-  @ExceptionHandler(HttpServerErrorException.InternalServerError.class)
-  public ResponseStatusException handleException(Exception ex) {
-    log.error("Default Exception Handler -> caught:", ex);
-    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
-  }
+    @ExceptionHandler({
+            TransactionSystemException.class,
+            GameNotFoundException.class,
+            PlayerNotFoundException.class,
+            CardNotFoundException.class,
+            GameNotFinishedException.class,
+            IncompleteGameDataException.class,
+            NotYourTurnException.class,
+            UserNotFoundException.class
+    })
+    public ResponseEntity<Object> handleCustomExceptions(RuntimeException ex, WebRequest request) {
+        log.error("Exception: {}", ex.getMessage());
+        HttpStatus status = determineHttpStatus(ex);
+        return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), status, request);
+    }
+
+    private HttpStatus determineHttpStatus(RuntimeException ex) {
+        if (ex instanceof TransactionSystemException) return HttpStatus.CONFLICT;
+        if (ex instanceof GameNotFoundException || ex instanceof PlayerNotFoundException || ex instanceof CardNotFoundException || ex instanceof UserNotFoundException)
+            return HttpStatus.NOT_FOUND;
+        if (ex instanceof GameNotFinishedException || ex instanceof IncompleteGameDataException || ex instanceof NotYourTurnException)
+            return HttpStatus.BAD_REQUEST;
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
 }

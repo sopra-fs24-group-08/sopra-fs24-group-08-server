@@ -81,7 +81,6 @@ public class GameController {
 
     @GetMapping("/winCount/{userId}")
     public Long getWinCount(@PathVariable Long userId) {
-        System.out.println("Retrieving the amount of wins for user with ID: "+userId );
         return gameService.getWinCountForUser(userId);
     }
 
