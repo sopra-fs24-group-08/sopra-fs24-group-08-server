@@ -170,6 +170,15 @@ public class GameService {
         }
         playerRepository.save(player);
     }
+    //Spring Boot test can't directly mock static methods, so instead of doing DTOMapper calls in controller we do them here.
+    public GameStateDTO getGameStateForPlayer(Game game, Long playerId) {
+        return DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
+    }
+
+    public Player getPlayerById(Long playerId) {
+        return playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found"));
+    }
+
 
 
     //If a player clicks on EXIT/SURR then we should have a proper way to apply the changes.
