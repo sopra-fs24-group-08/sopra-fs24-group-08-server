@@ -1,13 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.SurrenderConfirmation;
-import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
-import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.util.List;
 import java.util.Objects;
 
 @Controller
@@ -39,12 +31,6 @@ public class GameSocketController {
     }
 
 
-    @MessageMapping("/game/update")
-    @SendTo("/topic/game/{gameId}")
-    public Game updateGame(@Payload Game game) {
-        gameService.updateGame(game);
-        return game;
-    }
 
     /**Place MoveDTO= {
      "playerId": "X", -> Has to match up with game.getCurrentTurnPlayerId()

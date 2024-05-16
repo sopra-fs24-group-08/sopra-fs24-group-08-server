@@ -54,6 +54,7 @@ public class BoardService {
         } else if(card ==  null) {
             throw new IllegalArgumentException("Card cannot be null.");
         } else{
+            assert square != null;
             throw new SquareOccupiedException("Square is occupied or does not exist at position: " + square.getId());
         }
     }
