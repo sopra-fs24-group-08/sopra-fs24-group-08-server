@@ -5,9 +5,28 @@ import java.util.List;
 public class PlayerDTO {
     private Long id;
     private Long gameId;
-    private String username; // Optional, based on what you want to show
+    private String username;
     private int score;
     private List<CardDTO> cards;
+    private boolean isActive;
+
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
 
     public List<CardDTO> getCards() {
         return cards;

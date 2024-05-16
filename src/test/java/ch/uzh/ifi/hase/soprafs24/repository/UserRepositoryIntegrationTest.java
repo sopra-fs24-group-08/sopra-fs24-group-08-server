@@ -1,3 +1,4 @@
+/*
 package ch.uzh.ifi.hase.soprafs24.repository;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
@@ -19,7 +20,6 @@ public class UserRepositoryIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
     /*@Test
     public void findByName_success() {
         // given
@@ -46,8 +46,4 @@ public class UserRepositoryIntegrationTest {
         assertEquals(found.getStatus(), user.getStatus());
         assertNotNull(found.getCreation_date());
     }*/
-
-
-}
-
 

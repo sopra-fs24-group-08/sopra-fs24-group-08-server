@@ -1,11 +1,32 @@
 package ch.uzh.ifi.hase.soprafs24.rest.dto;
 
+import java.util.List;
+
 public class GridSquareDTO {
     private Long id;
     private String color;
-    private CardDTO card;  // Optionally include simplified card details
+    private boolean occupied;
+    private Object cards;  // This can be a List<CardDTO> or CardDTO or null
 
-    public GridSquareDTO() {}
+    public GridSquareDTO() {
+    }
+
+    public GridSquareDTO(Long id, String color, boolean occupied, Object cards) {
+        this.id = id;
+        this.color = color;
+        this.occupied = occupied;
+        this.cards = cards;
+    }
+
+    @Override
+    public String toString() {
+        return "GridSquareDTO{" +
+                "id=" + id +
+                ", color='" + color + '\'' +
+                ", occupied=" + occupied +
+                ", cards=" + cards +
+                '}';
+    }
 
     public Long getId() {
         return id;
@@ -23,11 +44,23 @@ public class GridSquareDTO {
         this.color = color;
     }
 
-    public CardDTO getCard() {
-        return card;
+    public boolean isOccupied() {
+        return occupied;
     }
 
-    public void setCard(CardDTO card) {
-        this.card = card;
+    public void setOccupied(boolean occupied) {
+        this.occupied = occupied;
+    }
+
+    public Object getCards() {
+        return cards;
+    }
+
+    public void setCards(Object cards) {
+        this.cards = cards;
+    }
+
+    public void setCards(List<CardDTO> cards) {
+        this.cards = cards;
     }
 }

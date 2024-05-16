@@ -1,5 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Entity
@@ -12,18 +14,28 @@ public class GridSquare {
     private String color;
 
     @ManyToOne
+    @JoinColumn(name = "board_id", nullable = false)
     private Board board;
 
-    @OneToOne(optional = true)
-    private Card card;
+    @OneToMany(mappedBy = "square", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Card> cards = new ArrayList<>();  // Initialize the list here
 
-    public String getColor() {
-        return color;
+    @Column(nullable = false)
+    private boolean isCardPile = false;
+
+    public boolean isOccupied() {
+        return !cards.isEmpty();  // A square is occupied if the cards list is not empty
+        // (cards list can only be 0/1 on all squares except middle one
     }
 
-    public void setColor(String color) {
-        this.color = color;
+    public void addCard(Card card) {
+        if (!isCardPile && isOccupied()) {
+            throw new IllegalStateException("This square is already occupied.");
+        }
+        cards.add(card);
+        card.setSquare(this);
     }
+
 
     public Long getId() {
         return id;
@@ -33,12 +45,12 @@ public class GridSquare {
         this.id = id;
     }
 
-    public Card getCard() {
-        return card;
+    public String getColor() {
+        return color;
     }
 
-    public void setCard(Card card) {
-        this.card = card;
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Board getBoard() {
@@ -48,5 +60,22 @@ public class GridSquare {
     public void setBoard(Board board) {
         this.board = board;
     }
+
+    public List<Card> getCards() {
+        return cards;
+    }
+
+    public void setCards(List<Card> cards) {
+        this.cards = cards;
+    }
+
+    public boolean isCardPile() {
+        return isCardPile;
+    }
+
+    public void setCardPile(boolean cardPile) {
+        isCardPile = cardPile;
+    }
+
 
 }

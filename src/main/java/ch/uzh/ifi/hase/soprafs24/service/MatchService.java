@@ -68,7 +68,7 @@ public class MatchService {
         System.out.println("Matched " + firstId + " with " + secondId);
         Game game = gameService.createGame();
         System.out.printf("create a game with Id: %d\n", game.getGameId());
-        game = gameService.startGame(game.getGameId(), firstId, secondId);
+//        game = gameService.startGame(game.getGameId(), firstId, secondId);
         completeDeferredResult(firstId, secondId, game.getGameId());
         completeDeferredResult(secondId, firstId, game.getGameId());
       } else {

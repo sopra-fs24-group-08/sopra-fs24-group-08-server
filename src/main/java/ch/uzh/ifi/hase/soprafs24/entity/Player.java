@@ -20,55 +20,28 @@ import java.util.Optional;
  */
 //Add all the other variables mentioned on the diagrams.
 @Entity
-public class Player implements  Serializable{
+public class Player implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @MapsId  //same id as user
+    @OneToOne(fetch = FetchType.EAGER)
+    @MapsId
     @JoinColumn(name = "id")
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "game_id")
+    @JoinColumn(name = "game_id", nullable = false)
     private Game game;
 
-    /*@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Card> hand = new ArrayList<>();*/
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<Card> hand = new ArrayList<Card>();
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "player_id")
+    private List<Card> hand = new ArrayList<>();
 
     @Column(nullable = false)
     private int score = 0;
 
     public Player() {
-    }
-
-    public List<Card> getHand() {
-        return hand;
-    }
-
-    public void setHand(List<Card> hand) {
-        this.hand = hand;
-    }
-
-    public void addCardToHand(Card card) {this.hand.add(card);
-    }
-    public void removeCardFromHand(Card card){
-        this.hand.remove(card);
-    }
-    public Optional<Card> getCardFromHand(Long cardId) {
-        return hand.stream().filter(card -> card.getId().equals(cardId)).findFirst();
-    }
-
-
-    public Player(User user, Game game) {
-        this.user = user;
-        this.game = game;
-        this.score = 0;
-        this.hand = new ArrayList<>();
     }
 
     public Long getId() {
@@ -85,6 +58,11 @@ public class Player implements  Serializable{
 
     public void setUser(User user) {
         this.user = user;
+        if (user == null) {
+            System.out.println("Setting null user for player");
+        } else {
+            System.out.println(user.getId());
+        }
     }
 
     public Game getGame() {
@@ -93,6 +71,24 @@ public class Player implements  Serializable{
 
     public void setGame(Game game) {
         this.game = game;
+    }
+
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public void setHand(List<Card> hand) {
+        this.hand = hand;
+    }
+
+    public void addCardToHand(Card card) {
+        if (card != null) {
+            this.hand.add(card);
+        }
+    }
+
+    public void removeCardFromHand(Card card) {
+        this.hand.remove(card);
     }
 
     public int getScore() {
@@ -106,10 +102,8 @@ public class Player implements  Serializable{
     public void addScore(int additionalPoints) {
         this.score += additionalPoints;
     }
-    //Special events might make use of this.
-    public void subScore(int substractPoints) {
-        this.score -= substractPoints;
+
+    public void subScore(int subtractPoints) {
+        this.score -= subtractPoints;
     }
-
-
 }
