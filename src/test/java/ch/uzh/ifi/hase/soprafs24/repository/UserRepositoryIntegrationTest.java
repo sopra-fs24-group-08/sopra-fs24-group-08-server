@@ -1,4 +1,3 @@
-/*
 package ch.uzh.ifi.hase.soprafs24.repository;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
@@ -9,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,30 +20,104 @@ public class UserRepositoryIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-    /*@Test
-    public void findByName_success() {
-        // given
+
+    @Test
+    public void findByUsername_success() {
         User user = new User();
-        user.setName("Firstname Lastname");
-        user.setUsername("firstname@lastname");
-        user.setStatus(UserStatus.OFFLINE);
+        user.setUsername("testUser");
         user.setPassword("TestPassword");
-        user.setToken("1");
-        LocalDate date = LocalDate.now();
-        user.setCreation_date(date);
+        user.setToken("UniqueToken123");
+        user.setStatus(UserStatus.OFFLINE);
+        user.setCreation_date(LocalDate.now());
 
         entityManager.persist(user);
         entityManager.flush();
 
-        // when
-        User found = userRepository.findByName(user.getName());
+        User found = userRepository.findByUsername(user.getUsername());
 
-        // then
-        assertNotNull(found.getId());
-        assertEquals(found.getName(), user.getName());
-        assertEquals(found.getUsername(), user.getUsername());
-        assertEquals(found.getToken(), user.getToken());
-        assertEquals(found.getStatus(), user.getStatus());
-        assertNotNull(found.getCreation_date());
-    }*/
+        assertNotNull(found);
+        assertEquals(user.getUsername(), found.getUsername());
+    }
+
+    @Test
+    public void findByid_success() {
+        User user = new User();
+        user.setUsername("testUser2");
+        user.setPassword("AnotherPassword");
+        user.setToken("AnotherToken123");
+        user.setStatus(UserStatus.ONLINE);
+        user.setCreation_date(LocalDate.now());
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = userRepository.findByid(user.getId());
+
+        assertNotNull(found);
+        assertEquals(user.getId(), found.getId());
+    }
+
+    @Test
+    public void findFriendsByUserId_success() {
+        User user = new User();
+        user.setUsername("user1");
+        user.setPassword("Password1");
+        user.setToken("Token1");
+        user.setStatus(UserStatus.ONLINE);
+        user.setCreation_date(LocalDate.now());
+
+        User friend = new User();
+        friend.setUsername("friend1");
+        friend.setPassword("Password2");
+        friend.setToken("Token2");
+        friend.setStatus(UserStatus.OFFLINE);
+        friend.setCreation_date(LocalDate.now());
+
+        user.getFriends().add(friend);
+
+        entityManager.persist(friend);
+        entityManager.persist(user);
+        entityManager.flush();
+
+        List<User> friends = userRepository.findFriendsByUserId(user.getId());
+
+        assertFalse(friends.isEmpty());
+        assertEquals(friend.getId(), friends.get(0).getId());
+    }
+
+    @Test
+    public void findByToken_success() {
+        User user = new User();
+        user.setUsername("userTokenTest");
+        user.setPassword("Password3");
+        user.setToken("SecureToken456");
+        user.setStatus(UserStatus.ONLINE);
+        user.setCreation_date(LocalDate.now());
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        User found = userRepository.findByToken(user.getToken());
+
+        assertNotNull(found);
+        assertEquals(user.getToken(), found.getToken());
+    }
+
+    @Test
+    public void existsByUserIdAndToken_success() {
+        User user = new User();
+        user.setUsername("checkExistence");
+        user.setPassword("Password4");
+        user.setToken("ExistToken12345");
+        user.setStatus(UserStatus.ONLINE);
+        user.setCreation_date(LocalDate.now());
+
+        entityManager.persist(user);
+        entityManager.flush();
+
+        boolean exists = userRepository.existsByUserIdAndToken(user.getId(), user.getToken());
+
+        assertTrue(exists);
+    }
+}
 
