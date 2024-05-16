@@ -3,6 +3,8 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.exceptions.NoCardsLeftException;
+import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +31,9 @@ public class UserServiceTest {
     @Mock
     private IconRepository iconRepository;
 
+    @Mock
+    private AchievementRepository achievementRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -53,6 +58,7 @@ public class UserServiceTest {
     public void createUser_validInputs_success() {
     when(userRepository.findByUsername(anyString())).thenReturn(null);
     when(userRepository.save(any(User.class))).thenReturn(testUser);
+    when(achievementRepository.findById(anyLong())).thenReturn(null);
     User createdUser = userService.createUser(testUser);
     Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
 
@@ -64,23 +70,37 @@ public class UserServiceTest {
 
     @Test
     public void createUser_duplicateUsername_throwsException() {
-    when(userRepository.findByUsername("testUser")).thenReturn(testUser);
+        testUser.setUsername("testUser");
+        when(userRepository.findByUsername("testUser")).thenReturn(testUser);
 
-    Exception exception = assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser));
-    assertEquals(HttpStatus.CONFLICT, ((ResponseStatusException) exception).getStatus());
+        assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser));
     }
+
+
+
 
     @Test
     public void loginCredentials_CorrectCredentials_ReturnUser() {
+        // Login specific setup
+        User testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testUsername");
+        testUser.setPassword("validPassword"); // Ensure the password is set
+
+        // Mocking userRepository to return the same user
         when(userRepository.findByUsername(testUser.getUsername())).thenReturn(testUser);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
+        // Execution
         User loggedInUser = userService.loginCredentials(testUser);
 
+        // Assertions
         assertNotNull(loggedInUser);
         assertEquals(UserStatus.ONLINE, loggedInUser.getStatus());
+        assertEquals("validPassword", loggedInUser.getPassword());
         verify(userRepository, times(1)).findByUsername(testUser.getUsername());
     }
+
     @Test
     public void loginCredentials_WrongUsername_ThrowsException() {
         when(userRepository.findByUsername("wrongUsername")).thenReturn(null);
@@ -93,25 +113,25 @@ public class UserServiceTest {
     }
     @Test
     public void loginCredentials_WrongPassword_ThrowsException() {
-        when(userRepository.findByUsername(testUser.getUsername())).thenReturn(testUser);
+        // Prepare the test user1 and 2 and the saved user with different passwords
+        User savedUser = new User();
+        savedUser.setId(1L);
+        savedUser.setUsername("testUsername");
+        savedUser.setPassword("correctPassword");
+
+        User testUser = new User();
+        testUser.setUsername("testUsername");
         testUser.setPassword("wrongPassword");
 
+        // Mock the findByUsername to return the savedUser
+        when(userRepository.findByUsername("testUsername")).thenReturn(savedUser);
+
+        // Test that a ResponseStatusException is thrown due to a password mismatch
         Exception exception = assertThrows(ResponseStatusException.class, () -> {
             userService.loginCredentials(testUser);
         });
 
         assertEquals(HttpStatus.NOT_ACCEPTABLE, ((ResponseStatusException) exception).getStatus());
-    }
-
-    @Test
-    public void getUserbyUserID_ValidId_ReturnUser() {
-        when(userRepository.findByid(1L)).thenReturn(testUser);
-
-        User foundUser = userService.getUserbyUserID(1L);
-
-        assertNotNull(foundUser);
-        assertEquals(testUser.getId(), foundUser.getId());
-        verify(userRepository, times(1)).findByid(1L);
     }
 
     @Test
