@@ -178,18 +178,13 @@ public class UserService {
         return newUser;
         //We shouldn't be returning s
     }
-
-
-
-
-    public User logoutUserbyUserID(Long userid) {
+    public void logoutUserbyUserID(Long userid) {
         // Input: user id
         // Function: Change online status to offline
         // Return: Edited user information
         User userbyID = userRepository.findByid(userid);
         userbyID.setStatus(UserStatus.OFFLINE);
-        return userbyID;
-    } //Why returning  User
+    }
 
     public void unlockIconUser(Long userId, Long iconId) {
         User user = userRepository.findById(userId).orElseThrow(
