@@ -2,80 +2,120 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
+import ch.uzh.ifi.hase.soprafs24.entity.*;
+import ch.uzh.ifi.hase.soprafs24.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.springframework.test.util.AssertionErrors.assertEquals;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class GameServiceTest {
 
-    @Autowired
-    private GameService gameService;
-
-    @MockBean
+    @Mock
     private GameRepository gameRepository;
-
-    @MockBean
+    @Mock
     private UserRepository userRepository;
-
-    @MockBean
+    @Mock
+    private PlayerRepository playerRepository;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+    @Mock
+    private ChatRoomRepository chatRoomRepository;
+    @Mock
     private BoardService boardService;
+    @Mock
+    private BoardRepository boardRepository;
+    @Mock
+    private UserService userService;
+
+    @InjectMocks
+    private GameService gameService;
 
     private User user1, user2;
     private Game game;
 
     @BeforeEach
     public void setup() {
+        user1 = new User();
+        user1.setId(1L);
+        user2 = new User();
+        user2.setId(2L);
 
+        game = new Game();
+        game.setGameId(1L);
+        game.setPlayers(new ArrayList<>(Arrays.asList(new Player(), new Player())));
     }
 
     @Test
-    public void testStartGame_Success() {
-        Game startedGame = gameService.startGame(1L, 2L);
+    public void testCreateGame() {
+        when(boardService.initializeAndSaveBoard()).thenReturn(new Board());
+        when(gameRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Game createdGame = gameService.createGame();
+
+        assertNotNull(createdGame);
+        verify(gameRepository).save(any(Game.class));
+    }
+
+    @Test
+    public void testStartGame() {
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(userRepository.findById(user2.getId())).thenReturn(Optional.of(user2));
+        when(gameRepository.save(any(Game.class))).thenReturn(game);
+        when(boardService.initializeAndSaveBoard()).thenReturn(new Board());
+
+        Game startedGame = gameService.startGame(user1.getId(), user2.getId());
+
         assertNotNull(startedGame);
-        String gameStatus = startedGame.getGameStatus().toString();
-        assertEquals("initializeNewGame", "ONGOING", gameStatus);
-        Mockito.verify(gameRepository, Mockito.times(2)).save(any(Game.class));
-        Mockito.verify(gameRepository).saveAndFlush(any(Game.class));
-    }
-
-
-    @Test
-    public void testGetWinCountByPlayer() {
-        Long playerId = 1L;
-        long expectedCount = 5L;
-        Mockito.when(gameRepository.countByWinnerId(playerId)).thenReturn(expectedCount);
-
-        long actualCount = gameService.getWinCountByPlayer(playerId);
-        Assertions.assertEquals(expectedCount, actualCount);
+        assertEquals(GameStatus.ONGOING, startedGame.getGameStatus());
+        verify(gameRepository).save(any(Game.class));
     }
 
     @Test
-    public void testStartGame_UserNotFound() {
-        assertThrows(RuntimeException.class, () -> gameService.startGame(3L, 4L));
+    public void testHandlePlayerSurrender() {
+        game.setGameStatus(GameStatus.ONGOING);
+        Player player1 = new Player();
+        player1.setId(user1.getId());
+        player1.setUser(user1);
+        Player player2 = new Player();
+        player2.setId(user2.getId());
+        player2.setUser(user2);
+
+        game.getPlayers().add(player1);
+        game.getPlayers().add(player2);
+
+        when(gameRepository.findById(game.getGameId())).thenReturn(Optional.of(game));
+
+        assertDoesNotThrow(() -> gameService.handlePlayerSurrender(game.getGameId(), player1.getId()));
+        assertEquals(GameStatus.FINISHED, game.getGameStatus());
+        verify(gameRepository, times(2)).save(game);
     }
 
     @Test
-    public void testGameInitialization() {
-        gameService.startGame(1L, 2L);
-
-        Mockito.verify(boardService).initializeAndSaveBoard();
-        Mockito.verify(gameRepository).saveAndFlush(any(Game.class)); // Ensuring game is immediately committed
+    public void testCheckGameOverConditions_NoConditionMet() {
+        when(boardService.isAllSquaresOccupied(any())).thenReturn(false);
+        assertFalse(gameService.checkGameOverConditions(game));
     }
+
+    @Test
+    public void testCheckGameOverConditions_GameOver() {
+        when(boardService.isAllSquaresOccupied(any())).thenReturn(true);
+        when(gameRepository.save(any())).thenReturn(game);
+        assertTrue(gameService.checkGameOverConditions(game));
+    }
+
+    // TODO Additional tests should be created for other methods such as processMove, finishGame, etc.
+
 }
 */
