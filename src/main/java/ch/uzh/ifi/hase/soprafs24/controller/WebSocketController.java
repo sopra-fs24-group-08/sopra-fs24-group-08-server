@@ -56,36 +56,36 @@ public class WebSocketController {
         return message;
     }
 
-    @MessageMapping("/{userId}/friend-requests/responds")
-    public void respondToFriendRequest(@DestinationVariable Long userId, @Payload FriendRequestDTO response) {
-        // Assume userId matches the receiverId for validation
-        if (!userId.equals(response.getReceiverId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized action.");
-        }
-        if (Objects.equals(response.getStatus().toString(), "ACCEPTED")) {
-            friendService.acceptFriendRequest(response.getSenderId(), userId);
+    // @MessageMapping("/{userId}/friend-requests/responds")
+    // public void respondToFriendRequest(@DestinationVariable Long userId, @Payload FriendRequestDTO response) {
+    //     // Assume userId matches the receiverId for validation
+    //     if (!userId.equals(response.getReceiverId())) {
+    //         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized action.");
+    //     }
+    //     if (Objects.equals(response.getStatus().toString(), "ACCEPTED")) {
+    //         friendService.acceptFriendRequest(response.getSenderId(), userId);
 
-        }else{ friendService.declineFriendRequest(response.getSenderId(), userId);
-        }
-        messagingTemplate.convertAndSend("/user/" + userId + "/friend-requests/response", response);
-    }
+    //     }else{ friendService.declineFriendRequest(response.getSenderId(), userId);
+    //     }
+    //     messagingTemplate.convertAndSend("/user/" + userId + "/friend-requests/response", response);
+    // }
 
-    @MessageMapping("/game/{userId}/accept")//duplicate userId sort it later
-    public void acceptGameInvitation(@Payload GameInvitationDTO response, @DestinationVariable Long userId) {
-        if (Objects.equals(response.getStatus().toString(), "ACCEPTED")) {
-            friendService.acceptedGameInvitation(response.getSenderId(), userId);
-            messagingTemplate.convertAndSend("/user/"+userId, "Game invitation accepted!");
-        }
-    }
-    // Handle game invitation decline
-    @MessageMapping("/game/{userId}/decline")
-    public void declineGameInvitation(@Payload GameInvitationDTO response, @DestinationVariable Long userId) {
-        if (Objects.equals(response.getStatus().toString(), "DECLINED")) {
-            friendService.declinedGameInvitation(response.getSenderId(), userId);
-            messagingTemplate.convertAndSend("/user/"+userId+"game-invitations", "Game invitation declined");
-        }
+    // @MessageMapping("/game/{userId}/accept")//duplicate userId sort it later
+    // public void acceptGameInvitation(@Payload GameInvitationDTO response, @DestinationVariable Long userId) {
+    //     if (Objects.equals(response.getStatus().toString(), "ACCEPTED")) {
+    //         friendService.acceptedGameInvitation(response.getSenderId(), userId);
+    //         messagingTemplate.convertAndSend("/user/"+userId, "Game invitation accepted!");
+    //     }
+    // }
+    // // Handle game invitation decline
+    // @MessageMapping("/game/{userId}/decline")
+    // public void declineGameInvitation(@Payload GameInvitationDTO response, @DestinationVariable Long userId) {
+    //     if (Objects.equals(response.getStatus().toString(), "DECLINED")) {
+    //         friendService.declinedGameInvitation(response.getSenderId(), userId);
+    //         messagingTemplate.convertAndSend("/user/"+userId+"game-invitations", "Game invitation declined");
+    //     }
 
-    }
+    // }
 }
 // Endpoint for handling in-game chat, demonstrating how to send messages to a specific game's chatbox
     /*@MessageMapping("/game/{gameId}/chat")

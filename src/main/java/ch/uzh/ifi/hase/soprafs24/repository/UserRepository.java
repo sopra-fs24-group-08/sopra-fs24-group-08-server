@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository("userRepository")   //在JPA里都定义好了 不用自己写
+@Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT f FROM User u JOIN u.friends f WHERE u.id = :userId")
     List<User> findFriendsByUserId(@Param("userId") Long userId);

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 import java.util.List;
+import java.util.Optional;
 
 @Repository("friendRequestRepository")
 // <FriendRequest, Long> FriendRequest：这表明RequestRepository将操作FriendRequest实体类的实例。
@@ -15,7 +16,7 @@ import java.util.List;
 public interface FriendRequestRepository extends JpaRepository<FriendRequest, Long> {
     FriendRequest findBySenderIdAndReceiverId(Long senderId, Long receiverId);
     FriendRequest findByRequestTypeAndSenderIdAndReceiverId(RequestType requestType, Long senderId, Long receiverId);
-    List <FriendRequest> findByReceiverIdAndStatus(Long receiverId, RequestStatus status);
+    List <FriendRequest> findByRequestTypeAndReceiverIdAndStatus(RequestType requestType, Long receiverId, RequestStatus status);
     List<FriendRequest> findBySenderIdAndStatus(@Param("senderId") Long senderId, RequestStatus status);
-    void deleteBySenderIdAndStatus(Long userId, RequestStatus status);
+    void deleteById(Long id);
 }
