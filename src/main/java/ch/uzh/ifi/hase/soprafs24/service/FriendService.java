@@ -45,7 +45,7 @@ public class FriendService {
     private final FriendRequestRepository friendRequestRepository;
     private final PlayerRepository playerRepository;
     private final GameService gameService;
-    private final MatchService matchService;
+    private final MatchmakingService matchmakingService;
     private final SimpMessagingTemplate messagingTemplate; // WebSocket messaging template
 
 
@@ -53,12 +53,12 @@ public class FriendService {
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
                          @Qualifier("playerRepository") PlayerRepository playerRepository,
-                         GameService gameService, MatchService matchService,SimpMessagingTemplate messagingTemplate) {
+                         GameService gameService,MatchmakingService matchmakingService,SimpMessagingTemplate messagingTemplate) {
       this.userRepository = userRepository;
       this.friendRequestRepository = friendRequestRepository;
       this.playerRepository = playerRepository;
       this.gameService = gameService;
-      this.matchService = matchService;
+      this.matchmakingService = matchmakingService;
       this.messagingTemplate = messagingTemplate;
 
 
@@ -201,15 +201,25 @@ public class FriendService {
 
     //WS
     public void dealRequest(FriendRequest request, RequestStatus result) {
-      request.setStatus(result);
-      friendRequestRepository.save(request);
-      forwardToWebSocket(request, request.getReceiverId());
-      forwardToWebSocket(request, request.getSenderId());
-      if (request.getStatus() == RequestStatus.ACCEPTED){
-        if (request.getRequestType() == RequestType.FRIENDADDING) addtoFriendList(request.getSenderId(), request.getReceiverId());
-        else if (request.getRequestType() == RequestType.GAMEINVITATION) {}
-      }
-      friendRequestRepository.deleteById(request.getId());
+        request.setStatus(result);
+        friendRequestRepository.save(request);
+
+        forwardToWebSocket(request, request.getReceiverId());
+        forwardToWebSocket(request, request.getSenderId());
+
+        // Handling accepted requests
+        if (request.getStatus() == RequestStatus.ACCEPTED) {
+            if (request.getRequestType() == RequestType.FRIENDADDING) {
+                // Add to friend list if the request is for adding a friend
+                addtoFriendList(request.getSenderId(), request.getReceiverId());
+            } else if (request.getRequestType() == RequestType.GAMEINVITATION) {
+                // Start game with friend if the request is for a game invitation
+                matchmakingService.startGameWithFriend(request.getSenderId(), request.getReceiverId());
+            }
+        }
+
+        // Deleting the request from the repository after handling
+        friendRequestRepository.deleteById(request.getId());
     }
 
     // provide all pending request

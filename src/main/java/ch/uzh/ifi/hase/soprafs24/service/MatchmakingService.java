@@ -83,4 +83,45 @@ public class MatchmakingService {
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerOneId.toString(), resultForPlayerOne);
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerTwoId.toString(), resultForPlayerTwo);
     }
+
+    @Transactional
+    public void startGameWithFriend(Long senderId ,Long receiverId) {
+        if (senderId == null || receiverId == null) {
+            System.err.println("Invalid player IDs provided for starting game.");
+            return;
+        }
+
+        // Start the game
+        Game game = gameService.startGame(senderId, receiverId);
+        Long gameId = game.getGameId();
+        Long firstPlayerId = game.getCurrentTurnPlayerId();
+
+        if (firstPlayerId == null) {
+            System.err.println("Error: Current turn player ID is null after game start.");
+            return;
+        }
+
+        // Fetch player names
+        String senderName = playerRepository.findUsernameByPlayerId(senderId);
+        String receiverName = playerRepository.findUsernameByPlayerId(receiverId);
+        boolean isInviterFirstPlayer = firstPlayerId.equals(senderId);
+
+        MatchmakingResult resultForReceiver = new MatchmakingResult(true, gameId, !isInviterFirstPlayer, senderId, senderName);
+        MatchmakingResult resultForSender = new MatchmakingResult(true, gameId, isInviterFirstPlayer, receiverId, receiverName);
+
+        // Debug output
+        System.out.println("Preparing to send game start notifications:");
+        System.out.println(" - Receiver (" + receiverId + "): " + resultForReceiver);
+        System.out.println(" - Sender (" + senderId + "): " + resultForSender);
+
+        // Send notifications
+        try {
+            messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
+            messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
+            System.out.println("Game " + gameId + " notifications sent to both players.");
+        } catch (Exception e) {
+            System.err.println("Failed to send game notifications: " + e.getMessage());
+        }
+    }
+
 }
