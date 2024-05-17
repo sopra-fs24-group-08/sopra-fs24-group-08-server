@@ -72,6 +72,18 @@ public class FriendRequestController {
         return friendGetDTOs;
     }
 
+    @GetMapping("/users/{userId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List <FriendRequestDTO> getAllRequests(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
+        userService.authorizeUser(authorization);
+
+        List <FriendRequestDTO> friendRequestDTOs = friendService.provideAllPendingRequest(userId);
+        return friendService.provideAllPendingRequest(userId);
+
+    }
+
+
 
     ///user/{userId}/queue/friend-requests
 
