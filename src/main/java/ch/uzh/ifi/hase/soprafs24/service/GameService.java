@@ -43,10 +43,11 @@ public class GameService {
     private final BoardService boardService;
     private final ApplicationEventPublisher eventPublisher;
     private final BoardRepository boardRepository;
+    private final UserService userService;
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository,EntityManager entityManager) {
+                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository, EntityManager entityManager, UserService userService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -56,6 +57,7 @@ public class GameService {
         this.eventPublisher = eventPublisher;
         this.boardRepository = boardRepository;
         this.entityManager = entityManager;
+        this.userService = userService;
     }
 
 
@@ -170,6 +172,15 @@ public class GameService {
         }
         playerRepository.save(player);
     }
+    //Spring Boot test can't directly mock static methods, so instead of doing DTOMapper calls in controller we do them here.
+    public GameStateDTO getGameStateForPlayer(Game game, Long playerId) {
+        return DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
+    }
+
+    public Player getPlayerById(Long playerId) {
+        return playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found"));
+    }
+
 
 
     //If a player clicks on EXIT/SURR then we should have a proper way to apply the changes.
@@ -499,6 +510,9 @@ public class GameService {
         return winner;
     }
     public Long getWinCountForUser(Long userId) {
+        if(!userRepository.existsById(userId)){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
         return gameRepository.countByWinnerUserId(userId);
     }
 }

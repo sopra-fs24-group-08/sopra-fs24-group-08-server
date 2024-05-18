@@ -3,15 +3,12 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.MatchmakingResult;
 import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
-import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class MatchmakingService {
@@ -37,7 +34,7 @@ public class MatchmakingService {
         checkForMatches();
     }
 
-    private void checkForMatches() {
+    public void checkForMatches() {
         if (playerQueueService.isEligibleForMatch()) {
             Iterator<Long> iterator = playerQueueService.getQueue().keySet().iterator();
             Long playerOneId = iterator.next();
@@ -58,11 +55,6 @@ public class MatchmakingService {
     public void removeFromQueue(Long playerId) {
         System.out.println("User with id " + playerId + " removed to queue");
         playerQueueService.removeFromQueue(playerId);
-    }
-
-    private void broadcastMatchmakingUpdate(Long playerId, String action) {
-        String message = String.format("Player%d has %s the matchmaking.", playerId, action);
-        messagingTemplate.convertAndSend("/topic/matchmaking/"+playerId, message);
     }
 
     private void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
@@ -116,7 +108,6 @@ public class MatchmakingService {
 
         // Send notifications
         try {
-            Thread.sleep(100);
             messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
             messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
             System.out.println("Game " + gameId + " notifications sent to both players.");

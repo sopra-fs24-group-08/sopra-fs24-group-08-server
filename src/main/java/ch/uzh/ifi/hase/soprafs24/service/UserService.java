@@ -5,6 +5,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.Icon;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.exceptions.UserNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
@@ -134,10 +135,6 @@ public class UserService {
         if (!password.equals(savedPassword)) {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, String.format(passwordErrorMessage));
         }
-
-        if(userByUsername.getStatus()==UserStatus.ONLINE) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with these credentials is already logged in");
-        }
         userByUsername.setStatus(UserStatus.ONLINE);
         return userByUsername;
     }
@@ -181,18 +178,13 @@ public class UserService {
         return newUser;
         //We shouldn't be returning s
     }
-
-
-
-
-    public User logoutUserbyUserID(Long userid) {
+    public void logoutUserbyUserID(Long userid) {
         // Input: user id
         // Function: Change online status to offline
         // Return: Edited user information
         User userbyID = userRepository.findByid(userid);
         userbyID.setStatus(UserStatus.OFFLINE);
-        return userbyID;
-    } //Why returning  User
+    }
 
     public void unlockIconUser(Long userId, Long iconId) {
         User user = userRepository.findById(userId).orElseThrow(
@@ -285,6 +277,5 @@ public class UserService {
 
         return true;
     }
-
 
 }

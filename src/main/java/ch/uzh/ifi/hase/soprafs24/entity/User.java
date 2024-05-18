@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,11 +58,11 @@ public class User implements Serializable {
     // Using FetchType.LAZY for optimizing the loading of friends
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "user_friends",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "friend_id")
+            name = "user_friends",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "friend_id")
     )
-    private List<User> friends;
+    private List<User> friends = new ArrayList<>(); // Initialize with an empty ArrayList
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

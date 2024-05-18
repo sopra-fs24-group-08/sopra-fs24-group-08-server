@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.MatchmakingResult;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendGetDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameInvitationDTO;
 import org.apache.catalina.connector.Request;
@@ -53,7 +54,7 @@ public class FriendService {
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
                          @Qualifier("playerRepository") PlayerRepository playerRepository,
-                         GameService gameService,MatchmakingService matchmakingService,SimpMessagingTemplate messagingTemplate) {
+                         GameService gameService,MatchmakingService matchmakingService, SimpMessagingTemplate messagingTemplate) {
       this.userRepository = userRepository;
       this.friendRequestRepository = friendRequestRepository;
       this.playerRepository = playerRepository;
@@ -200,15 +201,13 @@ public class FriendService {
     }
 
     //WS
-    @Transactional
-    public void dealRequest(FriendRequest request, RequestStatus result) {
+    public synchronized void dealRequest(FriendRequest request, RequestStatus result) {
         request.setStatus(result);
         friendRequestRepository.save(request);
         if (!(request.getStatus() == RequestStatus.ACCEPTED && request.getRequestType() == RequestType.GAMEINVITATION)){
           forwardToWebSocket(request, request.getReceiverId());
           forwardToWebSocket(request, request.getSenderId());
         }
-
         // Handling accepted requests
         if (request.getStatus() == RequestStatus.ACCEPTED) {
             if (request.getRequestType() == RequestType.FRIENDADDING) {
