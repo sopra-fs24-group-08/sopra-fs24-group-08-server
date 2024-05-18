@@ -27,16 +27,6 @@ public class FriendRequestController {
         this.friendService = friendService;
     }
 
-    // @PostMapping("/users/{userId}/friends/testadd")
-    // @ResponseStatus(HttpStatus.CREATED)
-    // @ResponseBody
-    // public boolean addFriendTestingPurpose(@PathVariable long userId,@RequestHeader("Authorization") String authorization, @RequestBody FriendGetDTO friendGetDTO) {
-    //     userService.authenticateUser(authorization, userId);
-    //     User updatedUser = friendService.addFriendAutomatically(userId, friendGetDTO);
-    //     return true;
-    //     //Just for testing purposes while I refactor the client and don't want to majorly affect anybody elses stuff.
-    // }
-
     // Delete friend
     @PutMapping("/users/{userId}/friends/delete")
     @ResponseStatus(HttpStatus.OK)
@@ -76,14 +66,21 @@ public class FriendRequestController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public List <FriendRequestDTO> getAllRequests(@PathVariable Long userId, @RequestHeader("Authorization") String authorization) {
-        userService.authorizeUser(authorization);
+        userService.authenticateUser(authorization, userId);
 
         List <FriendRequestDTO> friendRequestDTOs = friendService.provideAllPendingRequest(userId);
         return friendService.provideAllPendingRequest(userId);
 
     }
 
-
+    @PutMapping("/users/{userId}/friends/invitation")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public void acceptGameInvitation(@PathVariable Long userId, @RequestBody FriendRequestDTO requestDTO, @RequestHeader("Authorization") String authorization) {
+        userService.authenticateUser(authorization, userId);
+        FriendRequest friendRequest = DTOMapper.INSTANCE.convertFriendRequestDTOtoEntity(requestDTO);
+        friendService.handleRequest(userId, friendRequest);
+    }
 
     ///user/{userId}/queue/friend-requests
 

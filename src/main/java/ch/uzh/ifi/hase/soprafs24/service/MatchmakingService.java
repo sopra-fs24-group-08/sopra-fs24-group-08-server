@@ -116,6 +116,7 @@ public class MatchmakingService {
 
         // Send notifications
         try {
+            Thread.sleep(100);
             messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
             messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
             System.out.println("Game " + gameId + " notifications sent to both players.");

@@ -200,12 +200,14 @@ public class FriendService {
     }
 
     //WS
+    @Transactional
     public void dealRequest(FriendRequest request, RequestStatus result) {
         request.setStatus(result);
         friendRequestRepository.save(request);
-
-        forwardToWebSocket(request, request.getReceiverId());
-        forwardToWebSocket(request, request.getSenderId());
+        if (!(request.getStatus() == RequestStatus.ACCEPTED && request.getRequestType() == RequestType.GAMEINVITATION)){
+          forwardToWebSocket(request, request.getReceiverId());
+          forwardToWebSocket(request, request.getSenderId());
+        }
 
         // Handling accepted requests
         if (request.getStatus() == RequestStatus.ACCEPTED) {
