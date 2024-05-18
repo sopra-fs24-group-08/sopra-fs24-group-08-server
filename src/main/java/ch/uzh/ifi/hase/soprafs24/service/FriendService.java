@@ -181,7 +181,7 @@ public class FriendService {
       Long senderId = receivedRequest.getSenderId();
       Long receiverId = receivedRequest.getReceiverId();
       // check if the receiver is the user
-      if (receiverId != userId){
+      if (!receiverId.equals(userId)){
         forwardErrorMessage(userId, "You can't reply other's request!");
       }
       // check if the request exists
