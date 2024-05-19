@@ -59,17 +59,6 @@ public interface DTOMapper {
                 .collect(Collectors.toList());
     }
 
-    @Mapping(source = "username", target = "username")
-    @Mapping(source = "password", target = "password")
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "token", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "creation_date", ignore = true)
-    @Mapping(target = "birthday", ignore = true)
-
-    User convertLoginUserPostDTOtoEntity(LoginUserPostDTO loginUserPostDTO);
-
 
     @Mapping(source = "username", target = "username")
     @Mapping(source = "birthday", target = "birthday")
@@ -81,13 +70,7 @@ public interface DTOMapper {
     @Mapping(target = "creation_date", ignore = true)
 
     User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
-
-
-    // User convert to FriendGetDTO to protect data
-    @Mapping(source = "username", target = "username")
-    @Mapping(source = "id", target = "id")
-
-    FriendGetDTO convertEntityToFriendGetDTO(User user);
+    
 
     // friendRequestDTO convert to friendRequest entity and converse
     FriendRequest convertFriendRequestDTOtoEntity(FriendRequestDTO friendRequestDTO);

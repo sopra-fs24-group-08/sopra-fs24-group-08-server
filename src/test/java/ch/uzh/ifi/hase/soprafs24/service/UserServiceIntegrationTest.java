@@ -4,6 +4,9 @@ import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.EditUserPutDTO;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -81,14 +84,11 @@ public class UserServiceIntegrationTest {
 
         // change the name but forget about the username
         testUser2.setUsername("testUsername");
-        testUser.setPassword("testPassword3");
+        testUser2.setPassword("testPassword3");
 
         // check that an error is thrown
         assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser2));
+        userRepository.delete(testUser);
     }
-
-
-
-
 
 }

@@ -75,8 +75,8 @@ public class UserController {
     @PostMapping("/users/login")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public UserGetDTO loginUser(@RequestBody LoginUserPostDTO loginUserPostDTO) {
-        User userCredentials = DTOMapper.INSTANCE.convertLoginUserPostDTOtoEntity(loginUserPostDTO);
+    public UserGetDTO loginUser(@RequestBody UserPostDTO loginUserPostDTO) {
+        User userCredentials = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(loginUserPostDTO);
         System.out.println("credentials"+userCredentials);
         User userData = userService.loginCredentials(userCredentials);
         System.out.println("credentials"+userData);
