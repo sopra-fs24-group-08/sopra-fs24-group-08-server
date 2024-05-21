@@ -1,25 +1,14 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
-import ch.uzh.ifi.hase.soprafs24.entity.Game;
-import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.MatchmakingRequest;
-import ch.uzh.ifi.hase.soprafs24.service.GameService;
+
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import ch.uzh.ifi.hase.soprafs24.service.MatchmakingService;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.*;
-
-import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 
 
 @Controller
