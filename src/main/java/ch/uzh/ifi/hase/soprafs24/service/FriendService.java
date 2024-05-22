@@ -49,14 +49,12 @@ public class FriendService {
       this.matchmakingService = matchmakingService;
       this.messagingTemplate = messagingTemplate;
 
-
     }
 
     private void forwardToWebSocket(FriendRequest request, Long receiverId) {
       // Forward to WebSocket using a specific topic or user queue
       FriendRequestDTO requestDTO = convertEntityToFriendRequestDTO(request);
       messagingTemplate.convertAndSend("/topic/queue/"+receiverId + "/notifications", requestDTO);
-      System.out.println("/topic/queue/"+receiverId + "/notifications");
     }
 
     private void forwardErrorMessage(Long userId, String message) {
@@ -72,7 +70,6 @@ public class FriendService {
     @Transactional
     public void addFriendRequest(Long userId, FriendRequest friendAdding){
       // make sure the type of request is friendadding
-      System.out.println("user is trying to add a friend!");
       if (friendAdding.getRequestType() != RequestType.FRIENDADDING){
         forwardErrorMessage(userId, "The request type is not FRIENDADDING!");
       }
@@ -96,7 +93,7 @@ public class FriendService {
           // query the creation_time
           LocalDateTime previousTime = oldRequest.getCreationTime();
           LocalDateTime nowTime = LocalDateTime.now();
-          long duration = Duration.between(nowTime, previousTime).getSeconds();
+          long duration = Duration.between(previousTime, nowTime).getSeconds();
           if (duration < GlobalConstants.MAX_REQUEST_DURATION){
             forwardErrorMessage(userId, "You've already sent a friend request to this user recently. Please try it later!");
           }else{
@@ -146,7 +143,7 @@ public class FriendService {
         // query the creation_time
         LocalDateTime previousTime = oldGameInvitation.getCreationTime();
         LocalDateTime nowTime = LocalDateTime.now();
-        Long duration = Duration.between(nowTime, previousTime).getSeconds();
+        Long duration = Duration.between(previousTime, nowTime).getSeconds();
         if (duration < GlobalConstants.MAX_REQUEST_DURATION){
           forwardErrorMessage(userId, "U are sending too many invitation requests! Please try later!");
         }else{
@@ -214,7 +211,7 @@ public class FriendService {
     public List<FriendRequestDTO> provideAllPendingRequest(Long userId){
       List<FriendRequest> requests = friendRequestRepository
                         .findByRequestTypeAndReceiverIdAndStatus(RequestType.FRIENDADDING, userId, RequestStatus.PENDING);
-
+      
       return requests.stream().map(this::convertEntityToFriendRequestDTO).collect(Collectors.toList());
     }
 
@@ -223,7 +220,7 @@ public class FriendService {
         User currentUser = userRepository.findByid(userId);
         User oldFriend = userRepository.findByid(friendId);
         if (oldFriend == null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend Username doesn't exist.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Friend doesn't exist.");
         }else if (!currentUser.getFriends().contains(oldFriend)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user is not in your friend list.");
         }

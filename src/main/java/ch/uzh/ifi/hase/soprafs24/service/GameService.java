@@ -114,23 +114,19 @@ public class GameService {
 
 
     private Player convertUserToPlayer(User user, Game game) {
-        System.out.println("Converting User to player");
-        user.setInGame(true);
+      System.out.println("Converting User to player");
+      user.setInGame(true);
 
-        // Ensure user is managed
-        if (!entityManager.contains(user)) {
-            user = entityManager.merge(user);
-        }
-
-        Player player = new Player();
-        player.setUser(user);
-        player.setGame(game);
-
-        // Save user and player with correct references
-
-        userRepository.save(user);
-        return player;
-    }
+      // Ensure user is managed
+      Player player = new Player();
+      player.setUser(user);
+      player.setGame(game);
+      userRepository.save(user);
+      playerRepository.save(player);
+      // Save user and player with correct references
+          
+      return player;
+  }
 
     private void performCoinFlipAndInitializeGame(Player player1, Player player2, Game game) {
         System.out.println("About to do a coin flip for the game with id "+game.getGameId());

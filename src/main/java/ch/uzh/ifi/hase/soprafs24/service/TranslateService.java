@@ -24,9 +24,9 @@ public class TranslateService {
     public String translateText(String text, String targetLang) {
         try {
             // Manually construct the URL
-            String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8);
+            // String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8);
             String url = "https://translation.googleapis.com/language/translate/v2?key=" + apiKey +
-                    "&q=" + encodedText +
+                    "&q=" + text +
                     "&target=" + targetLang;
 
             System.out.println("Request URL: " + url);

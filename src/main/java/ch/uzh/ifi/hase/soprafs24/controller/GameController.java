@@ -4,7 +4,6 @@ import ch.uzh.ifi.hase.soprafs24.entity.GameResultRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.exceptions.GameNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
-import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.TurnDecisionDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.*;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
