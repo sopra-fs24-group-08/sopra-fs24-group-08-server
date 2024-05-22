@@ -56,7 +56,6 @@ public class MatchmakingService {
         playerQueueService.removeFromQueue(playerId);
     }
 
-
     public void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
         Long firstPlayerId = game.getCurrentTurnPlayerId();
         if (firstPlayerId == null) {
@@ -75,6 +74,7 @@ public class MatchmakingService {
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerOneId.toString(), resultForPlayerOne);
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerTwoId.toString(), resultForPlayerTwo);
     }
+
     @Transactional
     public void startGameWithFriend(Long senderId ,Long receiverId) {
         if (senderId == null || receiverId == null) {
@@ -97,7 +97,6 @@ public class MatchmakingService {
 
         MatchmakingResult resultForReceiver = new MatchmakingResult(true, gameId, !isInviterFirstPlayer, senderId, senderName);
         MatchmakingResult resultForSender = new MatchmakingResult(true, gameId, isInviterFirstPlayer, receiverId, receiverName);
-
 
         messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
         messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
