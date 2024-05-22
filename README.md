@@ -13,24 +13,16 @@ Kitty Cards
 
 ## High-level components
 ### 
-- Main
-This is the navigation page after logging in, connected to game-matching, friend-system, user profile, etc..
-https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-client/blob/main/src/components/views/Main.tsx
 
 ### 
-- KittyCards
-This is the game page, once upon a successful matching or an accepted invitation the user will jump to here.
-https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-client/blob/main/src/components/views/KittyCards.tsx
+
 
 
 ### 
-- UserList
-In this page all registered users can be seen and one can send friend request to another.
-https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-client/blob/main/src/components/views/UserList.tsx
+
 
 ### 
-- FriendList
-Once the friend request is accepted, new friend will be shown in this page. User can invite his/her friend to a game or delete this friend.
+
 
 ## Launch & Deployment
  - npm run dev
