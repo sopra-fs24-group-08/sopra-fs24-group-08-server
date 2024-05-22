@@ -51,6 +51,7 @@ public interface DTOMapper {
     @Mapping(source = "banners", target = "banners")
     @Mapping(source = "achievements", target = "achievements")
     @Mapping(source = "token", target = "token")
+    @Mapping(source = "avatarUrl", target = "avatarUrl")
 
     UserGetDTO convertEntityToUserGetDTO(User user);
     default List<IconGetDTO> mapIcons(Set<Icon> icons) {
@@ -70,7 +71,7 @@ public interface DTOMapper {
     @Mapping(target = "creation_date", ignore = true)
 
     User convertEditUserPutDTOtoEntity(EditUserPutDTO editUserPutDTO);
-    
+
 
     // friendRequestDTO convert to friendRequest entity and converse
     FriendRequest convertFriendRequestDTOtoEntity(FriendRequestDTO friendRequestDTO);

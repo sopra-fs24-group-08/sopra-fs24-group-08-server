@@ -33,7 +33,6 @@ public class User implements Serializable {
     @GeneratedValue
     private Long id;
 
-
     @Column(nullable = false, unique = true)
     private String username;
 
@@ -115,7 +114,7 @@ public class User implements Serializable {
     }
 
     public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;  // 确保可以设置头像URL
+        this.avatarUrl = avatarUrl;
     }
     public Set<Achievement> getAchievements() {
         return achievements;

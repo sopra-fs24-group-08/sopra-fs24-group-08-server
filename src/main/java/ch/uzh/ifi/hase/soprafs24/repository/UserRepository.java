@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.id = :userId AND u.token = :token")
     boolean existsByUserIdAndToken(@Param("userId") Long userId, @Param("token") String token);
 
+    @Query("SELECT u.avatarUrl FROM User u WHERE u.id = :userId")
+    Optional<String> findAvatarUrlByUserId(@Param("userId") Long userId);
+
+
     // Need this for authorization, to verify if the token is really a valid one
     User findByToken(String token);
 }
