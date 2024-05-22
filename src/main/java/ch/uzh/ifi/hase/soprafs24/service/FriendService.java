@@ -12,11 +12,9 @@ import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
-import ch.uzh.ifi.hase.soprafs24.service.MatchService;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendRequestDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
 import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import org.springframework.transaction.annotation.Transactional;
 
