@@ -50,10 +50,18 @@ public class UserService {
     }
 
     public void updateUserAvatar(Long userId, String avatarUrl) {
+        System.out.println("Attempting to update avatar for user ID: " + userId);
+
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        user.setAvatarUrl(avatarUrl); // Setting a new avatar URL
-        userRepository.save(user); // Save Updates
+        System.out.println("Current avatar URL: " + user.getAvatarUrl());
+
+        user.setAvatarUrl(avatarUrl); // 设置新的头像 URL
+        System.out.println("New avatar URL set to: " + avatarUrl);
+
+        userRepository.save(user); // 保存更新
+        System.out.println("Avatar URL updated successfully in the database for user ID: " + userId);
     }
+
 
     public Icon getDefaultIcon(String defaultIconName) {
         return iconRepository.findByName(defaultIconName);
