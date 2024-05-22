@@ -95,10 +95,10 @@ public class GameService {
         game.setGameStatus(GameStatus.STARTING);
 
         Board board = boardService.initializeAndSaveBoard();
-        //Not needed boardRepository.save(board);
         game.setBoard(board);
-        // Saving game here to ensure it has an ID before linking Players
-        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database for ChatRoom
+
+        // Save game here to ensure it has an ID before linking Players
+        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database
 
         ChatRoom chatRoom = createAndLinkChatRoom(game);
         game.setChatRoom(chatRoom);
@@ -108,8 +108,10 @@ public class GameService {
 
         game.addPlayer(player1);
         game.addPlayer(player2);
+
+        // Final save to ensure all changes are committed
         gameRepository.save(game);
-        //Not needed gameRepository.save(game);
+
         performCoinFlipAndInitializeGame(player1, player2, game);
 
         game.setGameStatus(GameStatus.ONGOING);
@@ -130,11 +132,19 @@ public class GameService {
     private Player convertUserToPlayer(User user, Game game) {
         System.out.println("Converting User to player");
         user.setInGame(true);
+
+        // Ensure user is managed
+        if (!entityManager.contains(user)) {
+            user = entityManager.merge(user);
+        }
+
         Player player = new Player();
         player.setUser(user);
         player.setGame(game);
+
+        // Save user and player with correct references
+
         userRepository.save(user);
-        playerRepository.save(player);
         return player;
     }
 

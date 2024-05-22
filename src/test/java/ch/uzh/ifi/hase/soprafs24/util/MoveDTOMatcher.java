@@ -1,4 +1,4 @@
-package ch.uzh.ifi.hase.soprafs24.utils;
+package ch.uzh.ifi.hase.soprafs24.util;
 
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import org.mockito.ArgumentMatcher;

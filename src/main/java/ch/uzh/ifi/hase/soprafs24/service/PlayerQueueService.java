@@ -10,6 +10,7 @@ public class PlayerQueueService {
     private final Map<Long, String> playerQueue = new ConcurrentHashMap<>();
 
     public void addToQueue(Long playerId) {
+
         playerQueue.put(playerId, "");
     }
 
