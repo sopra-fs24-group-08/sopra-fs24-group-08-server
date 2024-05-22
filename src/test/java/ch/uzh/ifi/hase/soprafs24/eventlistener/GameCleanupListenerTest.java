@@ -77,10 +77,20 @@ public class GameCleanupListenerTest {
 
         GameCleanupEvent event = new GameCleanupEvent(this, game); // Set game in the constructor
 
+        // Use an ArgumentCaptor to capture the GameEndEvent passed to handleGameEnd
+        ArgumentCaptor<GameEndEvent> gameEndEventCaptor = ArgumentCaptor.forClass(GameEndEvent.class);
+
         gameCleanupListener.onGameCleanup(event);
 
         verify(gameCleanupService).prepareGameEndData(game);
         verify(gameCleanupService).cleanupGameData(game);
-        verify(gameEventService).handleGameEnd(new GameEndEvent(gameCleanupListener, game, winner, loser, gameStateMap));
+        verify(gameEventService).handleGameEnd(gameEndEventCaptor.capture());
+
+        // Now assert on the captured GameEndEvent
+        GameEndEvent capturedEvent = gameEndEventCaptor.getValue();
+        assertEquals(game, capturedEvent.getGame()); // Assert the game is the same
+        assertEquals(winner, capturedEvent.getWinner()); // Assert the winner is as expected
+        assertEquals(loser, capturedEvent.getLoser()); // Assert the loser is as expected
+        assertEquals(gameStateMap, capturedEvent.getGameStateDTOs()); // Assert the state map is as expected
     }
 }
