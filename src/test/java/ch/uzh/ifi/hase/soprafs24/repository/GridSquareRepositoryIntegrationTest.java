@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
@@ -16,7 +17,7 @@ import javax.transaction.Transactional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
+@SpringBootTest
 @Transactional
 public class GridSquareRepositoryIntegrationTest {
 
@@ -25,6 +26,8 @@ public class GridSquareRepositoryIntegrationTest {
 
     @Autowired
     private GridSquareRepository gridSquareRepository;
+    @Autowired
+    private BoardRepository boardRepository;
 
     @AfterEach
     public void teardown() {
@@ -34,8 +37,7 @@ public class GridSquareRepositoryIntegrationTest {
     @Test
     public void countByBoardIdAndIsOccupiedFalse_success() {
         Board board = new Board();
-        entityManager.persist(board);
-        entityManager.flush();
+        boardRepository.saveAndFlush(board);
 
         GridSquare occupiedGridSquare = new GridSquare();
         occupiedGridSquare.setBoard(board);
@@ -43,14 +45,12 @@ public class GridSquareRepositoryIntegrationTest {
         Card card = new Card();
         card.setSquare(occupiedGridSquare);
         occupiedGridSquare.getCards().add(card);
-        entityManager.persist(occupiedGridSquare);
+        gridSquareRepository.saveAndFlush(occupiedGridSquare);
 
         GridSquare emptyGridSquare = new GridSquare();
         emptyGridSquare.setBoard(board);
         emptyGridSquare.setCardPile(false);
-        entityManager.persist(emptyGridSquare);
-
-        entityManager.flush();
+        gridSquareRepository.saveAndFlush(emptyGridSquare);
 
         long emptySquaresCount = gridSquareRepository.countByBoardIdAndIsOccupiedFalse(board.getId());
         assertEquals(1, emptySquaresCount);
@@ -59,8 +59,8 @@ public class GridSquareRepositoryIntegrationTest {
     @Test
     public void countCardsInCardPileGridSquare_success() {
         Board board = new Board();
-        entityManager.persist(board);
-        entityManager.flush();
+        boardRepository.saveAndFlush(board);
+
 
         GridSquare cardPileGridSquare = new GridSquare();
         cardPileGridSquare.setBoard(board);
@@ -71,9 +71,8 @@ public class GridSquareRepositoryIntegrationTest {
         card2.setSquare(cardPileGridSquare);
         cardPileGridSquare.getCards().add(card1);
         cardPileGridSquare.getCards().add(card2);
-        entityManager.persist(cardPileGridSquare);
+        gridSquareRepository.saveAndFlush(cardPileGridSquare);
 
-        entityManager.flush();
 
         int cardsCount = gridSquareRepository.countCardsInCardPileGridSquare(board.getId());
         assertEquals(2, cardsCount);

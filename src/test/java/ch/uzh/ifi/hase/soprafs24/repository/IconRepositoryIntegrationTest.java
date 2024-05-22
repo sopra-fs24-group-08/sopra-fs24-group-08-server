@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
@@ -13,7 +14,7 @@ import javax.persistence.EntityManager;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
+@SpringBootTest
 public class IconRepositoryIntegrationTest {
 
     @Autowired
@@ -31,8 +32,7 @@ public class IconRepositoryIntegrationTest {
     public void findByName_success() {
         // Create and persist an icon
         Icon icon = new Icon("Test Icon", "http://test.com/icon.png");
-        entityManager.persist(icon);
-        entityManager.flush();
+        iconRepository.saveAndFlush(icon);
 
         // Find the icon by name
         Icon foundIcon = iconRepository.findByName("Test Icon");
@@ -45,8 +45,7 @@ public class IconRepositoryIntegrationTest {
     public void findById_success() {
         // Create and persist an icon
         Icon icon = new Icon("Another Icon", "http://test.com/anothericon.png");
-        entityManager.persist(icon);
-        entityManager.flush();
+        iconRepository.saveAndFlush(icon);
 
         // Find the icon by ID
         Icon foundIcon = iconRepository.findById(icon.getId()).orElse(null);

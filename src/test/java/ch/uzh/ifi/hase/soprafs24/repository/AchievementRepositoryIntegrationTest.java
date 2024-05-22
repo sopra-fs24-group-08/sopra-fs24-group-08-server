@@ -7,14 +7,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
+@SpringBootTest
 public class AchievementRepositoryIntegrationTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+    //@Autowired
+    //private TestEntityManager entityManager;
 
     @Autowired
     private AchievementRepository achievementRepository;
@@ -24,7 +25,9 @@ public class AchievementRepositoryIntegrationTest {
         Achievement achievement = new Achievement();
         achievement.setTitle("testAchievement");
 
-        entityManager.persistAndFlush(achievement);
+        //entityManager.persistAndFlush(achievement);
+        achievementRepository.save(achievement);
+        achievementRepository.flush();
 
         Achievement found = achievementRepository.findByTitle("testAchievement");
 
@@ -38,7 +41,10 @@ public class AchievementRepositoryIntegrationTest {
         Achievement achievement = new Achievement();
         achievement.setTitle("testAchievement");
 
-        entityManager.persistAndFlush(achievement);
+        achievementRepository.save(achievement);
+        achievementRepository.flush();
+
+        //entityManager.persistAndFlush(achievement);
 
         Achievement found = achievementRepository.findById(achievement.getId()).orElse(null);
 

@@ -8,22 +8,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
+@SpringBootTest
 @Transactional
 public class FriendRequestRepositoryIntegrationTest {
 
-    @Autowired
-    private EntityManager entityManager;
+    //@Autowired
+    //private EntityManager entityManager;
 
     @Autowired
     private FriendRequestRepository friendRequestRepository;
@@ -41,8 +43,7 @@ public class FriendRequestRepositoryIntegrationTest {
         friendRequest.setSenderId(1L);
         friendRequest.setReceiverId(2L);
         friendRequest.setStatus(RequestStatus.PENDING);
-        entityManager.persist(friendRequest);
-        entityManager.flush();
+        friendRequestRepository.saveAndFlush(friendRequest);
 
         FriendRequest found = friendRequestRepository.findBySenderIdAndReceiverId(1L, 2L);
 
@@ -59,8 +60,10 @@ public class FriendRequestRepositoryIntegrationTest {
         friendRequest.setSenderId(1L);
         friendRequest.setReceiverId(2L);
         friendRequest.setStatus(RequestStatus.PENDING);
-        entityManager.persist(friendRequest);
-        entityManager.flush();
+        //entityManager.persist(friendRequest);
+        //entityManager.flush();
+        friendRequestRepository.saveAndFlush(friendRequest);
+
 
         FriendRequest found = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.FRIENDADDING, 1L, 2L);
 
@@ -78,8 +81,8 @@ public class FriendRequestRepositoryIntegrationTest {
         friendRequest.setReceiverId(2L);
         friendRequest.setStatus(RequestStatus.PENDING);
         friendRequest.setSenderId(1L);
-        entityManager.persist(friendRequest);
-        entityManager.flush();
+        friendRequestRepository.saveAndFlush(friendRequest);
+
 
         List<FriendRequest> foundRequests = friendRequestRepository.findByRequestTypeAndReceiverIdAndStatus(RequestType.FRIENDADDING, 2L, RequestStatus.PENDING);
 
@@ -98,8 +101,7 @@ public class FriendRequestRepositoryIntegrationTest {
         friendRequest.setSenderId(1L);
         friendRequest.setStatus(RequestStatus.PENDING);
         friendRequest.setReceiverId(2L);
-        entityManager.persist(friendRequest);
-        entityManager.flush();
+        friendRequestRepository.saveAndFlush(friendRequest);
 
         List<FriendRequest> foundRequests = friendRequestRepository.findBySenderIdAndStatus(1L, RequestStatus.PENDING);
 
@@ -117,14 +119,13 @@ public class FriendRequestRepositoryIntegrationTest {
         friendRequest.setSenderId(1L);
         friendRequest.setReceiverId(2L);
         friendRequest.setStatus(RequestStatus.PENDING);
-        entityManager.persist(friendRequest);
-        entityManager.flush();
+        friendRequestRepository.saveAndFlush(friendRequest);
 
         Long id = friendRequest.getId();
         friendRequestRepository.deleteById(id);
-        entityManager.flush();
+        friendRequestRepository.flush();
 
-        FriendRequest found = entityManager.find(FriendRequest.class, id);
-        assertNull(found);
+        Optional<FriendRequest> found = friendRequestRepository.findById(id);
+        assertTrue(found.isEmpty());
     }
 }

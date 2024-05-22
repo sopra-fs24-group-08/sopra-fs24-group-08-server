@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 public class UserRepositoryIntegrationTest {
 
-    // @Autowired
-    // private TestEntityManager entityManager;
 
     @Autowired
     private UserRepository userRepository;

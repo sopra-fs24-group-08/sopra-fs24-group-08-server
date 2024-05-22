@@ -13,11 +13,11 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
+@SpringBootTest
 public class BannerRepositoryIntegrationTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+    //@Autowired
+    //private TestEntityManager entityManager;
 
     @Autowired
     private BannerRepository bannerRepository;
@@ -27,7 +27,9 @@ public class BannerRepositoryIntegrationTest {
         Banner banner = new Banner();
         banner.setName("testBanner");
 
-        entityManager.persistAndFlush(banner);
+        //entityManager.persistAndFlush(banner);
+        bannerRepository.save(banner);
+        bannerRepository.flush();
 
         Banner found = bannerRepository.findByName("testBanner");
 

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -23,20 +24,24 @@ import static ch.uzh.ifi.hase.soprafs24.constant.UserStatus.ONLINE;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
 @Transactional
+@SpringBootTest
 public class ChatMessageRepositoryIntegrationTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+    //@Autowired
+    //private TestEntityManager entityManager;
 
     @Autowired
     private ChatMessageRepository chatMessageRepository;
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     public void findByChatRoomId_success() {
         ChatRoom chatRoom = new ChatRoom();
-        entityManager.persistAndFlush(chatRoom);
+        chatRoomRepository.saveAndFlush(chatRoom);
 
         User user = new User();
         user.setUsername("testUser");
@@ -44,13 +49,15 @@ public class ChatMessageRepositoryIntegrationTest {
         user.setCreation_date(LocalDate.now());
         user.setToken("testToken");
         user.setStatus(ONLINE);
-        entityManager.persistAndFlush(user);
+        userRepository.saveAndFlush(user);
+        //entityManager.persistAndFlush(user);
 
         ChatMessage message1 = new ChatMessage();
         message1.setMessageContent("Hello");
         message1.setChatRoom(chatRoom);
         message1.setTimestamp(LocalDateTime.now());
         message1.setSender(user);
+        chatMessageRepository.saveAndFlush(message1);
 
         ChatMessage message2 = new ChatMessage();
         message2.setMessageContent("Hi");
@@ -58,9 +65,7 @@ public class ChatMessageRepositoryIntegrationTest {
         message2.setTimestamp(LocalDateTime.now().plusMinutes(1));
         message2.setSender(user);
 
-        entityManager.persist(message1);
-        entityManager.persist(message2);
-        entityManager.flush();
+        chatMessageRepository.saveAndFlush(message2);
 
         Pageable pageable = PageRequest.of(0, 1); // Get the first page, one message per page
         List<ChatMessage> foundMessages = chatMessageRepository.findByChatRoomId(chatRoom.getId(), pageable);

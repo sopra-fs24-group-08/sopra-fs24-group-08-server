@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
@@ -17,24 +18,30 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@DataJpaTest
+@SpringBootTest
 @Transactional
 public class ChatRoomRepositoryIntegrationTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+    //@Autowired
+    //private TestEntityManager entityManager;
 
     @Autowired
     private ChatRoomRepository chatRoomRepository;
 
+    @Autowired
+    private GameRepository gameRepository;
+
+
     @Test
     public void findByGameId_success() {
         Game game = new Game();
-        entityManager.persistAndFlush(game);
+        //entityManager.persistAndFlush(game);
+        gameRepository.saveAndFlush(game);
 
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setGame(game);
-        entityManager.persistAndFlush(chatRoom);
+        //entityManager.persistAndFlush(chatRoom);
+        chatRoomRepository.saveAndFlush(chatRoom);
 
         Optional<ChatRoom> foundChatRoom = chatRoomRepository.findByGameId(game.getGameId());
 
