@@ -53,15 +53,6 @@ public class ChatService {
     }
 
 
-    private ChatRoom createChatRoom(Long gameId) {
-        // Logic to create a new chat room,not needed anymore if we only need ingame chat
-        ChatRoom newChatRoom = new ChatRoom();
-        newChatRoom.setGame(gameRepository.findById(gameId).orElseThrow(
-                () -> new RuntimeException("Game not found for gameId: " + gameId)
-        ));
-        return chatRoomRepository.save(newChatRoom);
-    }
-
     public void cleanupChatRoom(ChatRoom chatRoom) {
         chatMessageRepository.deleteAll(chatRoom.getMessages()); // Clear all messages explicitly
         chatRoomRepository.delete(chatRoom);  // Delete the chat room
