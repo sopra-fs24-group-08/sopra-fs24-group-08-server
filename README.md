@@ -54,7 +54,7 @@ Firstly, we want to thank our TA Sven Fabian Ringger for the help throughout the
 In a nutshell, we appreciate this journey at Sopra and thank for anyone who helps us directly or indirectly.
 
 ## License
- MIT License
+[MIT License](LICENSE)
 
 
 
