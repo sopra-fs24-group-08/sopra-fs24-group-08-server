@@ -149,4 +149,24 @@ public class GameControllerTest {
                 // Update the expected message to match the complete error response text
                 .andExpect(result -> assertEquals("404 NOT_FOUND \"User not found\"", result.getResolvedException().getMessage()));
     }
+
+    @Test
+    void RequestGameResultGameIncomplete() throws Exception {
+        Long gameId = 3L;
+        when(gameService.getGameMatchResult(gameId)).thenThrow(new IllegalStateException("incomplete"));
+
+        mockMvc.perform(get("/game/{gameId}/result", gameId)
+                        .header("Authorization", "Bearer some-token"))
+                .andExpect(status().isPreconditionFailed());
+    }
+
+    @Test
+    void RequestGameResultUnexpectedError() throws Exception {
+        Long gameId = 3L;
+        when(gameService.getGameMatchResult(gameId)).thenThrow(new RuntimeException("Unexpected error"));
+
+        mockMvc.perform(get("/game/{gameId}/result", gameId)
+                        .header("Authorization", "Bearer some-token"))
+                .andExpect(status().isInternalServerError());
+    }
 }

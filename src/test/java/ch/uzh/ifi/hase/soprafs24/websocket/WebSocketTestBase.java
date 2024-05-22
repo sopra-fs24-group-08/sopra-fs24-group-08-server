@@ -43,9 +43,17 @@ public abstract class WebSocketTestBase {
 
     protected StompSession connectToWebSocket(String token) throws Exception {
         TestStompSessionHandler sessionHandler = new TestStompSessionHandler();
+
+        // Simulate error message for null or empty tokens
+        if (token == null || token.isEmpty()) {
+            System.out.println("Connection failed: Token is missing or empty");
+            throw new IllegalArgumentException("Connection failed: Token is missing or empty");
+        }
+
         String urlWithToken = String.format("%s?token=%s", websocketUrl, URLEncoder.encode(token, StandardCharsets.UTF_8));
         StompSession session = stompClient.connect(urlWithToken, sessionHandler).get(10, TimeUnit.SECONDS);
         sessionHandler.awaitConnection();  // Wait for the connection to be established
         return session;
     }
+
 }

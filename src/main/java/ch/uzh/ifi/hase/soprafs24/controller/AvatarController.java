@@ -28,7 +28,7 @@ public class AvatarController {
         String url = "https://cat-avatars.vercel.app/api/cat?name=" + name;
         ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(Objects.requireNonNull(response.getHeaders().getContentType()).toString()))
+                .contentType(MediaType.parseMediaType(response.getHeaders().getContentType().toString()))
                 .body(response.getBody());
     }
 

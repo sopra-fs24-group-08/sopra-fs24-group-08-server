@@ -5,7 +5,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.SurrenderConfirmation;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
 import ch.uzh.ifi.hase.soprafs24.websocket.WebSocketTestBase;
-import ch.uzh.ifi.hase.soprafs24.utils.MoveDTOMatcher;
+import ch.uzh.ifi.hase.soprafs24.util.MoveDTOMatcher;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

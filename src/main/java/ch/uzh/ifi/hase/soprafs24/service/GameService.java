@@ -1,24 +1,20 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.EventListener.GameCleanupEvent;
-import ch.uzh.ifi.hase.soprafs24.EventListener.GameEndEvent;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import javax.persistence.EntityManager;
@@ -47,7 +43,7 @@ public class GameService {
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository, EntityManager entityManager, UserService userService) {
+                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, BoardRepository boardRepository, EntityManager entityManager, UserService userService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -65,18 +61,6 @@ public class GameService {
         return gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game not found"));
     }
 
-    public void updateGame(Game game) {
-        gameRepository.save(game);
-    }//Leaving this in for existing functions of others, should be removed eventually
-    //for gameId
-    public Game createGame() {
-        Game game = new Game();
-        Board board = new Board();
-        game.setBoard(board);
-        gameRepository.save(game);
-        gameRepository.flush();
-        return game;
-    }
 
     public Game startGame(Long userId1, Long userId2) {
         User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found"));
@@ -95,10 +79,10 @@ public class GameService {
         game.setGameStatus(GameStatus.STARTING);
 
         Board board = boardService.initializeAndSaveBoard();
-        //Not needed boardRepository.save(board);
         game.setBoard(board);
-        // Saving game here to ensure it has an ID before linking Players
-        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database for ChatRoom
+
+        // Save game here to ensure it has an ID before linking Players
+        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database
 
         ChatRoom chatRoom = createAndLinkChatRoom(game);
         game.setChatRoom(chatRoom);
@@ -108,8 +92,10 @@ public class GameService {
 
         game.addPlayer(player1);
         game.addPlayer(player2);
+
+        // Final save to ensure all changes are committed
         gameRepository.save(game);
-        //Not needed gameRepository.save(game);
+
         performCoinFlipAndInitializeGame(player1, player2, game);
 
         game.setGameStatus(GameStatus.ONGOING);
@@ -130,11 +116,19 @@ public class GameService {
     private Player convertUserToPlayer(User user, Game game) {
         System.out.println("Converting User to player");
         user.setInGame(true);
+
+        // Ensure user is managed
+        if (!entityManager.contains(user)) {
+            user = entityManager.merge(user);
+        }
+
         Player player = new Player();
         player.setUser(user);
         player.setGame(game);
+
+        // Save user and player with correct references
+
         userRepository.save(user);
-        playerRepository.save(player);
         return player;
     }
 
@@ -287,7 +281,7 @@ public class GameService {
      * @throws NotYourTurnException if it is not the player's turn
      * @throws RuntimeException if the move request is invalid or if the game or player does not exist
      */
-    private void validateTurn(Long gameId, Long playerId, Long moveDTOUserId) {
+    public void validateTurn(Long gameId, Long playerId, Long moveDTOUserId) {
         if (moveDTOUserId == null || !moveDTOUserId.equals(playerId)) {
             throw new RuntimeException("Invalid move request: User ID does not match Player ID");
         }

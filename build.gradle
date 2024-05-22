@@ -41,7 +41,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    // runtimeOnly 'com.h2database:h2'
+    //runtimeOnly 'com.h2database:h2'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
@@ -49,7 +49,12 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
+    testImplementation 'org.springframework:spring-messaging'  // For testing messaging
+    testImplementation 'org.springframework:spring-websocket'   // For WebSocket testing utilitie
+    testImplementation 'org.hamcrest:hamcrest:2.2' //https://www.baeldung.com/java-junit-hamcrest-guide
     runtimeOnly 'org.postgresql:postgresql'
+    testRuntimeOnly 'org.postgresql:postgresql'
+
 }
 
 bootJar {

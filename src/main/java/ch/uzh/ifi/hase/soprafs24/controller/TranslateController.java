@@ -16,9 +16,6 @@ public class TranslateController {
 
     @GetMapping
     public String translate(@RequestParam String text, @RequestParam String targetLang) {
-        System.out.println("Received text: " + text);
-        String translatedText = translateService.translateText(text, targetLang);
-        System.out.println("Translated text: " + translatedText);
-        return translatedText;
+        return translateService.translateText(text, targetLang);
     }
 }

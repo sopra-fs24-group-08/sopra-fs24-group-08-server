@@ -142,6 +142,10 @@ public class UserService {
         String passwordErrorMessage = "Password incorrect! Try again!";
         if (!password.equals(savedPassword)) {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, String.format(passwordErrorMessage));
+
+        }
+        if (userByUsername.getStatus()==UserStatus.ONLINE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with these credentials is already logged in");
         }
         userByUsername.setStatus(UserStatus.ONLINE);
         return userByUsername;

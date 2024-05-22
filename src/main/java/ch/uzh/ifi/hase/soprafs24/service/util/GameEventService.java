@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.service.util;
 
 import ch.uzh.ifi.hase.soprafs24.EventListener.GameEndEvent;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.exceptions.IncompleteGameDataException;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,7 +26,7 @@ public class GameEventService {
         Map<Long, GameStateDTO> gameStateDTOs = event.getGameStateDTOs();
 
         if (game.getWinnerUser() == null || game.getLoserUser() == null) {
-            throw new IllegalStateException("Game data is incomplete when handling game end.");
+            throw new IncompleteGameDataException("Game data is incomplete when handling game end.");
         }
 
         GameStateDTO stateForWinner = gameStateDTOs.get(game.getWinnerUser().getId());

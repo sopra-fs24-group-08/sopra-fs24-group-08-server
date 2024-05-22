@@ -6,6 +6,7 @@ import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import ch.uzh.ifi.hase.soprafs24.exceptions.UserNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
@@ -22,13 +23,12 @@ public class MatchmakingService {
         this.messagingTemplate = messagingTemplate;
         this.gameService = gameService;
         this.playerRepository = playerRepository;
-        this.playerQueueService = new PlayerQueueService();
+        this.playerQueueService = playerQueueService;
     }
 
     public void addToQueue(Long playerId) {
         if (playerId == null) {
-            System.out.println("Attempted to add null playerId to queue");
-            return;
+            throw new UserNotFoundException("Attempted to add null playerId to queue");
         }
         playerQueueService.addToQueue(playerId);
         checkForMatches();
@@ -42,10 +42,9 @@ public class MatchmakingService {
 
             // Create a game
             Game game = gameService.startGame(playerOneId, playerTwoId);
-            Long gameId = game.getGameId();
 
             // Notify matched players
-            notifyMatchedPlayers(playerOneId, playerTwoId, gameId, game);
+            notifyMatchedPlayers(playerOneId, playerTwoId, game.getGameId(), game);
             playerQueueService.removeFromQueue(playerOneId);
             playerQueueService.removeFromQueue(playerTwoId);
         }
@@ -57,7 +56,8 @@ public class MatchmakingService {
         playerQueueService.removeFromQueue(playerId);
     }
 
-    private void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
+
+    public void notifyMatchedPlayers(Long playerOneId, Long playerTwoId, Long gameId, Game game) {
         Long firstPlayerId = game.getCurrentTurnPlayerId();
         if (firstPlayerId == null) {
             System.err.println("Error: Current turn player ID is null.");
@@ -75,11 +75,9 @@ public class MatchmakingService {
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerOneId.toString(), resultForPlayerOne);
         messagingTemplate.convertAndSend("/topic/matchmaking/" + playerTwoId.toString(), resultForPlayerTwo);
     }
-
     @Transactional
     public void startGameWithFriend(Long senderId ,Long receiverId) {
         if (senderId == null || receiverId == null) {
-            System.err.println("Invalid player IDs provided for starting game.");
             return;
         }
 
@@ -89,7 +87,6 @@ public class MatchmakingService {
         Long firstPlayerId = game.getCurrentTurnPlayerId();
 
         if (firstPlayerId == null) {
-            System.err.println("Error: Current turn player ID is null after game start.");
             return;
         }
 
@@ -101,19 +98,9 @@ public class MatchmakingService {
         MatchmakingResult resultForReceiver = new MatchmakingResult(true, gameId, !isInviterFirstPlayer, senderId, senderName);
         MatchmakingResult resultForSender = new MatchmakingResult(true, gameId, isInviterFirstPlayer, receiverId, receiverName);
 
-        // Debug output
-        System.out.println("Preparing to send game start notifications:");
-        System.out.println(" - Receiver (" + receiverId + "): " + resultForReceiver);
-        System.out.println(" - Sender (" + senderId + "): " + resultForSender);
 
-        // Send notifications
-        try {
-            messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
-            messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
-            System.out.println("Game " + gameId + " notifications sent to both players.");
-        } catch (Exception e) {
-            System.err.println("Failed to send game notifications: " + e.getMessage());
-        }
+        messagingTemplate.convertAndSend("/topic/"+receiverId+"/game-notifications", resultForReceiver);
+        messagingTemplate.convertAndSend("/topic/"+senderId+"/game-notifications", resultForSender);
     }
 
 }
