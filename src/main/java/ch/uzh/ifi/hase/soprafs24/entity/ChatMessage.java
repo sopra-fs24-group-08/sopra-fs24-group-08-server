@@ -1,8 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
-import ch.uzh.ifi.hase.soprafs24.entity.ChatRoom;
-import ch.uzh.ifi.hase.soprafs24.entity.User;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
