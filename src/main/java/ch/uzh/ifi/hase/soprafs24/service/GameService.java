@@ -124,7 +124,7 @@ public class GameService {
       userRepository.save(user);
       playerRepository.save(player);
       // Save user and player with correct references
-          
+
       return player;
   }
 
@@ -225,10 +225,10 @@ public class GameService {
 
 
     //Keep and expand, might need it for killing a game process when somebody major happens with a connection a client.
-    private void revertPlayerToUser(Player player) {
+   /* private void revertPlayerToUser(Player player) {
         player.getUser().setInGame(false);
         userRepository.save(player.getUser());
-    }
+    }*/
 
 
 
@@ -484,21 +484,6 @@ public class GameService {
         return players.isEmpty() ? null : players.get(0);
     }
 
-    public  User getWinner(Long gameId) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-
-        if (game.getGameStatus() != GameStatus.FINISHED) {
-            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Game isn't finished yet");
-        }
-
-        User winner = game.getWinnerUser();
-        if (winner == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No winner recorded for this game.");
-        }
-
-        return winner;
-    }
     public Long getWinCountForUser(Long userId) {
         if(!userRepository.existsById(userId)){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");

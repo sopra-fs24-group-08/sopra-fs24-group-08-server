@@ -5,7 +5,4 @@ public class GameNotFoundException extends RuntimeException {
         super(message);
     }
 
-    public GameNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

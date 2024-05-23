@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 
 @Service
+@Transactional
 public class GameEventService {
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -20,7 +21,7 @@ public class GameEventService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @Transactional
+
     public void handleGameEnd(GameEndEvent event) {
         Game game = event.getGame();
         Map<Long, GameStateDTO> gameStateDTOs = event.getGameStateDTOs();

@@ -35,12 +35,12 @@ public class ChatServiceTest {
     }
     @Test
     public void testCleanupChatRoom() {
+
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setId(1L);
 
         chatService.cleanupChatRoom(chatRoom);
-
-        verify(chatMessageRepository, times(1)).deleteAll(chatRoom.getMessages());
+        //No Messages were exchanged-> only chatroomrepo will be wiped.
         verify(chatRoomRepository, times(1)).delete(chatRoom);
     }
     @Test

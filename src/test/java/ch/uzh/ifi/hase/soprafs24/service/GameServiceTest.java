@@ -8,9 +8,7 @@ import static org.mockito.Mockito.*;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.MoveType;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
-import ch.uzh.ifi.hase.soprafs24.exceptions.GameNotFoundException;
-import ch.uzh.ifi.hase.soprafs24.exceptions.NotYourTurnException;
-import ch.uzh.ifi.hase.soprafs24.exceptions.PlayerNotFoundException;
+import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
@@ -283,4 +281,55 @@ public class GameServiceTest {
         // Expect an exception because it's not player 2's turn
         assertThrows(RuntimeException.class, () -> gameService.processMove(gameId, move));
     }
+    @Test
+    void getWinnerValidAttempt(){
+        Long gameId = 1L;
+    }
+
+    @Test
+    void GetGameMatchResultValid() {
+        Long gameId = 1L;
+        Game game = mock(Game.class);
+        when(game.getGameStatus()).thenReturn(GameStatus.FINISHED);
+        when(game.getWinnerUser()).thenReturn(new User());
+        when(game.getLoserUser()).thenReturn(new User());
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        assertDoesNotThrow(() -> gameService.getGameMatchResult(gameId));
+    }
+    @Test
+    void testGetGameMatchResultGameNotFinished() {
+        Long gameId = 1L;
+        Game game = mock(Game.class);
+        when(game.getGameStatus()).thenReturn(GameStatus.ONGOING);
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        assertThrows(GameNotFinishedException.class, () -> gameService.getGameMatchResult(gameId));
+    }
+    @Test
+    void testGetGameMatchResultIncompleteData() {
+        Long gameId = 1L;
+        Game game = mock(Game.class);
+        when(game.getGameStatus()).thenReturn(GameStatus.FINISHED);
+        when(game.getWinnerUser()).thenReturn(null);
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        assertThrows(IncompleteGameDataException.class, () -> gameService.getGameMatchResult(gameId));
+    }
+    @Test
+    void testValidateTurnInvalidUser() {
+        Long gameId = 1L, playerId = 1L, wrongUserId = 2L;
+        Game game = new Game();
+        game.setCurrentTurnPlayerId(playerId);
+        assertThrows(RuntimeException.class, () -> gameService.validateTurn(gameId, playerId, wrongUserId));
+    }
+
+    @Test
+    void testValidateTurnCorrectPlayer() {
+        Long gameId = 1L, playerId = 1L;
+        Game game = new Game();
+        game.setCurrentTurnPlayerId(playerId);
+        when(gameRepository.findByGameId(gameId)).thenReturn(game);
+        assertDoesNotThrow(() -> gameService.validateTurn(gameId, playerId, playerId));
+    }
+
+
+
 }

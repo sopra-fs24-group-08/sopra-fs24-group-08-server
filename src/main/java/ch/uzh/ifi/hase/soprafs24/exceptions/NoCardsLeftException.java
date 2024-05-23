@@ -4,8 +4,4 @@ public class NoCardsLeftException extends RuntimeException {
     public NoCardsLeftException(String message) {
         super(message);
     }
-
-    public NoCardsLeftException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
