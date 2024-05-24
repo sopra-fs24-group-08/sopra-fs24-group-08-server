@@ -430,7 +430,7 @@ public class GameService {
         }
 
         // Condition 2: Any player has more than 10 cards
-        if (players.stream().anyMatch(p -> p.getHand().size() >= 10)) {
+        if (players.stream().anyMatch(p -> p.getHand().size() >= 7)) {
             return true;
         }
 
@@ -450,9 +450,9 @@ public class GameService {
             return players.stream().max(Comparator.comparingInt(Player::getScore)).orElse(null);
         }
 
-        // Determine winner based on least cards if any player has more than 10 cards
-        if (players.stream().anyMatch(p -> p.getHand().size() >= 10)) {
-            return players.stream().filter(p -> p.getHand().size() < 10).findFirst().orElse(null);
+        // Determine winner based on least cards if any player has more than 6 cards
+        if (players.stream().anyMatch(p -> p.getHand().size() >= 7)) {
+            return players.stream().filter(p -> p.getHand().size() < 7).findFirst().orElse(null);
         }
 
         // Determine winner when the card pile is empty and all hands are empty
