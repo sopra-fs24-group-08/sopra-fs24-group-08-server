@@ -21,6 +21,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
       - name: Set up environment for tests
         run: |
           echo "TRANSLATE_KEY=${{ secrets.LOCAL_TRANSLATE_API_KEY }}" >> $GITHUB_ENV
