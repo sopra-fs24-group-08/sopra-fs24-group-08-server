@@ -167,6 +167,15 @@ public class GameService {
         return DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
     }
 
+    public GameStateDTO activePlayerVerification(Long playerId){
+        Player player = playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found"));
+        Game game = gameRepository.findById(player.getId()).orElseThrow(() -> new GameNotFoundException("Game not found"));
+        if(userRepository.findByid(playerId).getInGame() && player.getGame()==game){
+            return getGameStateForPlayer(game,playerId);
+        }
+        throw new RuntimeException("Player not in game");
+    }
+
     public Player getPlayerById(Long playerId) {
         return playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found"));
     }
@@ -489,5 +498,39 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
         return gameRepository.countByWinnerUserId(userId);
+    }
+    public Long  rejoinCheck(Long userId){
+        User user = userRepository.findByid(userId);
+
+        if(user.getInGame()){
+            Player player = playerRepository.findByUser(user);
+            return player.getGame().getGameId();
+        }
+        return null;
+    }
+
+    public Optional<MatchmakingResult> getRefresh(Long userId, Long gameId) {
+        Game game = gameRepository.findByGameId(gameId);
+
+        if (game != null) {
+            List<Player> players = game.getPlayers();
+            if (players.size() == 2) { // Ensure there are exactly two players
+                Player currentPlayer = players.stream().filter(p -> p.getUser().getId().equals(userId)).findFirst().orElse(null);
+                Player opponent = players.stream().filter(p -> !p.getUser().getId().equals(userId)).findFirst().orElse(null);
+                assert opponent != null;
+                String username = opponent.getUser().getUsername();
+                if (currentPlayer != null) {
+                    return Optional.of(new MatchmakingResult(
+                            true,
+                            game.getGameId(),
+                            currentPlayer.getId().equals(game.getCurrentTurnPlayerId()),
+                            opponent.getId(),
+                            username
+
+                    ));
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

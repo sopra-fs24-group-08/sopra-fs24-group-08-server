@@ -3,14 +3,12 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.entity.SurrenderConfirmation;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.service.GameService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.Objects;
@@ -18,16 +16,15 @@ import java.util.Objects;
 @Controller
 public class GameSocketController {
 
-    private final Logger log = LoggerFactory.getLogger(GameService.class);
 
     private final GameService gameService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
 
 
     @Autowired
-    public GameSocketController(GameService gameService, SimpMessagingTemplate messagingTemplate) {
+    public GameSocketController(GameService gameService, UserService userService) {
         this.gameService = gameService;
-        this.messagingTemplate = messagingTemplate;
+        this.userService = userService;
     }
 
 
@@ -70,4 +67,8 @@ public class GameSocketController {
         }
     }
 
+    @MessageMapping("/{userId}/logout")
+    public void logoutBeforeClose(@DestinationVariable Long userId){
+        userService.logoutUserbyUserID(userId);
+    }
 }
