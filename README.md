@@ -103,12 +103,11 @@ Testing is optional, and you can run the tests with
 ./gradlew test
 ```
 ## Roadmap
-1. Improved game feature: add random events to the game for more fun
-2. Improved Friend system; adding a chat functions outside the game and store the history
-3. Improved UI; structuring the CSS files better, replacing the static images with better custom ones
-
+1. Improve game feature: add random events to the game for more fun
+2. Improve Friend system; add chat function outside the game and store the history
+3. Improve UI; structure the CSS files better, replace the static images with better resource
 ## Authors and acknowledgement
-SoPra Group 08 2024 members: David Tanner, Jingxuan Tian, Yiyang Chen, Zixian Pang,Luis Schmid
+SoPra Group 08 2024 members: 
 - **David Tanner** - [Github](https://github.com/Davtan00)
 - **Jingxuan Tian** - [Github](https://github.com/xuanjt)
 - **Yiyang Chen** - [Github](https://github.com/CindyChen-1999)
