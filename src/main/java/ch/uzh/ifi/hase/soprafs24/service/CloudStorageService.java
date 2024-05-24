@@ -5,6 +5,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.Acl; // Import Acl
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,10 +21,15 @@ public class CloudStorageService {
         this.storage = StorageOptions.getDefaultInstance().getService();
     }
 
-    public void uploadObject(String objectName, byte[] content) throws IOException {
+    public String uploadObject(String objectName, byte[] content) throws IOException {
         BlobId blobId = BlobId.of(BUCKET_NAME, objectName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-        storage.create(blobInfo, content);
+        Blob blob = storage.create(blobInfo, content);
+
+        // Make the blob publicly accessible
+        blob.createAcl(Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER));
+
+        return String.format("https://storage.googleapis.com/%s/%s", BUCKET_NAME, objectName);
     }
 
     public byte[] downloadObject(String objectName) {
