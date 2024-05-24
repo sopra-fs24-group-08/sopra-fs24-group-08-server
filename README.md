@@ -43,6 +43,7 @@ Board is the most basic element in a game, gridsquares and cardpile are initiali
 ChatMessage can be sent within the game, we offer translation function to every message.
 
 [ChatMessage](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/ChatMessage.java)
+
 [ChatService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/ChatService.java)
 
 
