@@ -10,6 +10,7 @@ import ch.uzh.ifi.hase.soprafs24.constant.RequestStatus;
 import ch.uzh.ifi.hase.soprafs24.constant.RequestType;
 import ch.uzh.ifi.hase.soprafs24.constant.GlobalConstants;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
+import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
@@ -35,6 +36,7 @@ public class FriendService {
     private final FriendRequestRepository friendRequestRepository;
     private final PlayerRepository playerRepository;
     private final MatchmakingService matchmakingService;
+    private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate; // WebSocket messaging template
 
 
@@ -42,12 +44,13 @@ public class FriendService {
     public FriendService(@Qualifier("userRepository") UserRepository userRepository,
                          @Qualifier("friendRequestRepository") FriendRequestRepository friendRequestRepository,
                          @Qualifier("playerRepository") PlayerRepository playerRepository,
-                         MatchmakingService matchmakingService, SimpMessagingTemplate messagingTemplate) {
+                         GameService gameService,MatchmakingService matchmakingService, SimpMessagingTemplate messagingTemplate) {
       this.userRepository = userRepository;
       this.friendRequestRepository = friendRequestRepository;
       this.playerRepository = playerRepository;
       this.matchmakingService = matchmakingService;
       this.messagingTemplate = messagingTemplate;
+      this.gameService = gameService;
 
     }
 
@@ -134,8 +137,12 @@ public class FriendService {
       // query if sender or receiver is already in a game
       Player player1 = playerRepository.findByUser(user);
       Player player2 = playerRepository.findByUser(receiver);
-      if (player1 != null || player2 != null){
-        forwardErrorMessage(userId, "At least 1 of the users is already in game!");
+      if (player2 != null && player1 == null){
+        forwardErrorMessage(userId, "Your friend is in a game now!");
+      }
+      if (player1 != null){
+        Game game = player1.getGame();
+        gameService.handlePlayerSurrender(game.getGameId(), userId);
       }
       // query if exists the request from the same sender to the same receiver
       FriendRequest oldGameInvitation = friendRequestRepository.findByRequestTypeAndSenderIdAndReceiverId(RequestType.GAMEINVITATION, userId, receiverId);

@@ -53,8 +53,11 @@ public class MatchmakingControllerTest extends WebSocketTestBase {
         verify(matchmakingService, times(1)).addToQueue(userId1);
         verify(matchmakingService, times(1)).addToQueue(userId2);
         // Check if checkForMatches was indeed called
+        verify(matchmakingService).checkStatusBeforeMatch(userId1);
+        verify(matchmakingService).checkStatusBeforeMatch(userId2);
         matchmakingService.checkForMatches();
         verify(matchmakingService).checkForMatches();
+
 
         // If there's any issue with not being invoked, consider adding more diagnostic output
         verifyNoMoreInteractions(matchmakingService);

@@ -51,8 +51,6 @@ public class GameServiceTest {
     private BoardRepository boardRepository;
     @Mock
     private EntityManager entityManager;
-    @Mock
-    private UserService userService;
 
     @InjectMocks
     private GameService gameService;
@@ -60,7 +58,7 @@ public class GameServiceTest {
     @BeforeEach
     void setUp() {
         // This ensures all dependencies are reset before each test
-        gameService = new GameService(gameRepository, userRepository, playerRepository, messagingTemplate, chatRoomRepository, boardService, eventPublisher,boardRepository, entityManager, userService);
+        gameService = new GameService(gameRepository, userRepository, playerRepository, messagingTemplate, chatRoomRepository, boardService, eventPublisher,boardRepository, entityManager);
     }
 
     @Test

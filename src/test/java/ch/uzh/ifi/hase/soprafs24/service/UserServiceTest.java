@@ -6,6 +6,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.exceptions.NoCardsLeftException;
 import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ public class UserServiceTest {
 
     @Mock
     private AchievementRepository achievementRepository;
+
+    @Mock
+    private PlayerRepository playerRepository;
 
     @InjectMocks
     private UserService userService;

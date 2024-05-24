@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.EventListener.GameCleanupEvent;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
@@ -22,6 +23,7 @@ import javax.persistence.EntityManager;
 
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -39,11 +41,10 @@ public class GameService {
     private final BoardService boardService;
     private final ApplicationEventPublisher eventPublisher;
     private final BoardRepository boardRepository;
-    private final UserService userService;
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, BoardRepository boardRepository, EntityManager entityManager, UserService userService) {
+                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, BoardRepository boardRepository, EntityManager entityManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -53,7 +54,6 @@ public class GameService {
         this.eventPublisher = eventPublisher;
         this.boardRepository = boardRepository;
         this.entityManager = entityManager;
-        this.userService = userService;
     }
 
 

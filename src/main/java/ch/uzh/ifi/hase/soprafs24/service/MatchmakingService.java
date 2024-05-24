@@ -1,6 +1,8 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
+import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Game;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.MatchmakingResult;
 import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,14 @@ public class MatchmakingService {
         }
         playerQueueService.addToQueue(playerId);
         checkForMatches();
+    }
+
+    public void checkStatusBeforeMatch(Long userId){
+      Player player = playerRepository.findById(userId).orElse(null);
+      if (player != null){
+        Game game = player.getGame();
+        gameService.handlePlayerSurrender(game.getGameId(), userId);
+      }
     }
 
     public void checkForMatches() {

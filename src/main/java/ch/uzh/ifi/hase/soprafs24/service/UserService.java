@@ -3,11 +3,14 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
+import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Icon;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.exceptions.UserNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
@@ -38,14 +41,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final AchievementRepository achievementRepository;
     private final IconRepository iconRepository;
+    private final GameService gameService;
+    private final PlayerRepository playerRepository;
 
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository,
-                       AchievementRepository achievementRepository, IconRepository iconRepository) {
+                      @Qualifier("playerRepository") PlayerRepository playerRepository,
+                      GameService gameService, AchievementRepository achievementRepository, IconRepository iconRepository) {
         this.userRepository = userRepository;
         this.achievementRepository = achievementRepository;
         this.iconRepository = iconRepository;
+        this.gameService = gameService;
+        this.playerRepository = playerRepository;
 
     }
 
@@ -198,6 +206,11 @@ public class UserService {
         // Function: Change online status to offline
         // Return: Edited user information
         User userbyID = userRepository.findByid(userid);
+        Player player = playerRepository.findByUser(userbyID);
+        if (player != null){
+          Game game = player.getGame();
+          gameService.handlePlayerSurrender(game.getGameId(), userid);
+      }
         userbyID.setStatus(UserStatus.OFFLINE);
     }
 

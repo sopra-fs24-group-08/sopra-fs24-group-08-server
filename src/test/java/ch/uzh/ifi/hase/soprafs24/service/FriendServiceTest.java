@@ -263,12 +263,13 @@ public class FriendServiceTest {
       // Setup user to already have receiver as a friend
       user.getFriends().add(receiver);
       when(playerRepository.findByUser(receiver)).thenReturn(player);
+      when(playerRepository.findByUser(user)).thenReturn(null);
       Exception exception = assertThrows(IllegalArgumentException.class, () ->
           friendService.inviteFriendToGame(user.getId(), gameInvitation)
       );
-      assertTrue(exception.getMessage().contains("At least 1 of the users is already in game!"));
+      assertTrue(exception.getMessage().contains("Your friend is in a game now!"));
       verify(messagingTemplate, times(1)).convertAndSend(anyString(), mapCaptor.capture());
-      assertEquals("At least 1 of the users is already in game!", mapCaptor.getValue().get("error"));
+      assertEquals("Your friend is in a game now!", mapCaptor.getValue().get("error"));
     }
 
     @Test

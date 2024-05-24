@@ -32,7 +32,7 @@ public class MatchmakingController {
         System.out.println("Session: " + sessionToken);
         if (sessionToken != null && userService.validateUserIdToken(userId, sessionToken)) {
 
-
+            matchmakingService.checkStatusBeforeMatch(userId);
             System.out.println("User " + userId + " has joined the matchmaking queue.");
             matchmakingService.addToQueue(userId);
         } else {
