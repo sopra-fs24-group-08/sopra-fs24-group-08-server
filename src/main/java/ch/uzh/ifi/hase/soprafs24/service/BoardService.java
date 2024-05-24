@@ -70,6 +70,9 @@ public class BoardService {
             cardRepository.deleteAll(square.getCards()); // Ensure all cards are deleted
             square.getCards().clear(); // Clear in-memory references immediately
         }
+        gridSquareRepository.deleteAll(board.getGridSquares());
+        boardRepository.delete(board);
+
 
     }
 
