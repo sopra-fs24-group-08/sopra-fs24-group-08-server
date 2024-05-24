@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-
 @RestController
 public class AvatarController {
     private final RestTemplate restTemplate;
