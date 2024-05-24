@@ -1,4 +1,4 @@
-# project title
+# Project title
 Kitty Cards
 
 ## Technologies
@@ -12,45 +12,109 @@ Kitty Cards
 - [SonarCloud](https://sonarcloud.io/) - Testing & Feedback of code quality
 
 ## High-level components
-### 
 
-### 
+### User
+
+Users can eidt their username, password, birthday and avatar save them to the database, the primary key ID will be automatically stored upon registration.
+
+[User](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/User.java)
+
+[UserService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/UserService.java)
+
+### Game
+
+Game is the core part and takes players, cardpile, winner/loser, etc.. as components.
+
+[Game](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/Game.java)
+
+[GameService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/GameService.java)
+
+### Board
+
+Board is the most basic element in a game, gridsquares and cardpile are initialized within a board.
+
+[Board](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/Board.java)
+
+[BoardService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/BoardService.java)
+
+
+### ChatMessage
+
+ChatMessage can be sent within the game, we offer translation function to every message.
+
+[ChatMessage](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/ChatMessage.java)
+[ChatService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/ChatService.java)
+
+
+### WebSocket
+
+In order to make our Application more real-time, we use WebSockets in key areas.
 
 
 
-### 
+## Deployment and Database
+
+### Deployment on Google Cloud
+
+Our application is hosted on [Google Cloud URL](https://sopra-fs23-group-38-client.oa.r.appspot.com/). Also our server status is available in this link [Google Cloud URL](https://sopra-fs23-group-38-server.oa.r.appspot.com/). All cloud deployments are now complete and can be accessed directly via the link above.
+
+### Cloud SQL Database
+
+This application use Cloud SQL database to store data.
+
+## Launch & Development
+
+For your local development environment, you may need gradle to build this application and create your own database:
+
+### Create your own database of Cloud SQL:
 
 
-### 
 
+### Building with Gradle
 
-## Launch & Deployment
- - npm run dev
+You can use the local Gradle Wrapper to build the application.
 
-  This command runs the app in the development mode.
-  Open http://localhost:3000 to view it in the browser.
+- macOS: `./gradlew`
+- Linux: `./gradlew`
+- Windows: `./gradlew.bat`
 
-  The page will reload if you make edits and save them.
+More Information about [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) and [Gradle](https://gradle.org/docs/).
 
-- npm run build
+### Build
 
-  This command builds the app for production to the build folder.
+```bash
+./gradlew build
+```
 
+### Run
 
- 
-## Illustrations
+```bash
+./gradlew bootRun
+```
 
- 
+You can verify that the server is running by visiting `localhost:8080` in your browser. You also have to check whether your server URL is set properly on `localhost:8080`.
+
+### Testing
+
+Testing is optional, and you can run the tests with
+
+```bash
+./gradlew test
+```
 ## Roadmap
-Improved game feature: add random events to the game for more fun
+1. Improved game feature: add random events to the game for more fun
 2. Improved Friend system; adding a chat functions outside the game and store the history
 3. Improved UI; structuring the CSS files better, replacing the static images with better custom ones
 
 ## Authors and acknowledgement
-SoPra Group 08 2024 members: David Tanner, Jingxuan Tian, Yiyang Chen, Zixian Pang, Luis Schmid.
+SoPra Group 08 2024 members: David Tanner, Jingxuan Tian, Yiyang Chen, Zixian Pang,Luis Schmid
+- **David Tanner** - [Github](https://github.com/Davtan00)
+- **Jingxuan Tian** - [Github](https://github.com/xuanjt)
+- **Yiyang Chen** - [Github](https://github.com/CindyChen-1999)
+- **Zixian Pang** - [Github](https://github.com/Dennis-Pang)
+- **Luis Schmid** - [Github](https://github.com/LooPyt)
 
-
-Firstly, we want to thank our TA Sven Fabian Ringger for the help throughout the whole project. Secondly, we want to thank any official documents/online tutorials that provide us with help at any part of the project. During this semester, we encountered so many challenges, which also offered us chances to grow and gain knowledge and experience in the software field. Furthermore, we also realized that not only coding skills but also communication matters, as we fell short in this part but eventually overcame it. 
+>Firstly, we want to thank our TA Sven Fabian Ringger for the help throughout the whole project. Secondly, we want to thank any official documents/online tutorials that provide us with help at any part of the project. During this semester, we encountered so many challenges, which also offered us chances to grow and gain knowledge and experience in the software field. Furthermore, we also realized that not only coding skills but also communication matters, as we fell short in this part but eventually overcame it. 
 In a nutshell, we appreciate this journey at Sopra and thank for anyone who helps us directly or indirectly.
 
 ## License
