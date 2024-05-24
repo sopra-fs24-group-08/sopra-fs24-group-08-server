@@ -19,21 +19,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
 
 @RestController
 public class GameController {
 
     private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
 
 
     @Autowired
-    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate) {
+    public GameController(GameService gameService, SimpMessagingTemplate messagingTemplate, UserService userService) {
         this.gameService = gameService;
         this.messagingTemplate = messagingTemplate;
+        this.userService = userService;
     }
 
 
@@ -83,6 +83,26 @@ public class GameController {
     @GetMapping("/winCount/{userId}")
     public Long getWinCount(@PathVariable Long userId) {
         return gameService.getWinCountForUser(userId);
+    }
+
+    @PostMapping("/game/{userId}/{token}/refresh")
+    public void playerRefresh(@PathVariable Long userId, @PathVariable String token) {
+        System.out.println("Player with id: " + userId + " is refreshing game with controller");
+        userService.authenticateUser(token,userId);
+
+        GameStateDTO specificUpToDateDTO = gameService.activePlayerVerification(userId);
+        System.out.println(specificUpToDateDTO + "////" + "websocketcntroller");
+        messagingTemplate.convertAndSend("/topic/game/" + specificUpToDateDTO.getGameId() + "/" + userId, specificUpToDateDTO);
+    }
+
+    @GetMapping("/user/{userId}/status")
+    public ResponseEntity<?> getRejoinStatus(@PathVariable Long userId) {
+        System.out.println("User with id: " + userId + " is rejoining");
+        Long gameId = gameService.rejoinCheck(userId);
+        System.out.println(gameId + "////");
+        return gameService.getRefresh(gameId, userId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
 }
