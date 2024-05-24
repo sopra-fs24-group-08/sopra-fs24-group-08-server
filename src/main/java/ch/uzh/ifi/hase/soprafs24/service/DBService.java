@@ -34,7 +34,7 @@ public class DBService implements CommandLineRunner {
         initializeIcons();
     }
 
-    @Transactional
+
     public void initializeAchievements() {
         log.info("Initializing achievements...");
         List<Achievement> predefinedAchievements = List.of(
@@ -54,7 +54,6 @@ public class DBService implements CommandLineRunner {
             }
         });
     }
-    @Transactional
     public void initializeIcons() {
         log.info("Initializing icons...");
         List<Icon> predefinedIcons = List.of(

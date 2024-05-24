@@ -1,34 +1,83 @@
-# SoPra RESTful Service Template FS24
+# Project title
+Kitty Cards
 
-## Getting started with Spring Boot
--   Documentation: https://docs.spring.io/spring-boot/docs/current/reference/html/index.html
--   Guides: http://spring.io/guides
-    -   Building a RESTful Web Service: http://spring.io/guides/gs/rest-service/
-    -   Building REST services with Spring: https://spring.io/guides/tutorials/rest/
+## Technologies
+- [Springboot](https://spring.io/) - Java framework to create a service
+- [Gradle](https://gradle.org/) - Automated building and management tool
+- [MySQL](https://www.mysql.com/) - Database
+- [React](https://reactjs.org/docs/getting-started.html) - Javascript library for the frontend
+- [Github Projects](https://github.com/explore) - Project Management
+- [Figma](https://figma.com/) - Mockups
+- [Google Cloud](https://cloud.google.com/) - Deployment
+- [SonarCloud](https://sonarcloud.io/) - Testing & Feedback of code quality
 
-## Setup this Template with your IDE of choice
-Download your IDE of choice (e.g., [IntelliJ](https://www.jetbrains.com/idea/download/), [Visual Studio Code](https://code.visualstudio.com/), or [Eclipse](http://www.eclipse.org/downloads/)). Make sure Java 17 is installed on your system (for Windows, please make sure your `JAVA_HOME` environment variable is set to the correct version of Java).
+## High-level components
 
-### IntelliJ
-If you consider to use IntelliJ as your IDE of choice, you can make use of your free educational license [here](https://www.jetbrains.com/community/education/#students).
-1. File -> Open... -> SoPra server template
-2. Accept to import the project as a `gradle project`
-3. To build right click the `build.gradle` file and choose `Run Build`
+### User
 
-### VS Code
-The following extensions can help you get started more easily:
--   `vmware.vscode-spring-boot`
--   `vscjava.vscode-spring-initializr`
--   `vscjava.vscode-spring-boot-dashboard`
--   `vscjava.vscode-java-pack`
+Users can eidt their username, password, birthday and avatar save them to the database, the primary key ID will be automatically stored upon registration.
 
-**Note:** You'll need to build the project first with Gradle, just click on the `build` command in the _Gradle Tasks_ extension. Then check the _Spring Boot Dashboard_ extension if it already shows `soprafs24` and hit the play button to start the server. If it doesn't show up, restart VS Code and check again.
+[User](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/User.java)
 
-## Building with Gradle
+[UserService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/UserService.java)
+
+### Game
+
+Game is the core part and takes players, cardpile, winner/loser, etc.. as components.
+
+[Game](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/Game.java)
+
+[GameService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/GameService.java)
+
+### Board
+
+Board is the most basic element in a game, gridsquares and cardpile are initialized within a board.
+
+[Board](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/Board.java)
+
+[BoardService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/BoardService.java)
+
+
+### ChatMessage
+
+ChatMessage can be sent within the game, we offer translation function to every message.
+
+[ChatMessage](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/entity/ChatMessage.java)
+
+[ChatService](https://github.com/sopra-fs24-group-08/sopra-fs24-group-08-server/blob/main/src/main/java/ch/uzh/ifi/hase/soprafs24/service/ChatService.java)
+
+
+### WebSocket
+
+In order to make our Application more real-time, we use WebSockets in key areas.
+
+
+
+## Deployment and Database
+
+### Deployment on Google Cloud
+
+Our application is hosted on [Google Cloud URL](https://sopra-fs23-group-38-client.oa.r.appspot.com/). Also our server status is available in this link [Google Cloud URL](https://sopra-fs23-group-38-server.oa.r.appspot.com/). All cloud deployments are now complete and can be accessed directly via the link above.
+
+### Cloud SQL Database
+
+This application use Cloud SQL database to store data.
+
+## Launch & Development
+
+For your local development environment, you may need gradle to build this application and create your own database:
+
+### Create your own database of Cloud SQL:
+
+
+
+### Building with Gradle
+
 You can use the local Gradle Wrapper to build the application.
--   macOS: `./gradlew`
--   Linux: `./gradlew`
--   Windows: `./gradlew.bat`
+
+- macOS: `./gradlew`
+- Linux: `./gradlew`
+- Windows: `./gradlew.bat`
 
 More Information about [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) and [Gradle](https://gradle.org/docs/).
 
@@ -44,44 +93,34 @@ More Information about [Gradle Wrapper](https://docs.gradle.org/current/userguid
 ./gradlew bootRun
 ```
 
-You can verify that the server is running by visiting `localhost:8080` in your browser.
+You can verify that the server is running by visiting `localhost:8080` in your browser. You also have to check whether your server URL is set properly on `localhost:8080`.
 
-### Test
+### Testing
+
+Testing is optional, and you can run the tests with
 
 ```bash
 ./gradlew test
 ```
+## Roadmap
+1. Improve game feature: add random events to the game for more fun
+2. Improve Friend system; add chat function outside the game and store the history
+3. Improve UI; structure the CSS files better, replace the static images with better resource
+## Authors and acknowledgement
+SoPra Group 08 2024 members: 
+- **David Tanner** - [Github](https://github.com/Davtan00)
+- **Jingxuan Tian** - [Github](https://github.com/xuanjt)
+- **Yiyang Chen** - [Github](https://github.com/CindyChen-1999)
+- **Zixian Pang** - [Github](https://github.com/Dennis-Pang)
+- **Luis Schmid** - [Github](https://github.com/LooPyt)
 
-### Development Mode
-You can start the backend in development mode, this will automatically trigger a new build and reload the application
-once the content of a file has been changed.
+>Firstly, we want to thank our TA Sven Fabian Ringger for the help throughout the whole project. Secondly, we want to thank any official documents/online tutorials that provide us with help at any part of the project. During this semester, we encountered so many challenges, which also offered us chances to grow and gain knowledge and experience in the software field. Furthermore, we also realized that not only coding skills but also communication matters, as we fell short in this part but eventually overcame it. 
+In a nutshell, we appreciate this journey at Sopra and thank for anyone who helps us directly or indirectly.
 
-Start two terminal windows and run:
+## License
+[MIT License](LICENSE)
 
-`./gradlew build --continuous`
 
-and in the other one:
 
-`./gradlew bootRun`
+ 
 
-If you want to avoid running all tests with every change, use the following command instead:
-
-`./gradlew build --continuous -xtest`
-
-## API Endpoint Testing with Postman
-We recommend using [Postman](https://www.getpostman.com) to test your API Endpoints.
-
-## Debugging
-If something is not working and/or you don't know what is going on. We recommend using a debugger and step-through the process step-by-step.
-
-To configure a debugger for SpringBoot's Tomcat servlet (i.e. the process you start with `./gradlew bootRun` command), do the following:
-
-1. Open Tab: **Run**/Edit Configurations
-2. Add a new Remote Configuration and name it properly
-3. Start the Server in Debug mode: `./gradlew bootRun --debug-jvm`
-4. Press `Shift + F9` or the use **Run**/Debug "Name of your task"
-5. Set breakpoints in the application where you need it
-6. Step through the process one step at a time
-
-## Testing
-Have a look here: https://www.baeldung.com/spring-boot-testing

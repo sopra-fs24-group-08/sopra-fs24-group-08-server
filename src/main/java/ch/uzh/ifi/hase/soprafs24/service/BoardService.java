@@ -54,6 +54,7 @@ public class BoardService {
         } else if(card ==  null) {
             throw new IllegalArgumentException("Card cannot be null.");
         } else{
+            assert square != null;
             throw new SquareOccupiedException("Square is occupied or does not exist at position: " + square.getId());
         }
     }
@@ -69,6 +70,9 @@ public class BoardService {
             cardRepository.deleteAll(square.getCards()); // Ensure all cards are deleted
             square.getCards().clear(); // Clear in-memory references immediately
         }
+        gridSquareRepository.deleteAll(board.getGridSquares());
+        boardRepository.delete(board);
+
 
     }
 

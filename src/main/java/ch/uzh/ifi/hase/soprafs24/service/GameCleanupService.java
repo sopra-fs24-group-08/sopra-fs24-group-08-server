@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Service
+@Transactional
 public class GameCleanupService {
     private static final Logger logger = LoggerFactory.getLogger(GameCleanupListener.class);
     private final BoardService boardService;
@@ -51,7 +52,7 @@ public class GameCleanupService {
         try {
             if (game.getChatRoom() != null) {
                 chatService.cleanupChatRoom(game.getChatRoom());
-                game.setChatRoom(null);
+                game.setChatRoom(null);  // Ensure this nullification happens only after all needed operations are done
             }
 
             if (game.getBoard() != null) {

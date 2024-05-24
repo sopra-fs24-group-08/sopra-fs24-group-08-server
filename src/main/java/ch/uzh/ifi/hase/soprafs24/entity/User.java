@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,7 +33,6 @@ public class User implements Serializable {
     @GeneratedValue
     private Long id;
 
-
     @Column(nullable = false, unique = true)
     private String username;
 
@@ -57,11 +57,11 @@ public class User implements Serializable {
     // Using FetchType.LAZY for optimizing the loading of friends
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "user_friends",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "friend_id")
+            name = "user_friends",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "friend_id")
     )
-    private List<User> friends;
+    private List<User> friends = new ArrayList<>(); // Initialize with an empty ArrayList
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -114,7 +114,7 @@ public class User implements Serializable {
     }
 
     public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;  // 确保可以设置头像URL
+        this.avatarUrl = avatarUrl;
     }
     public Set<Achievement> getAchievements() {
         return achievements;

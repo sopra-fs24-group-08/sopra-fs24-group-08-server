@@ -1,24 +1,21 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import ch.uzh.ifi.hase.soprafs24.EventListener.GameCleanupEvent;
-import ch.uzh.ifi.hase.soprafs24.EventListener.GameEndEvent;
 import ch.uzh.ifi.hase.soprafs24.constant.GameStatus;
+import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.*;
 import ch.uzh.ifi.hase.soprafs24.exceptions.*;
 import ch.uzh.ifi.hase.soprafs24.repository.*;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.dto.GameStateDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.GameMatchResultDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.MoveDTO;
 import ch.uzh.ifi.hase.soprafs24.gamesocket.mapper.DTOSocketMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import javax.persistence.EntityManager;
@@ -26,6 +23,7 @@ import javax.persistence.EntityManager;
 
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -46,7 +44,7 @@ public class GameService {
 
     @Autowired
     public GameService(GameRepository gameRepository, UserRepository userRepository, PlayerRepository playerRepository, SimpMessagingTemplate messagingTemplate,
-                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, ChatService chatService, BoardRepository boardRepository,EntityManager entityManager) {
+                       ChatRoomRepository chatRoomRepository, BoardService boardService, ApplicationEventPublisher eventPublisher, BoardRepository boardRepository, EntityManager entityManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -63,18 +61,6 @@ public class GameService {
         return gameRepository.findById(gameId).orElseThrow(() -> new GameNotFoundException("Game not found"));
     }
 
-    public void updateGame(Game game) {
-        gameRepository.save(game);
-    }//Leaving this in for existing functions of others, should be removed eventually
-    //for gameId
-    public Game createGame() {
-        Game game = new Game();
-        Board board = new Board();
-        game.setBoard(board);
-        gameRepository.save(game);
-        gameRepository.flush();
-        return game;
-    }
 
     public Game startGame(Long userId1, Long userId2) {
         User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found"));
@@ -93,10 +79,10 @@ public class GameService {
         game.setGameStatus(GameStatus.STARTING);
 
         Board board = boardService.initializeAndSaveBoard();
-        //Not needed boardRepository.save(board);
         game.setBoard(board);
-        // Saving game here to ensure it has an ID before linking Players
-        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database for ChatRoom
+
+        // Save game here to ensure it has an ID before linking Players
+        gameRepository.saveAndFlush(game); // Use saveAndFlush to immediately commit to the database
 
         ChatRoom chatRoom = createAndLinkChatRoom(game);
         game.setChatRoom(chatRoom);
@@ -106,8 +92,10 @@ public class GameService {
 
         game.addPlayer(player1);
         game.addPlayer(player2);
+
+        // Final save to ensure all changes are committed
         gameRepository.save(game);
-        //Not needed gameRepository.save(game);
+
         performCoinFlipAndInitializeGame(player1, player2, game);
 
         game.setGameStatus(GameStatus.ONGOING);
@@ -126,15 +114,19 @@ public class GameService {
 
 
     private Player convertUserToPlayer(User user, Game game) {
-        System.out.println("Converting User to player");
-        user.setInGame(true);
-        Player player = new Player();
-        player.setUser(user);
-        player.setGame(game);
-        userRepository.save(user);
-        playerRepository.save(player);
-        return player;
-    }
+      System.out.println("Converting User to player");
+      user.setInGame(true);
+
+      // Ensure user is managed
+      Player player = new Player();
+      player.setUser(user);
+      player.setGame(game);
+      userRepository.save(user);
+      playerRepository.save(player);
+      // Save user and player with correct references
+
+      return player;
+  }
 
     private void performCoinFlipAndInitializeGame(Player player1, Player player2, Game game) {
         System.out.println("About to do a coin flip for the game with id "+game.getGameId());
@@ -170,6 +162,15 @@ public class GameService {
         }
         playerRepository.save(player);
     }
+    //Spring Boot test can't directly mock static methods, so instead of doing DTOMapper calls in controller we do them here.
+    public GameStateDTO getGameStateForPlayer(Game game, Long playerId) {
+        return DTOSocketMapper.INSTANCE.convertEntityToGameStateDTOForPlayer(game, playerId);
+    }
+
+    public Player getPlayerById(Long playerId) {
+        return playerRepository.findById(playerId).orElseThrow(() -> new PlayerNotFoundException("Player not found"));
+    }
+
 
 
     //If a player clicks on EXIT/SURR then we should have a proper way to apply the changes.
@@ -224,10 +225,10 @@ public class GameService {
 
 
     //Keep and expand, might need it for killing a game process when somebody major happens with a connection a client.
-    private void revertPlayerToUser(Player player) {
+   /* private void revertPlayerToUser(Player player) {
         player.getUser().setInGame(false);
         userRepository.save(player.getUser());
-    }
+    }*/
 
 
 
@@ -276,7 +277,7 @@ public class GameService {
      * @throws NotYourTurnException if it is not the player's turn
      * @throws RuntimeException if the move request is invalid or if the game or player does not exist
      */
-    private void validateTurn(Long gameId, Long playerId, Long moveDTOUserId) {
+    public void validateTurn(Long gameId, Long playerId, Long moveDTOUserId) {
         if (moveDTOUserId == null || !moveDTOUserId.equals(playerId)) {
             throw new RuntimeException("Invalid move request: User ID does not match Player ID");
         }
@@ -429,7 +430,7 @@ public class GameService {
         }
 
         // Condition 2: Any player has more than 10 cards
-        if (players.stream().anyMatch(p -> p.getHand().size() >= 10)) {
+        if (players.stream().anyMatch(p -> p.getHand().size() >= 7)) {
             return true;
         }
 
@@ -449,9 +450,9 @@ public class GameService {
             return players.stream().max(Comparator.comparingInt(Player::getScore)).orElse(null);
         }
 
-        // Determine winner based on least cards if any player has more than 10 cards
-        if (players.stream().anyMatch(p -> p.getHand().size() >= 10)) {
-            return players.stream().filter(p -> p.getHand().size() < 10).findFirst().orElse(null);
+        // Determine winner based on least cards if any player has more than 6 cards
+        if (players.stream().anyMatch(p -> p.getHand().size() >= 7)) {
+            return players.stream().filter(p -> p.getHand().size() < 7).findFirst().orElse(null);
         }
 
         // Determine winner when the card pile is empty and all hands are empty
@@ -483,22 +484,10 @@ public class GameService {
         return players.isEmpty() ? null : players.get(0);
     }
 
-    public  User getWinner(Long gameId) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
-
-        if (game.getGameStatus() != GameStatus.FINISHED) {
-            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Game isn't finished yet");
-        }
-
-        User winner = game.getWinnerUser();
-        if (winner == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No winner recorded for this game.");
-        }
-
-        return winner;
-    }
     public Long getWinCountForUser(Long userId) {
+        if(!userRepository.existsById(userId)){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
         return gameRepository.countByWinnerUserId(userId);
     }
 }

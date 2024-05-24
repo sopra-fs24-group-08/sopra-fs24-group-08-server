@@ -3,10 +3,14 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.Achievement;
 import ch.uzh.ifi.hase.soprafs24.entity.FriendRequest;
+import ch.uzh.ifi.hase.soprafs24.entity.Game;
 import ch.uzh.ifi.hase.soprafs24.entity.Icon;
+import ch.uzh.ifi.hase.soprafs24.entity.Player;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.exceptions.UserNotFoundException;
 import ch.uzh.ifi.hase.soprafs24.repository.FriendRequestRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.IconRepository;
+import ch.uzh.ifi.hase.soprafs24.repository.PlayerRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.AchievementRepository;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
@@ -37,21 +41,37 @@ public class UserService {
     private final UserRepository userRepository;
     private final AchievementRepository achievementRepository;
     private final IconRepository iconRepository;
+    private final GameService gameService;
+    private final PlayerRepository playerRepository;
 
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository,
-                       AchievementRepository achievementRepository, IconRepository iconRepository) {
+                      @Qualifier("playerRepository") PlayerRepository playerRepository,
+                      GameService gameService, AchievementRepository achievementRepository, IconRepository iconRepository) {
         this.userRepository = userRepository;
         this.achievementRepository = achievementRepository;
         this.iconRepository = iconRepository;
+        this.gameService = gameService;
+        this.playerRepository = playerRepository;
 
     }
 
     public void updateUserAvatar(Long userId, String avatarUrl) {
+        System.out.println("Attempting to update avatar for user ID: " + userId);
+
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("Current avatar URL: " + user.getAvatarUrl());
+
         user.setAvatarUrl(avatarUrl); // Setting a new avatar URL
+        System.out.println("New avatar URL set to: " + avatarUrl);
+
         userRepository.save(user); // Save Updates
+        System.out.println("Avatar URL updated successfully in the database for user ID: " + userId);
+    }
+
+    public Optional<String> getAvatarUrl(Long userId) {
+        return userRepository.findAvatarUrlByUserId(userId);
     }
 
     public Icon getDefaultIcon(String defaultIconName) {
@@ -133,6 +153,10 @@ public class UserService {
         String passwordErrorMessage = "Password incorrect! Try again!";
         if (!password.equals(savedPassword)) {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, String.format(passwordErrorMessage));
+
+        }
+        if (userByUsername.getStatus()==UserStatus.ONLINE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with these credentials is already logged in");
         }
         userByUsername.setStatus(UserStatus.ONLINE);
         return userByUsername;
@@ -177,18 +201,18 @@ public class UserService {
         return newUser;
         //We shouldn't be returning s
     }
-
-
-
-
-    public User logoutUserbyUserID(Long userid) {
+    public void logoutUserbyUserID(Long userid) {
         // Input: user id
         // Function: Change online status to offline
         // Return: Edited user information
         User userbyID = userRepository.findByid(userid);
+        Player player = playerRepository.findByUser(userbyID);
+        if (player != null){
+          Game game = player.getGame();
+          gameService.handlePlayerSurrender(game.getGameId(), userid);
+      }
         userbyID.setStatus(UserStatus.OFFLINE);
-        return userbyID;
-    } //Why returning  User
+    }
 
     public void unlockIconUser(Long userId, Long iconId) {
         User user = userRepository.findById(userId).orElseThrow(
@@ -281,6 +305,5 @@ public class UserService {
 
         return true;
     }
-
 
 }

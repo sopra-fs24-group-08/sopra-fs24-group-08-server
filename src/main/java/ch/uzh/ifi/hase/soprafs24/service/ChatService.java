@@ -3,7 +3,6 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.entity.ChatMessage;
 import ch.uzh.ifi.hase.soprafs24.entity.ChatRoom;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
-import ch.uzh.ifi.hase.soprafs24.service.util.BatchDataHandler;
 import ch.uzh.ifi.hase.soprafs24.repository.ChatMessageRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.ChatRoomRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.GameRepository;
@@ -12,7 +11,8 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.MessagePostDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,22 +20,23 @@ import java.util.Map;
 @Service
 public class ChatService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
+
+
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final GameRepository gameRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final BatchDataHandler batchDataHandler;
 
     @Autowired
     public ChatService(UserRepository userRepository, ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository, GameRepository gameRepository,
-                       SimpMessagingTemplate messagingTemplate, BatchDataHandler batchDataHandler) {
+                       SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.gameRepository = gameRepository;
         this.messagingTemplate = messagingTemplate;
-        this.batchDataHandler = batchDataHandler;
     }
 
     public void sendChatMessage(Long gameId, MessagePostDTO messagePostDTO) {
@@ -57,23 +58,17 @@ public class ChatService {
     }
 
 
-    private ChatRoom createChatRoom(Long gameId) {
-        // Logic to create a new chat room,not needed anymore if we only need ingame chat
-        ChatRoom newChatRoom = new ChatRoom();
-        newChatRoom.setGame(gameRepository.findById(gameId).orElseThrow(
-                () -> new RuntimeException("Game not found for gameId: " + gameId)
-        ));
-        return chatRoomRepository.save(newChatRoom);
-    }
-
     public void cleanupChatRoom(ChatRoom chatRoom) {
-        chatMessageRepository.deleteAll(chatRoom.getMessages()); // Clear all messages explicitly
-        chatRoomRepository.delete(chatRoom);  // Delete the chat room
-        System.out.println("Chat room and all messages cleared");
-    }
-
-    @Transactional
-    public void cleanupChatRoomMessages(ChatRoom chatRoom) {
-        batchDataHandler.deleteChatMessagesInBatch(chatRoom.getId());
+        if (chatRoom != null) {
+            if (chatRoom.getMessages() != null) {
+                chatMessageRepository.deleteAll(chatRoom.getMessages()); // Clear all messages explicitly
+            } else {
+                logger.warn("No messages to clear for chatRoom ID {}", chatRoom.getId());
+            }
+            chatRoomRepository.delete(chatRoom);  // Delete the chat room
+            logger.info("Chat room and all messages cleared for chatRoom ID {}", chatRoom.getId());
+        } else {
+            logger.error("Attempted to clean up a null chat room.");
+        }
     }
 }
